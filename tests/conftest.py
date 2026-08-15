@@ -1,9 +1,32 @@
+import shutil
 import pytest
 from pathlib import Path
 
 from codeprism.core.storage import StorageManager
 from codeprism.core.graph import GraphEngine
 from codeprism.core.models import FileRecord, SymbolRecord, EdgeRecord, NodeKind, EdgeKind
+
+PYTHON_FIXTURE = Path(__file__).parent / "fixtures" / "sample_python_project"
+
+
+@pytest.fixture
+async def indexed_engine(tmp_path: Path):
+    """Return (QueryEngine, StorageManager) for the sample Python project."""
+    from codeprism.core.config import CodePrismConfig
+    from codeprism.indexer.project_indexer import ProjectIndexer
+    from codeprism.query.engine import QueryEngine
+
+    proj = tmp_path / "project"
+    shutil.copytree(PYTHON_FIXTURE, proj)
+
+    db = StorageManager(tmp_path / "idx.db")
+    await db.initialize()
+    g = GraphEngine()
+    config = CodePrismConfig(languages=["python"])
+    await ProjectIndexer(g, db, config).index(str(proj))
+    engine = QueryEngine(g, db)
+    yield engine, db, proj
+    await db.close()
 
 
 @pytest.fixture
