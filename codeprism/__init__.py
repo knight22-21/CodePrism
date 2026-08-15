@@ -22,19 +22,38 @@ from .query.context import ContextResult
 from .query.engine import QueryEngine
 from .query.impact import ImpactResult
 from .query.summary import ModuleSummary
+from .security import CVEResult, SecurityGate, SecurityReport, SecurityScanner
+from .security import check_package as check_package_cve
+from .security import check_requirements as check_requirements_cve
+from .mcp.session import Session, SessionContext, SessionManager, UndoResult
 
 __version__ = "0.1.0"
 
 
 class CodePrism:
-    """High-level façade: one object for indexing, querying, and watching a project.
+    """High-level façade: one object for indexing, querying, session tracking, and security.
 
     Usage::
 
         async with CodePrism("/path/to/project") as prism:
             await prism.index()
+
+            # Query
             ctx = await prism.get_context("payments/processor.py", "process_payment")
             impact = await prism.get_impact("payments/processor.py", "process_payment")
+
+            # Security gate
+            gate = SecurityGate()
+            report = await gate.check_write("payments/processor.py", new_content)
+            if report.is_blocked:
+                raise ValueError(report.issues[0].description)
+
+            # Session tracking
+            session = prism.session("sess_abc123")
+            await session.record_read("payments/processor.py", "process_payment")
+            await session.record_write("payments/processor.py", old_content, new_content)
+            ctx_summary = await session.get_context()
+            await session.undo(steps=1)
     """
 
     def __init__(
@@ -104,24 +123,62 @@ class CodePrism:
     async def get_module_summary(self, file: str) -> Optional[ModuleSummary]:
         return await self.engine.get_module_summary(file)
 
+    # ── Session tracking (spec §7) ────────────────────────────────────────────
+
+    def session(self, session_id: str) -> Session:
+        """Return a session-id–bound Session object for tracking agent activity.
+
+        The Session wraps SessionManager so callers never pass session_id manually::
+
+            s = prism.session("sess_001")
+            await s.record_read("payments/processor.py", "process_payment")
+            await s.record_write("payments/processor.py", old_content, new_content)
+            ctx = await s.get_context()
+            await s.undo(steps=1)
+        """
+        from .indexer.incremental_updater import IncrementalUpdater
+        assert self._graph is not None and self._storage is not None, (
+            "CodePrism not initialized — use `async with CodePrism(...)`"
+        )
+        updater = IncrementalUpdater(self._graph, self._storage)
+        manager = SessionManager(self._storage, updater)
+        return Session(session_id, manager)
+
 
 __all__ = [
     "__version__",
+    # Facade
     "CodePrism",
+    # Config
     "CodePrismConfig",
+    # Query
     "QueryEngine",
     "ContextResult",
     "ImpactResult",
     "ModuleSummary",
+    # Graph
     "GraphEngine",
     "StorageManager",
     "NodeKind",
     "EdgeKind",
     "Severity",
+    # Records
     "FileRecord",
     "SymbolRecord",
     "EdgeRecord",
     "SecurityIssue",
     "SessionEvent",
     "GraphStats",
+    # Security
+    "SecurityGate",
+    "SecurityScanner",
+    "SecurityReport",
+    "CVEResult",
+    "check_package_cve",
+    "check_requirements_cve",
+    # Session
+    "Session",
+    "SessionContext",
+    "SessionManager",
+    "UndoResult",
 ]

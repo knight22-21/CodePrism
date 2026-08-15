@@ -414,6 +414,13 @@ class StorageManager:
             row = await cur.fetchone()
         last_indexed_at = float(row[0]) if row and row[0] is not None else None
 
+        files_with_symbols = await scalar(
+            "SELECT COUNT(DISTINCT file_id) FROM symbols"
+        )
+        coverage_percent = (
+            round(files_with_symbols / file_count * 100, 1) if file_count else 0.0
+        )
+
         return {
             "file_count": file_count,
             "function_count": function_count,
@@ -423,6 +430,7 @@ class StorageManager:
             "edge_count": edge_count,
             "languages": languages,
             "last_indexed_at": last_indexed_at,
+            "coverage_percent": coverage_percent,
         }
 
 

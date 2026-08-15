@@ -397,3 +397,266 @@ async def _watch(path: str) -> None:
     except (KeyboardInterrupt, asyncio.CancelledError):
         await storage.close()
         console.print("\nStopped.")
+
+
+# ── setup ─────────────────────────────────────────────────────────────────────
+
+
+@app.command()
+def setup(
+    agent: str = typer.Argument("claude", help="Target agent: claude | cursor"),
+    project: str = typer.Option(".", "--project", "-p", help="Project path to serve"),
+    global_: bool = typer.Option(
+        False, "--global", "-g", help="Write to global config (~/.claude/settings.json)"
+    ),
+) -> None:
+    """Configure an AI coding agent to use CodePrism as an MCP server.
+
+    Examples:
+        codeprism setup claude --project /path/to/repo
+        codeprism setup cursor --project /path/to/repo --global
+    """
+    _setup(agent, project, global_)
+
+
+def _setup(agent: str, project: str, global_: bool) -> None:
+    import json
+
+    abs_project = str(Path(project).resolve())
+    server_entry = {
+        "command": "codeprism",
+        "args": ["serve", abs_project],
+    }
+
+    agent = agent.lower()
+    if agent == "claude":
+        _write_claude_config(server_entry, global_)
+    elif agent == "cursor":
+        _write_cursor_config(server_entry, global_)
+    else:
+        console.print(f"[red]Unknown agent:[/red] {agent!r}. Supported: claude, cursor")
+        raise typer.Exit(1)
+
+
+def _write_claude_config(server_entry: dict, global_: bool) -> None:
+    import json
+
+    if global_:
+        config_dir = Path.home() / ".claude"
+    else:
+        config_dir = Path(".claude")
+
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "settings.json"
+
+    existing: dict = {}
+    if config_file.exists():
+        try:
+            existing = json.loads(config_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    servers = existing.setdefault("mcpServers", {})
+    servers["codeprism"] = server_entry
+    config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+    scope = "global" if global_ else "project"
+    console.print(
+        f"[green]Done.[/green] CodePrism MCP server added to "
+        f"[bold]{config_file}[/bold] ({scope}).\n"
+        f"Restart Claude Code to pick up the change."
+    )
+
+
+def _write_cursor_config(server_entry: dict, global_: bool) -> None:
+    import json
+
+    if global_:
+        config_dir = Path.home() / ".cursor"
+    else:
+        config_dir = Path(".cursor")
+
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "mcp.json"
+
+    existing: dict = {}
+    if config_file.exists():
+        try:
+            existing = json.loads(config_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    servers = existing.setdefault("mcpServers", {})
+    servers["codeprism"] = server_entry
+    config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+    scope = "global" if global_ else "project"
+    console.print(
+        f"[green]Done.[/green] CodePrism MCP server added to "
+        f"[bold]{config_file}[/bold] ({scope}).\n"
+        f"Restart Cursor to pick up the change."
+    )
+
+
+# ── scan ──────────────────────────────────────────────────────────────────────
+
+
+@app.command()
+def scan(
+    target: str = typer.Argument(..., help="File path to scan"),
+    all_: bool = typer.Option(False, "--all", "-a", help="Scan all indexed files"),
+    diff: Optional[str] = typer.Option(
+        None, "--diff",
+        help="Git diff range to scan, e.g. HEAD~1..HEAD or main..feature",
+    ),
+    project: str = typer.Option(".", "--project", "-p", help="Project path (for --all)"),
+) -> None:
+    """Run security detectors on a file (or all indexed files with --all).
+
+    Examples:
+        codeprism scan payments/processor.py
+        codeprism scan --all --project /path/to/repo
+        codeprism scan . --diff HEAD~1..HEAD
+    """
+    asyncio.run(_scan(target, all_, diff, project))
+
+
+async def _scan(target: str, all_: bool, diff: Optional[str], project: str) -> None:
+    from .security.scanner import SecurityScanner
+
+    scanner = SecurityScanner()
+
+    if diff:
+        await _scan_git_diff(diff, scanner)
+        return
+
+    if all_:
+        engine, storage = await _open_session(project)
+        try:
+            stats = await engine.get_stats()
+            fm = await engine.get_file_map(project)
+        finally:
+            await storage.close()
+
+        total_issues = 0
+        for entry in fm.entries:
+            try:
+                content = Path(entry.path).read_text(encoding="utf-8")
+            except Exception:
+                continue
+            report = scanner.scan_content(content, entry.path)
+            if report.issues:
+                total_issues += len(report.issues)
+                _print_scan_report(report, entry.path)
+
+        console.print(
+            f"\n[bold]Scan complete.[/bold] "
+            f"{len(fm.entries)} files · {total_issues} issue(s) found."
+        )
+        return
+
+    # Single file scan
+    try:
+        content = Path(target).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        console.print(f"[red]File not found:[/red] {target}")
+        raise typer.Exit(1)
+
+    report = scanner.scan_content(content, target)
+    _print_scan_report(report, target)
+
+    if report.is_blocked:
+        raise typer.Exit(2)
+
+
+async def _scan_git_diff(diff_range: str, scanner) -> None:
+    """Scan only the files changed in a git diff range (e.g. HEAD~1..HEAD)."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "diff", "--name-only", diff_range],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        console.print(f"[red]git diff failed:[/red] {exc.stderr.strip()}")
+        raise typer.Exit(1)
+
+    changed_files = [f.strip() for f in proc.stdout.splitlines() if f.strip()]
+    if not changed_files:
+        console.print(f"[dim]No changed files in {diff_range}[/dim]")
+        return
+
+    console.print(f"Scanning [bold]{len(changed_files)}[/bold] changed file(s) in [bold]{diff_range}[/bold]")
+
+    total_issues = 0
+    blocked = False
+    for rel_path in changed_files:
+        fp = Path(rel_path)
+        if not fp.exists():
+            continue
+        try:
+            after_content = fp.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        # Retrieve the content before the diff so we only report new issues.
+        before_ref = diff_range.split("..")[0] if ".." in diff_range else diff_range + "~1"
+        try:
+            before_proc = subprocess.run(
+                ["git", "show", f"{before_ref}:{rel_path}"],
+                capture_output=True,
+                text=True,
+            )
+            before_content = before_proc.stdout if before_proc.returncode == 0 else ""
+        except Exception:
+            before_content = ""
+
+        report = scanner.scan_diff(before_content, after_content, str(fp))
+        if report.issues:
+            total_issues += len(report.issues)
+            _print_scan_report(report, str(fp))
+            if report.is_blocked:
+                blocked = True
+
+    console.print(
+        f"\n[bold]Diff scan complete.[/bold] "
+        f"{len(changed_files)} files · {total_issues} new issue(s)."
+    )
+    if blocked:
+        raise typer.Exit(2)
+
+
+def _print_scan_report(report, file_path: str) -> None:
+    from rich.table import Table
+
+    severity_colour = {"BLOCK": "bright_red", "WARN": "yellow", "INFO": "blue"}
+    status_colour = {"BLOCK": "bright_red", "WARN": "yellow", "PASS": "green"}
+    colour = status_colour.get(report.status, "white")
+
+    console.print(
+        f"\n[bold]{Path(file_path).name}[/bold]  "
+        f"[{colour}]{report.status}[/{colour}]  "
+        f"({len(report.issues)} issue(s))"
+    )
+
+    if not report.issues:
+        return
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Line", justify="right", width=6)
+    table.add_column("Sev", width=7)
+    table.add_column("Category", width=14)
+    table.add_column("Description")
+
+    for issue in report.issues:
+        sev_col = severity_colour.get(issue.severity, "white")
+        table.add_row(
+            str(issue.line_number or ""),
+            f"[{sev_col}]{issue.severity}[/{sev_col}]",
+            issue.category,
+            issue.description,
+        )
+    console.print(table)
