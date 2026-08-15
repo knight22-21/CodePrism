@@ -1,0 +1,114 @@
+{
+  "version": "1.0",
+  "language": "python",
+  "rules": [
+    {
+      "id": "PY-SEC-001",
+      "detector": "injection",
+      "severity": "BLOCK",
+      "category": "SQL Injection",
+      "pattern": "\\.execute\\(f\"",
+      "description": "F-string SQL query — use parameterised queries instead",
+      "cwe": "CWE-89"
+    },
+    {
+      "id": "PY-SEC-002",
+      "detector": "injection",
+      "severity": "BLOCK",
+      "category": "SQL Injection",
+      "pattern": "\\.execute\\(.*\\.format\\(",
+      "description": ".format() in SQL query — use parameterised queries instead",
+      "cwe": "CWE-89"
+    },
+    {
+      "id": "PY-SEC-003",
+      "detector": "injection",
+      "severity": "WARN",
+      "category": "Code Injection",
+      "pattern": "\\beval\\(",
+      "description": "eval() executes arbitrary code",
+      "cwe": "CWE-95"
+    },
+    {
+      "id": "PY-SEC-004",
+      "detector": "injection",
+      "severity": "WARN",
+      "category": "Code Injection",
+      "pattern": "\\bexec\\(",
+      "description": "exec() executes arbitrary code",
+      "cwe": "CWE-95"
+    },
+    {
+      "id": "PY-SEC-005",
+      "detector": "injection",
+      "severity": "WARN",
+      "category": "Command Injection",
+      "pattern": "subprocess\\..*shell=True",
+      "description": "shell=True allows shell injection",
+      "cwe": "CWE-78"
+    },
+    {
+      "id": "PY-SEC-006",
+      "detector": "crypto",
+      "severity": "WARN",
+      "category": "Weak Cryptography",
+      "pattern": "hashlib\\.md5\\(",
+      "description": "MD5 is cryptographically broken — use SHA-256 or better",
+      "cwe": "CWE-327"
+    },
+    {
+      "id": "PY-SEC-007",
+      "detector": "crypto",
+      "severity": "WARN",
+      "category": "Weak Cryptography",
+      "pattern": "hashlib\\.sha1\\(",
+      "description": "SHA-1 is deprecated — use SHA-256 or better",
+      "cwe": "CWE-327"
+    },
+    {
+      "id": "PY-SEC-008",
+      "detector": "secrets",
+      "severity": "BLOCK",
+      "category": "Hardcoded Secret",
+      "pattern": "(?i)(password|passwd|pwd)\\s*=\\s*[\"'][^\"']{4,}[\"']",
+      "description": "Hardcoded password — use environment variable",
+      "cwe": "CWE-798"
+    },
+    {
+      "id": "PY-SEC-009",
+      "detector": "secrets",
+      "severity": "BLOCK",
+      "category": "Hardcoded Secret",
+      "pattern": "AKIA[0-9A-Z]{16}",
+      "description": "AWS access key ID exposed",
+      "cwe": "CWE-798"
+    },
+    {
+      "id": "PY-SEC-010",
+      "detector": "dependencies",
+      "severity": "WARN",
+      "category": "Unsafe Deserialization",
+      "pattern": "import pickle",
+      "description": "pickle can execute arbitrary code on load",
+      "cwe": "CWE-502"
+    },
+    {
+      "id": "PY-SEC-011",
+      "detector": "dependencies",
+      "severity": "BLOCK",
+      "category": "Unsafe Deserialization",
+      "pattern": "yaml\\.load\\((?!.*Loader=)",
+      "description": "yaml.load without Loader allows arbitrary code execution",
+      "cwe": "CWE-502"
+    },
+    {
+      "id": "PY-SEC-012",
+      "detector": "git_safety",
+      "severity": "WARN",
+      "category": "Error Handling",
+      "pattern": "^\\s*except\\s*:\\s*$",
+      "description": "Bare except clause — catches all exceptions including SystemExit",
+      "cwe": "CWE-390"
+    }
+  ]
+}

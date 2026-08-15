@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "language": "all",
+  "rules": [
+    {
+      "id": "CMN-SEC-001",
+      "detector": "secrets",
+      "severity": "BLOCK",
+      "category": "Hardcoded Secret",
+      "pattern": "\\bsk-[a-zA-Z0-9]{20,}",
+      "description": "Possible OpenAI API key",
+      "cwe": "CWE-798"
+    },
+    {
+      "id": "CMN-SEC-002",
+      "detector": "secrets",
+      "severity": "BLOCK",
+      "category": "Hardcoded Secret",
+      "pattern": "\\bghp_[a-zA-Z0-9]{36}\\b",
+      "description": "GitHub personal access token",
+      "cwe": "CWE-798"
+    },
+    {
+      "id": "CMN-SEC-003",
+      "detector": "secrets",
+      "severity": "BLOCK",
+      "category": "Hardcoded Secret",
+      "pattern": "(?i)aws_secret_access_key\\s*=\\s*[\"'][^\"']+[\"']",
+      "description": "AWS secret access key exposed",
+      "cwe": "CWE-798"
+    },
+    {
+      "id": "CMN-SEC-004",
+      "detector": "git_safety",
+      "severity": "WARN",
+      "category": "Debug Code",
+      "pattern": "\\bbreakpoint\\(\\)",
+      "description": "Built-in breakpoint() left in code",
+      "cwe": "CWE-489"
+    },
+    {
+      "id": "CMN-SEC-005",
+      "detector": "git_safety",
+      "severity": "WARN",
+      "category": "Debug Code",
+      "pattern": "\\bpdb\\.set_trace\\(\\)",
+      "description": "Debugger breakpoint left in code",
+      "cwe": "CWE-489"
+    },
+    {
+      "id": "CMN-SEC-006",
+      "detector": "env_vars",
+      "severity": "WARN",
+      "category": "Secret Exposure",
+      "pattern": "print\\(.*os\\.environ",
+      "description": "Printing environment variables may expose secrets in logs",
+      "cwe": "CWE-532"
+    },
+    {
+      "id": "CMN-SEC-007",
+      "detector": "crypto",
+      "severity": "INFO",
+      "category": "Weak Randomness",
+      "pattern": "random\\.(random|randint|choice|shuffle|sample)\\(",
+      "description": "random module is not cryptographically secure — use secrets module",
+      "cwe": "CWE-338"
+    }
+  ]
+}
