@@ -4,8 +4,8 @@
 
 CodePrism builds a persistent knowledge graph of your project — every function, class, import, and data-flow relationship — and exposes it to any AI coding agent via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). Instead of your agent reading 40 files to understand one function, it queries the graph and gets exactly what it needs in under 200 tokens.
 
-[![PyPI](https://img.shields.io/pypi/v/codeprism)](https://pypi.org/project/codeprism/)
-[![Python](https://img.shields.io/pypi/pyversions/codeprism)](https://pypi.org/project/codeprism/)
+[![PyPI](https://img.shields.io/pypi/v/codeprism-ai)](https://pypi.org/project/codeprism-ai/)
+[![Python](https://img.shields.io/pypi/pyversions/codeprism-ai)](https://pypi.org/project/codeprism-ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://github.com/knight22-21/CodePrism/actions/workflows/ci.yml/badge.svg)](https://github.com/knight22-21/CodePrism/actions)
 
@@ -39,14 +39,14 @@ CodePrism builds a persistent knowledge graph of your project — every function
 ## Installation
 
 ```bash
-pip install codeprism
+pip install codeprism-ai
 ```
 
 Python 3.12+ required.
 
 **Optional: semantic search** (heavier install, enables embedding-based symbol search)
 ```bash
-pip install "codeprism[embeddings]"
+pip install "codeprism-ai[embeddings]"
 ```
 
 ---

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 packages = ["codeprism"]
 
 [project]
-name = "codeprism"
+name = "codeprism-ai"
 version = "0.1.0"
 description = "Persistent knowledge graph for AI coding agents — 60-80% token reduction"
 license = { text = "MIT" }
