@@ -169,3 +169,119 @@ def test_callers_found(project):
         app, ["callers", f"{proc}::compute_checksum", "--project", str(project)]
     )
     assert result.exit_code == 0
+
+
+# ── setup ─────────────────────────────────────────────────────────────────────
+
+
+def test_setup_claude_creates_settings(tmp_path):
+    """setup claude writes .claude/settings.json in CWD."""
+    import os
+    import json
+
+    orig = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        result = runner.invoke(app, ["setup", "claude", "--project", str(tmp_path)])
+        assert result.exit_code == 0, result.output
+        cfg_file = tmp_path / ".claude" / "settings.json"
+        assert cfg_file.exists()
+        data = json.loads(cfg_file.read_text())
+        assert "codeprism" in data["mcpServers"]
+        assert data["mcpServers"]["codeprism"]["command"] == "codeprism"
+    finally:
+        os.chdir(orig)
+
+
+def test_setup_claude_merges_existing_servers(tmp_path):
+    """setup claude merges into an existing settings.json without overwriting."""
+    import os
+    import json
+
+    orig = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        dot_claude = tmp_path / ".claude"
+        dot_claude.mkdir()
+        existing = {"mcpServers": {"other-tool": {"command": "other"}}}
+        (dot_claude / "settings.json").write_text(json.dumps(existing))
+
+        runner.invoke(app, ["setup", "claude", "--project", str(tmp_path)])
+
+        data = json.loads((dot_claude / "settings.json").read_text())
+        assert "other-tool" in data["mcpServers"]
+        assert "codeprism" in data["mcpServers"]
+    finally:
+        os.chdir(orig)
+
+
+def test_setup_cursor_creates_mcp_json(tmp_path):
+    """setup cursor writes .cursor/mcp.json."""
+    import os
+    import json
+
+    orig = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        result = runner.invoke(app, ["setup", "cursor", "--project", str(tmp_path)])
+        assert result.exit_code == 0, result.output
+        cfg_file = tmp_path / ".cursor" / "mcp.json"
+        assert cfg_file.exists()
+        data = json.loads(cfg_file.read_text())
+        assert "codeprism" in data["mcpServers"]
+    finally:
+        os.chdir(orig)
+
+
+def test_setup_unknown_agent_exits_nonzero(tmp_path):
+    """setup with an unsupported agent name exits non-zero."""
+    result = runner.invoke(app, ["setup", "unknown-agent-xyz"])
+    assert result.exit_code != 0
+
+
+# ── scan ──────────────────────────────────────────────────────────────────────
+
+SECURITY_FIXTURES = Path(__file__).parent / "fixtures" / "sample_security_issues"
+
+
+def test_scan_clean_file_exits_zero(tmp_path):
+    clean = SECURITY_FIXTURES / "clean_example.py"
+    result = runner.invoke(app, ["scan", str(clean)])
+    assert result.exit_code == 0
+
+
+def test_scan_shows_pass_for_clean_file(tmp_path):
+    clean = SECURITY_FIXTURES / "clean_example.py"
+    result = runner.invoke(app, ["scan", str(clean)])
+    assert "PASS" in result.output
+
+
+def test_scan_secrets_file_exits_nonzero():
+    """A BLOCK-level finding causes exit code 2."""
+    result = runner.invoke(app, ["scan", str(SECURITY_FIXTURES / "secrets_example.py")])
+    assert result.exit_code == 2
+
+
+def test_scan_secrets_shows_block():
+    result = runner.invoke(app, ["scan", str(SECURITY_FIXTURES / "secrets_example.py")])
+    assert "BLOCK" in result.output
+
+
+def test_scan_crypto_shows_warn():
+    result = runner.invoke(app, ["scan", str(SECURITY_FIXTURES / "crypto_example.py")])
+    assert "WARN" in result.output or "INFO" in result.output
+
+
+def test_scan_missing_file_exits_nonzero():
+    result = runner.invoke(app, ["scan", "/no/such/file_xyz123.py"])
+    assert result.exit_code != 0
+
+
+def test_scan_all_exits_zero(project):
+    result = runner.invoke(app, ["scan", ".", "--all", "--project", str(project)])
+    assert result.exit_code == 0
+
+
+def test_scan_all_shows_scan_complete(project):
+    result = runner.invoke(app, ["scan", ".", "--all", "--project", str(project)])
+    assert "Scan complete" in result.output
