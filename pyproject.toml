@@ -12,6 +12,33 @@ description = "Persistent knowledge graph for AI coding agents — 60-80% token 
 license = { text = "MIT" }
 requires-python = ">=3.12"
 readme = "README.md"
+authors = [
+    { name = "knight22-21", email = "your-email@example.com" }
+]
+maintainers = [
+    { name = "knight22-21", email = "your-email@example.com" }
+]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "code-analysis",
+    "knowledge-graph",
+    "ast",
+    "static-analysis",
+    "security",
+    "code-indexing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "tree-sitter>=0.23",
     "tree-sitter-python",
@@ -27,6 +54,12 @@ dependencies = [
     "rich>=13.0",
     "platformdirs>=4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/knight22-21/CodePrism"
+Documentation = "https://github.com/knight22-21/CodePrism#readme"
+Repository = "https://github.com/knight22-21/CodePrism"
+"Bug Tracker" = "https://github.com/knight22-21/CodePrism/issues"
 
 [project.optional-dependencies]
 embeddings = [
