@@ -306,18 +306,35 @@ async def _search(query: str, kind: Optional[str], project: str) -> None:
 def stats(
     project: str = typer.Option(".", "--project", "-p", help="Project path"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output stats as JSON"),
 ) -> None:
     """Show knowledge graph statistics."""
-    asyncio.run(_stats(project, verbose))
+    asyncio.run(_stats(project, verbose, json_output))
 
 
-async def _stats(project: str, verbose: bool) -> None:
+async def _stats(project: str, verbose: bool, json_output: bool = False) -> None:
+    import json as _json
+
     engine, storage = await _open_session(project)
     try:
         data = await engine.get_stats()
         file_map = await engine.get_file_map(project) if verbose else None
     finally:
         await storage.close()
+
+    if json_output:
+        print(_json.dumps({
+            "file_count": data["file_count"],
+            "function_count": data["function_count"],
+            "class_count": data["class_count"],
+            "variable_count": data["variable_count"],
+            "import_count": data["import_count"],
+            "edge_count": data["edge_count"],
+            "languages": data["languages"] or [],
+            "last_indexed_at": data.get("last_indexed_at"),
+            "coverage_percent": data.get("coverage_percent", 0.0),
+        }))
+        return
 
     console.print(Panel(
         f"Files:     {data['file_count']}\n"
