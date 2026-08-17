@@ -455,6 +455,81 @@ def _setup(agent: str, project: str, global_: bool) -> None:
         raise typer.Exit(1)
 
 
+_CODEPRISM_MARKER = "<!-- codeprism-instructions -->"
+
+_CLAUDE_MD_BLOCK = """\
+<!-- codeprism-instructions -->
+## CodePrism — Knowledge Graph (auto-injected by `codeprism setup`)
+
+This project is indexed with [CodePrism](https://github.com/knight22-21/CodePrism).
+A live knowledge graph of every file, symbol, and relationship is available via MCP.
+
+### Use CodePrism FIRST — before reading any source file
+
+| Instead of … | Use … |
+|---|---|
+| Reading a file to understand a function | `get_context(file, symbol, depth=2)` |
+| Grepping for who calls a function | `get_callers(file, function)` |
+| Reading a file to understand its role | `get_module_summary(file)` |
+| Guessing the blast radius of a change | `get_impact(file, symbol)` |
+| Searching for a symbol by name | `search_symbol(query)` |
+| Reading a file before writing it | `scan_diff(original, proposed, file)` |
+| Wondering what you already read | `get_session_context(session_id)` |
+
+### Tool quick-reference
+
+```
+get_context(file, symbol, depth=2)      → signature, callers, callees, types (< 400 tokens)
+get_module_summary(file)                → purpose, public API, complexity (< 150 tokens)
+get_impact(file, symbol)                → severity, dependents, affected tests
+get_callers(file, function)             → every call site with line numbers
+get_callees(file, function)             → every function this one calls
+search_symbol(query, kind=None)         → find symbols by name substring
+get_file_map(project_path)              → full file tree with role summaries
+get_dependencies(file)                  → imports: internal vs external
+scan_diff(original, proposed, file)     → security check before any write
+record_read(session_id, file, symbol)   → log what you've already read
+record_write(session_id, file, before, after) → log + security gate + graph sync
+get_session_context(session_id)         → compact digest of session activity
+undo_write(session_id, steps=1)         → roll back agent-authored writes
+```
+
+### Rules
+
+1. **Always query the graph before reading files.** `get_context` returns callers,
+   callees, and signature in under 400 tokens. Reading the whole file costs 10–100×
+   more context for the same information.
+2. **Only fall back to `Read`/`Grep` when graph data is provably insufficient** —
+   e.g. you need the exact implementation body, not just the structure.
+3. **Always call `scan_diff` before writing a file.** A `BLOCK` status means the
+   proposed content contains a critical security issue — do not write it.
+4. **Use `record_read` / `record_write` to track session state** so you never
+   re-fetch context you already have.
+<!-- /codeprism-instructions -->"""
+
+_CURSORRULES_BLOCK = """\
+# CodePrism — Knowledge Graph (auto-injected by `codeprism setup`)
+
+This project is indexed with CodePrism. A live knowledge graph is available via MCP.
+
+## Use CodePrism FIRST — before reading any source file
+
+- `get_context(file, symbol, depth=2)` — signature, callers, callees in < 400 tokens
+- `get_module_summary(file)` — understand a file's purpose without reading it
+- `get_impact(file, symbol)` — blast radius of a change (severity + affected tests)
+- `get_callers(file, function)` — every call site with line numbers
+- `search_symbol(query)` — find symbols by name
+- `scan_diff(original, proposed, file)` — security gate before every write
+- `record_write(session_id, file, before, after)` — log + security scan + graph sync
+- `get_session_context(session_id)` — what you've already read/written this session
+
+## Rules
+1. Query the graph before reading files. Graph = 10-100x fewer tokens for same info.
+2. Only use file reads when you need the exact implementation body.
+3. Always call `scan_diff` before writing. BLOCK status = do not write.
+4. Use `record_read`/`record_write` to avoid redundant re-fetches."""
+
+
 def _write_claude_config(server_entry: dict, global_: bool) -> None:
     import json
 
@@ -477,12 +552,20 @@ def _write_claude_config(server_entry: dict, global_: bool) -> None:
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
+    # Write CLAUDE.md into the project directory (always local — not global)
+    claude_md = Path("CLAUDE.md")
+    _upsert_agent_instructions(claude_md, _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+
     scope = "global" if global_ else "project"
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to "
-        f"[bold]{config_file}[/bold] ({scope}).\n"
-        f"Restart Claude Code to pick up the change."
+        f"[bold]{config_file}[/bold] ({scope})."
     )
+    console.print(
+        f"[green]Done.[/green] Usage instructions written to "
+        f"[bold]{claude_md.resolve()}[/bold]."
+    )
+    console.print("[dim]Restart Claude Code to pick up the change.[/dim]")
 
 
 def _write_cursor_config(server_entry: dict, global_: bool) -> None:
@@ -507,12 +590,44 @@ def _write_cursor_config(server_entry: dict, global_: bool) -> None:
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
+    # Write .cursorrules into the project directory
+    cursorrules = Path(".cursorrules")
+    _upsert_agent_instructions(cursorrules, _CURSORRULES_BLOCK, "# CodePrism")
+
     scope = "global" if global_ else "project"
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to "
-        f"[bold]{config_file}[/bold] ({scope}).\n"
-        f"Restart Cursor to pick up the change."
+        f"[bold]{config_file}[/bold] ({scope})."
     )
+    console.print(
+        f"[green]Done.[/green] Usage instructions written to "
+        f"[bold]{cursorrules.resolve()}[/bold]."
+    )
+    console.print("[dim]Restart Cursor to pick up the change.[/dim]")
+
+
+def _upsert_agent_instructions(file: Path, block: str, marker: str) -> None:
+    """Insert or replace the CodePrism block inside an existing instructions file."""
+    if not file.exists():
+        file.write_text(block + "\n", encoding="utf-8")
+        return
+
+    existing = file.read_text(encoding="utf-8")
+    if marker in existing:
+        # Replace the old block between opening and closing marker
+        import re
+        pattern = re.compile(
+            re.escape(marker) + r".*?" + re.escape(marker.replace("<!--", "<!--/")),
+            re.DOTALL,
+        )
+        updated = pattern.sub(block, existing)
+        if updated == existing:
+            # Marker present but closing tag differs — just append updated block
+            updated = existing.rstrip() + "\n\n" + block + "\n"
+        file.write_text(updated, encoding="utf-8")
+    else:
+        # Append to the end of whatever is already there
+        file.write_text(existing.rstrip() + "\n\n" + block + "\n", encoding="utf-8")
 
 
 # ── scan ──────────────────────────────────────────────────────────────────────
