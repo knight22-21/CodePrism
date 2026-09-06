@@ -82,6 +82,22 @@ async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
     _engine = QueryEngine(graph, storage)
     updater = IncrementalUpdater(graph, storage)
     _session_manager = SessionManager(storage, updater)
+
+    # Wire semantic search if embeddings index exists and is configured
+    try:
+        from ..core.config import CodePrismConfig
+        from ..core.paths import get_chroma_path, get_project_config_path
+        cfg = CodePrismConfig.load(get_project_config_path(_project_path))
+        if cfg.enable_embeddings:
+            from ..embeddings.embedder import Embedder
+            from ..embeddings.store import EmbeddingStore
+            _embedder = Embedder(model_name=cfg.embeddings.model, device=cfg.embeddings.device)
+            _embed_store = EmbeddingStore(str(get_chroma_path(_project_path)))
+            if _embed_store.count() > 0:
+                _engine.set_embeddings(_embedder, _embed_store)
+    except Exception:
+        pass  # embeddings are optional — never block server startup
+
     try:
         yield
     finally:
@@ -109,8 +125,15 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def index_project(path: str, languages: Optional[list[str]] = None) -> dict[str, Any]:
-    """Build or rebuild the knowledge graph for a project directory."""
+async def index_project(
+    path: str,
+    languages: Optional[list[str]] = None,
+    embeddings: bool = False,
+) -> dict[str, Any]:
+    """Build or rebuild the knowledge graph for a project directory.
+
+    embeddings: also build the vector index for semantic search (requires codeprism[embeddings]).
+    """
     global _engine
     from ..core.config import CodePrismConfig
     from ..core.graph import GraphEngine
@@ -118,7 +141,8 @@ async def index_project(path: str, languages: Optional[list[str]] = None) -> dic
     from ..core.storage import StorageManager
     from ..indexer.project_indexer import ProjectIndexer
 
-    cfg = CodePrismConfig(languages=languages) if languages else CodePrismConfig()
+    cfg = CodePrismConfig(languages=languages, enable_embeddings=embeddings) if languages \
+        else CodePrismConfig(enable_embeddings=embeddings)
     db_path = get_db_path(path)
     storage = StorageManager(db_path)
     await storage.initialize()
