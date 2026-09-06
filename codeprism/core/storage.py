@@ -391,32 +391,68 @@ class StorageManager:
 
     # ── Aggregate stats ───────────────────────────────────────────────────────
 
-    async def get_stats(self) -> dict[str, object]:
-        async def scalar(sql: str) -> int:
-            async with self.db.execute(sql) as cur:
+    async def get_stats(self, path_prefix: Optional[str] = None) -> dict[str, object]:
+        async def scalar(sql: str, params: tuple = ()) -> int:
+            async with self.db.execute(sql, params) as cur:
                 row = await cur.fetchone()
             return int(row[0]) if row and row[0] is not None else 0
 
-        file_count = await scalar("SELECT COUNT(*) FROM files")
-        function_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'function'")
-        class_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'class'")
-        variable_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'variable'")
-        import_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'import'")
-        edge_count = await scalar("SELECT COUNT(*) FROM edges")
+        if path_prefix:
+            prefix = path_prefix.rstrip("/\\") + "%"
+            file_count = await scalar(
+                "SELECT COUNT(*) FROM files WHERE path LIKE ?", (prefix,)
+            )
+            function_count = await scalar(
+                "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
+                "WHERE s.kind = 'function' AND f.path LIKE ?", (prefix,)
+            )
+            class_count = await scalar(
+                "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
+                "WHERE s.kind = 'class' AND f.path LIKE ?", (prefix,)
+            )
+            variable_count = await scalar(
+                "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
+                "WHERE s.kind = 'variable' AND f.path LIKE ?", (prefix,)
+            )
+            import_count = await scalar(
+                "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
+                "WHERE s.kind = 'import' AND f.path LIKE ?", (prefix,)
+            )
+            edge_count = await scalar(
+                "SELECT COUNT(*) FROM edges WHERE file_path LIKE ?", (prefix,)
+            )
+            async with self.db.execute(
+                "SELECT DISTINCT language FROM files WHERE path LIKE ? AND language IS NOT NULL",
+                (prefix,),
+            ) as cur:
+                lang_rows = await cur.fetchall()
+            async with self.db.execute(
+                "SELECT MAX(indexed_at) FROM files WHERE path LIKE ?", (prefix,)
+            ) as cur:
+                row = await cur.fetchone()
+            files_with_symbols = await scalar(
+                "SELECT COUNT(DISTINCT s.file_id) FROM symbols s "
+                "JOIN files f ON s.file_id = f.id WHERE f.path LIKE ?", (prefix,)
+            )
+        else:
+            file_count = await scalar("SELECT COUNT(*) FROM files")
+            function_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'function'")
+            class_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'class'")
+            variable_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'variable'")
+            import_count = await scalar("SELECT COUNT(*) FROM symbols WHERE kind = 'import'")
+            edge_count = await scalar("SELECT COUNT(*) FROM edges")
+            async with self.db.execute(
+                "SELECT DISTINCT language FROM files WHERE language IS NOT NULL"
+            ) as cur:
+                lang_rows = await cur.fetchall()
+            async with self.db.execute("SELECT MAX(indexed_at) FROM files") as cur:
+                row = await cur.fetchone()
+            files_with_symbols = await scalar(
+                "SELECT COUNT(DISTINCT file_id) FROM symbols"
+            )
 
-        async with self.db.execute(
-            "SELECT DISTINCT language FROM files WHERE language IS NOT NULL"
-        ) as cur:
-            lang_rows = await cur.fetchall()
         languages = [r[0] for r in lang_rows]
-
-        async with self.db.execute("SELECT MAX(indexed_at) FROM files") as cur:
-            row = await cur.fetchone()
         last_indexed_at = float(row[0]) if row and row[0] is not None else None
-
-        files_with_symbols = await scalar(
-            "SELECT COUNT(DISTINCT file_id) FROM symbols"
-        )
         coverage_percent = (
             round(files_with_symbols / file_count * 100, 1) if file_count else 0.0
         )
