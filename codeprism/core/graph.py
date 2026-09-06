@@ -162,6 +162,24 @@ class GraphEngine:
             return set()
         return nx.ancestors(self._g, node_id)
 
+    def get_import_cycles_for_file(self, file_id: str) -> list[list[str]]:
+        """Find circular import cycles (file-level) involving *file_id*."""
+        import_g: nx.DiGraph = nx.DiGraph()
+        for u, v, data in self._g.edges(data=True):
+            if data.get("kind") != EdgeKind.IMPORTS:
+                continue
+            u_rec = self._g.nodes.get(u, {}).get("record")
+            v_rec = self._g.nodes.get(v, {}).get("record")
+            if isinstance(u_rec, SymbolRecord) and isinstance(v_rec, SymbolRecord):
+                if u_rec.file_id != v_rec.file_id:
+                    import_g.add_edge(u_rec.file_id, v_rec.file_id)
+        if not import_g.has_node(file_id):
+            return []
+        try:
+            return [c for c in nx.simple_cycles(import_g) if file_id in c]
+        except Exception:
+            return []
+
     def get_transitive_dependencies(self, node_id: str) -> set[str]:
         """All nodes this node (transitively) depends on (descendants)."""
         if not self._g.has_node(node_id):

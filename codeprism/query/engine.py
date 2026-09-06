@@ -214,11 +214,18 @@ class QueryEngine:
             else:
                 external.append(imp.name)
 
+        all_files_map = {f.id: f.path for f in await self._storage.get_all_files()}
+        raw_cycles = self._graph.get_import_cycles_for_file(file.id)
+        circular: list[str] = []
+        for cycle in raw_cycles:
+            nodes = [all_files_map.get(fid, fid) for fid in cycle]
+            circular.append(" → ".join(nodes + [nodes[0]]))
+
         return DependencyResult(
             file_path=file_path,
             internal_deps=internal,
             external_deps=external,
-            circular_deps=[],  # TODO: nx cycle detection in Phase 5+
+            circular_deps=circular,
         )
 
     async def get_dependents(self, file_path: str) -> Optional[DependentResult]:
@@ -274,5 +281,5 @@ class QueryEngine:
 
     # ── Stats ─────────────────────────────────────────────────────────────────
 
-    async def get_stats(self) -> dict:
-        return await self._storage.get_stats()
+    async def get_stats(self, path_prefix: Optional[str] = None) -> dict:
+        return await self._storage.get_stats(path_prefix=path_prefix)
