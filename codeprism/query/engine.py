@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from ..core.graph import GraphEngine
 from ..core.models import EdgeKind, FileRecord, NodeKind, SymbolRecord
@@ -79,6 +79,13 @@ class QueryEngine:
     def __init__(self, graph: GraphEngine, storage: StorageManager) -> None:
         self._graph = graph
         self._storage = storage
+        self._embedder: Optional[Any] = None
+        self._embed_store: Optional[Any] = None
+
+    def set_embeddings(self, embedder: Any, store: Any) -> None:
+        """Inject embeddings components to enable semantic search."""
+        self._embedder = embedder
+        self._embed_store = store
 
     # ── Delegation to sub-modules ─────────────────────────────────────────────
 
@@ -132,20 +139,45 @@ class QueryEngine:
     async def search_symbols(
         self, query: str, kind: Optional[str] = None
     ) -> list[SearchMatch]:
+        if self._embedder is not None and self._embed_store is not None:
+            return await self._semantic_search(query, kind)
+        return await self._substring_search(query, kind)
+
+    async def _substring_search(
+        self, query: str, kind: Optional[str] = None
+    ) -> list[SearchMatch]:
         raw = await self._storage.search_symbols(query, kind)
         all_files = await self._storage.get_all_files()
         id_to_path = {f.id: f.path for f in all_files}
-
-        results: list[SearchMatch] = []
-        for sym in raw:
-            excerpt = sym.docstring[:120] if sym.docstring else None
-            results.append(SearchMatch(
+        return [
+            SearchMatch(
                 symbol=sym,
                 file_path=id_to_path.get(sym.file_id, ""),
                 score=1.0,
-                docstring_excerpt=excerpt,
-            ))
-        return results
+                docstring_excerpt=sym.docstring[:120] if sym.docstring else None,
+            )
+            for sym in raw
+        ]
+
+    async def _semantic_search(
+        self, query: str, kind: Optional[str] = None
+    ) -> list[SearchMatch]:
+        import asyncio as _asyncio
+        vector = await _asyncio.to_thread(self._embedder.encode_one, query)
+        results = self._embed_store.search(vector, top_k=20)
+        if kind:
+            results = [r for r in results if r.metadata.get("kind") == kind]
+        matches: list[SearchMatch] = []
+        for r in results:
+            sym = await self._storage.get_symbol_by_id(r.symbol_id)
+            if sym:
+                matches.append(SearchMatch(
+                    symbol=sym,
+                    file_path=r.file_path,
+                    score=max(0.0, 1.0 - r.distance),
+                    docstring_excerpt=sym.docstring[:120] if sym.docstring else None,
+                ))
+        return matches
 
     # ── File map ──────────────────────────────────────────────────────────────
 
