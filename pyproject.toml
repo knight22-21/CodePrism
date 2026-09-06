@@ -7,16 +7,16 @@ packages = ["codeprism"]
 
 [project]
 name = "codeprism-ai"
-version = "0.1.1"
+version = "0.1.2"
 description = "Persistent knowledge graph for AI coding agents — 60-80% token reduction"
 license = { text = "MIT" }
 requires-python = ">=3.12"
 readme = "README.md"
 authors = [
-    { name = "knight22-21", email = "your-email@example.com" }
+    { name = "knight22-21", email = "krishnatyagibest321@gmail.com" }
 ]
 maintainers = [
-    { name = "knight22-21", email = "your-email@example.com" }
+    { name = "knight22-21", email = "krishnatyagibest321@gmail.com" }
 ]
 keywords = [
     "mcp",

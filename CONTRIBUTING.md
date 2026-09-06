@@ -344,7 +344,7 @@ Feature requests for new **security detectors** should include:
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email the maintainers directly at **krishna.tyagi@futuresmart.ai** with:
+Email the maintainers directly at **krishnatyagibest321@gmail.com** with:
 - A description of the vulnerability
 - Steps to reproduce
 - Potential impact
@@ -375,6 +375,6 @@ Version numbers follow [Semantic Versioning](https://semver.org/):
 
 - Open a [GitHub Discussion](https://github.com/knight22-21/CodePrism/discussions) for general questions
 - Tag an issue `question` if you're unsure whether something is a bug or expected behavior
-- For anything else: **krishna.tyagi@futuresmart.ai**
+- For anything else: **krishnatyagibest321@gmail.com**
 
 Thank you for making CodePrism better.
