@@ -31,3 +31,10 @@ def get_default_config_path() -> Path:
 
 def get_project_config_path(project_path: str | Path) -> Path:
     return Path(project_path) / ".codeprism.toml"
+
+
+def get_chroma_path(project_path: str | Path) -> Path:
+    """Return the ChromaDB directory for a given project (sibling of the SQLite db)."""
+    resolved = str(Path(project_path).resolve())
+    project_hash = hashlib.sha256(resolved.encode()).hexdigest()[:16]
+    return get_data_dir() / f"{project_hash}_chroma"
