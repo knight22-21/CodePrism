@@ -163,7 +163,7 @@ async def get_graph_stats(path: Optional[str] = None) -> dict[str, Any]:
 
     path: optional project path filter — scopes stats to files under that directory.
     """
-    stats = await _get().get_stats()
+    stats = await _get().get_stats(path_prefix=path)
     if path:
         stats["filter_path"] = path
     return stats
@@ -259,10 +259,17 @@ async def get_data_flow(file: str, symbol: str) -> dict[str, Any]:
 @mcp.tool()
 async def search_symbol(
     query: str,
+    project_path: Optional[str] = None,
     kind: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Find symbols by name (substring match). kind: function|class|variable|import."""
+    """Find symbols by name (substring match).
+
+    project_path: optional directory prefix to restrict results to a sub-project.
+    kind: function|class|variable|import
+    """
     matches = await _get().search_symbols(query, kind)
+    if project_path:
+        matches = [m for m in matches if m.file_path.startswith(project_path)]
     return search_matches_to_dict(matches)
 
 
