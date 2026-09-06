@@ -57,12 +57,16 @@ def index(
         None, "--languages", "-l",
         help="Comma-separated language list (default: python,javascript,typescript)"
     ),
+    embeddings: bool = typer.Option(
+        False, "--embeddings", "-e",
+        help="Also build semantic vector index (requires codeprism[embeddings])"
+    ),
 ) -> None:
     """Build the knowledge graph for a project directory."""
-    asyncio.run(_index(path, languages))
+    asyncio.run(_index(path, languages, embeddings))
 
 
-async def _index(path: str, languages: Optional[str]) -> None:
+async def _index(path: str, languages: Optional[str], embeddings: bool = False) -> None:
     from .core.config import CodePrismConfig
     from .core.graph import GraphEngine
     from .core.paths import get_db_path
@@ -70,7 +74,8 @@ async def _index(path: str, languages: Optional[str]) -> None:
     from .indexer.project_indexer import ProjectIndexer
 
     langs = [l.strip() for l in languages.split(",")] if languages else None
-    config = CodePrismConfig(languages=langs) if langs else CodePrismConfig()
+    config = CodePrismConfig(languages=langs, enable_embeddings=embeddings) if langs \
+        else CodePrismConfig(enable_embeddings=embeddings)
 
     db_path = get_db_path(path)
     storage = StorageManager(db_path)
@@ -78,6 +83,8 @@ async def _index(path: str, languages: Optional[str]) -> None:
     graph = GraphEngine()
 
     console.print(f"Indexing [bold]{path}[/bold] ...")
+    if embeddings:
+        console.print("[dim]Embeddings enabled — will build vector index after parsing...[/dim]")
     indexer = ProjectIndexer(graph, storage, config)
     result = await indexer.index(path)
     await storage.close()
@@ -88,6 +95,8 @@ async def _index(path: str, languages: Optional[str]) -> None:
             f"{result.file_count} files · {result.symbol_count} symbols · "
             f"{result.edge_count} edges · {result.duration_seconds:.2f}s"
         )
+        if embeddings:
+            console.print("[green]Semantic index built.[/green] search_symbol now uses embeddings.")
     else:
         console.print(f"[yellow]Completed with {len(result.errors)} error(s).[/yellow]")
         for err in result.errors:
