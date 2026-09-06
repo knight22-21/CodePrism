@@ -115,6 +115,10 @@ class ProjectIndexer:
         # Populate in-memory graph from the now-complete storage
         await self._graph.load_from_storage(self._storage)
 
+        # Optionally build vector index for semantic search
+        if self._config.enable_embeddings:
+            await self._build_embeddings(project_path, all_symbols)
+
         stats = await self._storage.get_stats()
         return IndexResult(
             file_count=stats["file_count"],
@@ -151,6 +155,59 @@ class ProjectIndexer:
                     line_number=ref.line_number,
                 ))
         return resolved
+
+    # ── Embeddings builder ────────────────────────────────────────────────────
+
+    async def _build_embeddings(self, project_path: str, symbols: list) -> None:
+        from ..core.paths import get_chroma_path
+        try:
+            from ..embeddings.embedder import Embedder
+            from ..embeddings.store import EmbeddingStore
+        except ImportError:
+            return
+
+        try:
+            embedder = Embedder(
+                model_name=self._config.embeddings.model,
+                device=self._config.embeddings.device,
+            )
+            store = EmbeddingStore(str(get_chroma_path(project_path)))
+        except ImportError:
+            return
+
+        all_files = await self._storage.get_all_files()
+        id_to_path = {f.id: f.path for f in all_files}
+
+        meaningful = [
+            s for s in symbols
+            if s.kind in {NodeKind.FUNCTION, NodeKind.CLASS, NodeKind.VARIABLE}
+        ]
+        if not meaningful:
+            return
+
+        texts = []
+        for sym in meaningful:
+            parts = [sym.kind.value, sym.name]
+            if sym.signature:
+                parts.append(sym.signature)
+            if sym.docstring:
+                parts.append(sym.docstring[:200])
+            texts.append(" ".join(parts))
+
+        vectors = await asyncio.to_thread(embedder.encode, texts)
+
+        ids = [sym.id for sym in meaningful]
+        metadatas = [
+            {
+                "name": sym.name,
+                "kind": sym.kind.value,
+                "file_path": id_to_path.get(sym.file_id, ""),
+                "line_start": sym.line_start or 0,
+                "signature": sym.signature or "",
+            }
+            for sym in meaningful
+        ]
+        store.upsert_batch(ids, vectors, metadatas)
 
     # ── File discovery ────────────────────────────────────────────────────────
 
