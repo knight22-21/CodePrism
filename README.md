@@ -89,104 +89,48 @@ Your agent can now call tools like `get_context`, `get_impact`, `scan_diff`, and
 
 ---
 
-## IDE and Agent Setup
+## Integrations
 
-### Claude Code
+CodePrism works with every major AI editor and agent framework via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). Two transports are supported: **stdio** (local, default) and **SSE** (network, for remote agents).
 
-Run the setup command and restart:
+| Agent / Tool | Auto-setup | Transport |
+|---|---|---|
+| Claude Code | `codeprism setup claude` | stdio |
+| Cursor | `codeprism setup cursor` | stdio |
+| Windsurf | manual config | stdio |
+| Continue.dev | manual config | stdio |
+| Zed | manual config | stdio |
+| VS Code + GitHub Copilot | manual config | stdio |
+| Cody (Sourcegraph) | manual config | stdio |
+| Any HTTP agent | `codeprism serve --transport sse` | SSE |
+| Python library | `from codeprism import CodePrism` | library |
+| GitHub Actions / CI | `codeprism scan --diff` | CLI |
+| Pre-commit hook | `.pre-commit-config.yaml` | CLI |
 
-```bash
-codeprism setup claude --project /path/to/project
-# Restart Claude Code
-```
-
-For a global installation (applies to all projects):
-```bash
-codeprism setup claude --project /path/to/project --global
-```
-
-Claude Code will pick up the `codeprism` MCP server automatically. You'll see it listed under MCP servers in the session. Ask Claude to `get_context payments/processor.py::process_payment` and it will call CodePrism instead of reading the file.
-
----
-
-### Cursor
+**Auto-setup for Claude Code and Cursor:**
 
 ```bash
-codeprism setup cursor --project /path/to/project
-# Restart Cursor
+codeprism index /path/to/project
+codeprism setup claude --project /path/to/project   # or: setup cursor
+# Restart your editor
 ```
 
-For a global config:
-```bash
-codeprism setup cursor --project /path/to/project --global
-```
-
-Cursor will list CodePrism under **Settings → MCP**. All Cursor Composer and chat sessions automatically get access to the graph tools.
-
----
-
-### Continue.dev
-
-Add the following to your `~/.continue/config.json`:
-
-```json
-{
-  "mcpServers": {
-    "codeprism": {
-      "command": "codeprism",
-      "args": ["serve", "/path/to/your/project"]
-    }
-  }
-}
-```
-
----
-
-### Any MCP-compatible agent (programmatic)
-
-Start the server in SSE mode for remote or network-connected agents:
-
-```bash
-codeprism serve /path/to/project --transport sse --port 8765
-```
-
-Then connect your agent to `http://localhost:8765`.
-
----
-
-### Python library (embed directly)
-
-If you're building an agent harness or automation script, use CodePrism directly without the MCP layer:
+**Python library (no MCP layer):**
 
 ```python
 from codeprism import CodePrism, SecurityGate
 
 async with CodePrism("/path/to/project") as prism:
     await prism.index()
-
-    # Get structured context for a symbol — no file reading needed
     ctx = await prism.get_context("payments/processor.py", "process_payment")
-    print(ctx.symbol.signature)
-    print([c.name for c in ctx.direct_callers])
-
-    # Assess the blast radius of a change
     impact = await prism.get_impact("payments/processor.py", "process_payment")
-    print(impact.severity)           # LOW | MEDIUM | HIGH | CRITICAL
-    print(impact.affected_test_files)
-
-    # Security gate — check before writing
     gate = SecurityGate()
     report = await gate.check_write("payments/processor.py", new_content)
     if report.is_blocked:
         raise ValueError(report.issues[0].description)
-
-    # Session tracking — prevent re-reads across a long agent chain
-    session = prism.session("sess_abc123")
-    await session.record_read("payments/processor.py", "process_payment")
-    await session.record_write("payments/processor.py", old_content, new_content)
-    summary = await session.get_context()   # compact digest for the LLM
-    await session.undo(steps=1)             # roll back the write
 ```
+
+For detailed per-editor config, Docker Compose setup, CI pipelines, and OpenAI Agents SDK examples, see **[INTEGRATIONS.md](INTEGRATIONS.md)**.
 
 ---
 
