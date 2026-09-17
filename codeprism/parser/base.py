@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from ..core.models import EdgeKind, EdgeRecord, FileRecord, SymbolRecord
+from ..core.models import EdgeKind, EdgeRecord, FileRecord, NodeKind, SymbolRecord
 
 
 @dataclass
@@ -51,3 +51,35 @@ class BaseParser(ABC):
 
     def can_parse(self, file_path: str) -> bool:
         return Path(file_path).suffix.lower() in self.supported_extensions
+
+    @staticmethod
+    def resolve_intrafile_refs(result: ParseResult, name_to_id: dict[str, str]) -> None:
+        """
+        Resolve unresolved refs that can be satisfied within a single file's symbol table.
+
+        CALLS refs that match an IMPORT stub are intentionally left unresolved so the
+        cross-file resolver can wire them to the actual definition. Without this, a call
+        like `run_payment -> compute_checksum` in main.py resolves to the import stub
+        instead of the real function in processor.py, and the caller never appears in
+        get_callers() results.
+        """
+        import_ids = {sym.id for sym in result.symbols if sym.kind == NodeKind.IMPORT}
+
+        still: list[UnresolvedRef] = []
+        for ref in result.unresolved_refs:
+            target_id = name_to_id.get(ref.ref_name)
+            # Leave cross-file calls for _resolve_cross_file in the indexer.
+            if ref.kind == EdgeKind.CALLS and target_id in import_ids:
+                still.append(ref)
+                continue
+            if target_id and target_id != ref.from_id:
+                result.edges.append(EdgeRecord.create(
+                    kind=ref.kind,
+                    from_id=ref.from_id,
+                    to_id=target_id,
+                    file_path=ref.file_path,
+                    line_number=ref.line_number,
+                ))
+            else:
+                still.append(ref)
+        result.unresolved_refs = still

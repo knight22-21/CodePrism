@@ -5,6 +5,31 @@ this file is the committed record.
 
 ---
 
+## Run 3 — 2026-09-17 | Post cross-file call edge fix | Fixture Corpus
+
+**Fix applied:** `resolve_intrafile_refs` in `BaseParser` now passes CALLS refs that point at
+import stubs through to cross-file resolution, so `run_payment -> compute_checksum` is
+correctly wired as a cross-file edge instead of resolving to the import stub in `main.py`.
+
+| Task ID | Type | Baseline | CodePrism | Reduction | Acc-Baseline | Acc-CodePrism |
+|---|---|---:|---:|---:|---:|---:|
+| fixture_001 | symbol_lookup | 274 | 230 | 16.1% | 0.96 | 0.15 |
+| fixture_002 | call_trace | 375 | 109 | 70.9% | 1.00 | **0.90** |
+| fixture_003 | impact_analysis | 380 | 209 | 45.0% | 0.96 | 0.60 |
+| fixture_004 | dependency_map | 270 | 136 | 49.6% | 1.00 | 0.97 |
+| fixture_005 | call_trace | 272 | 392 | -44.1% | 1.00 | 0.65 |
+| fixture_006 | symbol_lookup | 271 | 176 | 35.1% | 1.00 | 0.40 |
+| fixture_007 | impact_analysis | 274 | 204 | 25.5% | 1.00 | 0.20 |
+| fixture_008 | symbol_lookup | 135 | 331 | -145.2% | 0.10 | 0.60 |
+| fixture_009 | call_trace | 131 | 95 | 27.5% | 1.00 | 0.90 |
+| fixture_010 | dependency_map | 377 | 133 | 64.7% | 0.90 | 0.60 |
+| **AVG** | | | | **27.0%** | **0.89** | **0.60** |
+
+**Key result:** `fixture_002` (find all callers of `compute_checksum`) went 0.20 → **0.90**.
+This was the direct target of the fix. Other score changes are within LLM judge variance (non-deterministic across runs).
+
+---
+
 ## Run 2 — 2026-09-17 | Level 1 Token Reduction + Accuracy | Fixture Corpus
 
 **Corpus:** `tests/fixtures/sample_python_project` (2 files, 16 symbols)

@@ -356,20 +356,7 @@ class PythonParser(BaseParser):
     # ── Intra-file resolution ─────────────────────────────────────────────────
 
     def _resolve_intrafile_refs(self, result: ParseResult, name_to_id: dict[str, str]) -> None:
-        still_unresolved: list[UnresolvedRef] = []
-        for ref in result.unresolved_refs:
-            target_id = name_to_id.get(ref.ref_name)
-            if target_id and target_id != ref.from_id:
-                result.edges.append(EdgeRecord.create(
-                    kind=ref.kind,
-                    from_id=ref.from_id,
-                    to_id=target_id,
-                    file_path=ref.file_path,
-                    line_number=ref.line_number,
-                ))
-            else:
-                still_unresolved.append(ref)
-        result.unresolved_refs = still_unresolved
+        self.resolve_intrafile_refs(result, name_to_id)
 
     # ── AST helpers ───────────────────────────────────────────────────────────
 
