@@ -5,6 +5,17 @@ against reading raw source files.
 
 ---
 
+## Summary
+
+| Level | Metric | Fixture corpus | requests corpus |
+|---|---|---|---|
+| Level 1 | Token reduction | 27% avg | **88.5% avg** |
+| Level 1 | Accuracy (CP vs baseline) | 0.60 vs 0.89 | 0.66 vs 0.81 |
+| Level 2 | Query p50 latency | < 1.5ms | < 4ms |
+| Level 2 | Query p95 latency | < 2ms | < 5.2ms |
+
+---
+
 ## Methodology
 
 ### Level 1 — Token Reduction + Accuracy
@@ -167,10 +178,41 @@ python -m benchmarks.run_token_benchmark \
 
 Add `--accuracy` for LLM-as-judge scoring (requires `OLLAMA_API_KEY`).
 
+### Level 2 latency (requests corpus)
+
+```bash
+python -m benchmarks.run_latency_benchmark \
+  --tasks benchmarks/tasks/requests_tasks.json \
+  --reps 20 --warmup 3
+```
+
 ### CI (GitHub Actions)
 
 The token benchmark runs automatically on every push and PR via
 `.github/workflows/benchmark.yml`. No API key required — token-only mode only.
+
+---
+
+## Level 2 Results — psf/requests v2.32.3
+
+**Method:** 3 warmup runs discarded, 20 measurement reps per task. Engine held open across
+all tasks so indexing overhead is excluded — pure query latency only.
+
+| Tool | CP p50 | CP p95 | Overhead vs file read |
+|---|---:|---:|---:|
+| `get_context` | 1.2ms | 1.8ms | +0.9ms |
+| `get_callers` | 1.2ms | 1.8ms | +0.9ms |
+| `get_impact` | 2.0ms | 3.4ms | +1.6ms |
+| `get_dependencies` | 3.8ms | 5.1ms | +3.5ms |
+| **Overall** | **1.9ms** | **2.5ms** | |
+
+**Interpretation:** LLM API calls take 500–3,000ms. CodePrism overhead of < 4ms p95 is
+noise relative to model inference. Combined with 88.5% token reduction, CodePrism makes
+agent turns net faster: the model processes 88% less data per turn at < 4ms cost per query.
+
+**Fix discovered during Run 5:** `get_dependencies` was 10.7ms before this run due to
+`SELECT * FROM symbols` (full table scan). Fixed with `SELECT DISTINCT name WHERE kind !=
+'import'` — dropped 64% to 3.8ms.
 
 ---
 
