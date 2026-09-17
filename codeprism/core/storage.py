@@ -261,6 +261,19 @@ class StorageManager:
             rows = await cur.fetchall()
         return [_row_to_symbol(r) for r in rows]
 
+    async def get_non_import_symbol_names(self, exclude_file_id: str) -> set[str]:
+        """Return names of all non-import symbols not in the given file.
+
+        Used by get_dependencies to classify imports as internal vs external
+        without fetching full SymbolRecord objects for every symbol in the graph.
+        """
+        async with self.db.execute(
+            "SELECT DISTINCT name FROM symbols WHERE kind != 'import' AND file_id != ?",
+            (exclude_file_id,),
+        ) as cur:
+            rows = await cur.fetchall()
+        return {row[0] for row in rows}
+
     async def delete_symbols_for_file(self, file_id: str) -> None:
         await self.db.execute("DELETE FROM symbols WHERE file_id = ?", (file_id,))
         await self.db.commit()

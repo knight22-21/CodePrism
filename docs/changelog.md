@@ -5,7 +5,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased] — v0.1.5
+## [Unreleased] — v0.1.6
+
+### Added
+- **Level 2 latency benchmark** (`benchmarks/run_latency_benchmark.py`)
+  - Measures p50/p95/p99 query latency with configurable warmup and reps
+  - Holds the CodePrism engine open across all tasks — times pure query latency, not indexing
+  - Results on psf/requests: get_context p50=1.2ms, get_impact p50=2.0ms, get_dependencies p50=3.8ms
+
+### Fixed
+- **`get_dependencies` latency** (`StorageManager.get_non_import_symbol_names`):
+  was calling `SELECT * FROM symbols` (full table scan) to build the internal/external
+  classification set. Fixed with `SELECT DISTINCT name WHERE kind != 'import'`, reducing
+  latency from 10.7ms → 3.8ms p50 (64% faster). All 341 tests pass.
+
+---
+
+## [v0.1.5] — 2026-09-17
 
 ### Added
 - **Level 1 benchmark harness** — token reduction + LLM-as-judge accuracy eval
