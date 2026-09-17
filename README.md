@@ -23,6 +23,9 @@ CodePrism builds a persistent knowledge graph of your project — every function
 
 **Token reduction target: 60–80% on large codebases.**
 
+> Measured at **88.5%** on psf/requests v2.32.3 (real-world, 6k–12k token files).
+> See [docs/benchmark-results.md](docs/benchmark-results.md) for full results.
+
 ---
 
 ## What CodePrism Does
@@ -312,6 +315,38 @@ ignore_paths = ["tests/fixtures/", "*.example.*"]
 transport = "stdio"
 port = 8765
 ```
+
+---
+
+## Benchmarks
+
+CodePrism is benchmarked on token reduction and answer accuracy across real-world codebases.
+
+| Corpus | Avg baseline | Avg CodePrism | Reduction |
+|---|---:|---:|---:|
+| Fixture project (tiny, 2 files) | 276 tokens | 202 tokens | 27% |
+| psf/requests v2.32.3 (18 files) | 6,407 tokens | 738 tokens | **88.5%** |
+
+The fixture numbers are low because on tiny files (135–380 tokens), JSON response overhead can
+exceed the raw file size. On real-world files the savings are always substantial.
+
+Accuracy (LLM-as-judge): baseline **0.81** → CodePrism **0.66** on the requests corpus.
+The gap closes as indexer edge coverage improves (cross-file call edges, intra-class calls).
+
+Full methodology, per-task breakdown, and reproduction instructions:
+**[docs/benchmark-results.md](docs/benchmark-results.md)**
+
+---
+
+## Documentation
+
+| Doc | What it covers |
+|---|---|
+| [docs/benchmark-results.md](docs/benchmark-results.md) | Benchmark methodology, all run results, reproduction steps |
+| [docs/architecture.md](docs/architecture.md) | System design, data flow, key design decisions |
+| [docs/changelog.md](docs/changelog.md) | Version history and release notes |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | Per-editor setup, Docker Compose, CI, OpenAI Agents SDK |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev environment, coding standards, PR process |
 
 ---
 
