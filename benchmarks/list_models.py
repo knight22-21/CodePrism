@@ -16,30 +16,37 @@ import sys
 _BASE_URL = os.environ.get("OLLAMA_BASE_URL", "https://ollama.com/v1").rstrip("/")
 _API_KEY = os.environ.get("OLLAMA_API_KEY", "")
 
-# Confirmed Ollama cloud models (ollama.com/search?c=cloud) — 2026-09-17
+# Confirmed from live Ollama cloud account — 2026-09-17
 # rating: A = excellent, B = good, C = adequate for structured 0-1 judge scoring
 _JUDGE_RATINGS: dict[str, tuple[str, str]] = {
-    # -- Tier A: best for judging (instruction-following + output format) --
-    "llama3.3:70b":      ("A", "Best balance quality/speed for judge tasks; top pick"),
-    "llama3.3":          ("A", "Same as 70b if cloud routes to it automatically"),
-    "qwen3.5":           ("A", "Strong reasoning, strict format adherence"),
-    "qwen3-coder":       ("A", "Excellent at structured output"),
-    "deepseek-v4-flash": ("A", "Fastest + cheapest on Ollama cloud; 1M ctx; great for high-volume"),
+    # -- Tier A: best for judging (strict format + quality) --
+    "deepseek-v4.1-flash":  ("A", "Newest flash variant; fast, cheap, strict format following — top pick"),
+    "deepseek-v4-flash":    ("A", "Fastest + cheapest on Ollama cloud; 1M ctx; great for high-volume"),
+    "deepseek-v4-pro":      ("A", "Pro variant; higher quality than flash, slower/pricier"),
+    "qwen3.5":              ("A", "Strong reasoning, strict format adherence; 397b = slow but best quality"),
+    "llama3.3":             ("A", "Strong instruction following, well-tested as judge"),
+    "qwen3-coder":          ("A", "Excellent at structured output"),
     # -- Tier B: good, minor caveats --
-    "llama3.1":          ("B", "Widely tested as judge, slightly older"),
-    "llama3.2":          ("B", "Smaller, fast, adequate for binary scoring"),
-    "qwen3-coder-480b":  ("B", "Huge model, excellent reasoning but slower + heavier"),
-    "nemotron-3-super":  ("B", "Good reasoning, less tested as judge"),
-    "glm-5.1":           ("B", "Good structured output"),
-    "glm4":              ("B", "Predecessor, still solid"),
-    "gemma4":            ("B", "Good but may not follow decimal-only format strictly"),
-    "minimax-m3":        ("B", "Good for comparison tasks"),
-    "minimax-m2.7":      ("B", "Lighter minimax variant"),
-    "kimi-k2.6":         ("B", "Strong reasoning; format compliance variable"),
+    "gpt-oss:120b":         ("B", "OpenAI open-weights 120B; solid reasoning, heavier"),
+    "gpt-oss:20b":          ("B", "OpenAI open-weights 20B; fast, adequate for binary scoring"),
+    "kimi-k3":              ("B", "Kimi latest; strong reasoning, format compliance variable"),
+    "kimi-k2.6":            ("B", "Strong reasoning; format compliance variable"),
+    "kimi-k2.7-code":       ("B", "Code-focused; still adequate for factual scoring"),
+    "glm-5.3":              ("B", "GLM latest; good structured output"),
+    "glm-5.3-flash":        ("B", "Fast GLM variant; good for high-volume"),
+    "glm-5.2":              ("B", "Good structured output"),
+    "glm-5.1":              ("B", "Good structured output"),
+    "glm4":                 ("B", "Predecessor, still solid"),
+    "nemotron-3-ultra":     ("B", "Nvidia's strongest Nemotron; good reasoning"),
+    "nemotron-3-super":     ("B", "Good reasoning, less tested as judge"),
+    "nemotron-3-nano":      ("B", "Smaller Nemotron; fast"),
+    "gemma4":               ("B", "Good but may not follow decimal-only format strictly"),
+    "minimax-m3":           ("B", "Good for comparison tasks"),
+    "minimax-m2.7":         ("B", "Lighter minimax variant"),
     # -- Tier C: usable but not ideal --
-    "deepseek-r1":       ("C", "Excellent reasoning but verbose — often ignores score-only format"),
-    "phi4-mini":         ("C", "Very fast, adequate for rough scoring"),
-    "mistral":           ("C", "Adequate general judge"),
+    "mistral-large-3":      ("C", "Adequate but Mistral struggles with strict 0-1 format"),
+    "mistral":              ("C", "Adequate general judge"),
+    "deepseek-r1":          ("C", "Excellent reasoning but verbose — often ignores score-only format"),
 }
 
 
