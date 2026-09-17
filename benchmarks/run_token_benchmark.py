@@ -213,7 +213,7 @@ async def main(argv: list[str] | None = None) -> None:
         print(f"  [{i}/{len(tasks)}] {task['id']} ...", end=" ", flush=True)
         r = await run_task(task, repo, run_accuracy)
         results.append(r)
-        print(f"{r['baseline_tokens']:,} → {r['cp_tokens']:,} tokens  ({r['reduction_pct']:+.1f}%)")
+        print(f"{r['baseline_tokens']:,} -> {r['cp_tokens']:,} tokens  ({r['reduction_pct']:+.1f}%)")
 
     print_table(results, run_accuracy)
 

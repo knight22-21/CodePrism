@@ -8,7 +8,6 @@ same text format the LLM would receive it over the wire.
 
 from __future__ import annotations
 
-import asyncio
 import json
 from pathlib import Path
 
@@ -20,21 +19,27 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
     Build a context prompt using only CodePrism graph queries.
 
     task schema:
-      file:     str          — file path (relative to repo_path)
-      function: str          — symbol name to query
-      query:    str          — the natural-language question
-      cp_tools: list[str]    — which tools to call: get_context | get_impact |
-                               get_callers | get_dependencies | search_symbol
+      file:     str          -- file path (relative to repo_path)
+      function: str          -- symbol name to query
+      query:    str          -- the natural-language question
+      cp_tools: list[str]    -- which tools to call: get_context | get_impact |
+                                get_callers | get_dependencies | search_symbol
     """
     repo = Path(repo_path).resolve()
     results: list[dict] = []
 
     async with CodePrism(str(repo)) as prism:
+        # Index if the graph is empty (first run against this project).
+        stats = await prism.engine.get_stats()
+        if stats.get("file_count", 0) == 0:
+            await prism.index()
+
+        engine = prism.engine
         tools = task.get("cp_tools", ["get_context"])
 
         for tool in tools:
             if tool == "get_context":
-                ctx = await prism.get_context(task["file"], task["function"], depth=2)
+                ctx = await engine.get_context(task["file"], task["function"], depth=2)
                 if ctx:
                     results.append({
                         "tool": "get_context",
@@ -52,7 +57,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                     })
 
             elif tool == "get_impact":
-                impact = await prism.get_impact(task["file"], task["function"])
+                impact = await engine.get_impact(task["file"], task["function"])
                 if impact:
                     results.append({
                         "tool": "get_impact",
@@ -64,7 +69,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                     })
 
             elif tool == "get_callers":
-                callers = await prism.get_callers(task["file"], task["function"])
+                callers = await engine.get_callers(task["file"], task["function"])
                 results.append({
                     "tool": "get_callers",
                     "function": task["function"],
@@ -73,7 +78,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                 })
 
             elif tool == "get_dependencies":
-                deps = await prism.get_dependencies(task["file"])
+                deps = await engine.get_dependencies(task["file"])
                 if deps:
                     results.append({
                         "tool": "get_dependencies",
@@ -85,7 +90,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
 
             elif tool == "search_symbol":
                 q = task.get("search_query", task["function"])
-                matches = await prism.search_symbols(q)
+                matches = await engine.search_symbols(q)
                 results.append({
                     "tool": "search_symbol",
                     "query": q,
@@ -98,7 +103,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
     context = json.dumps(results, indent=2)
     return (
         f"You are a code analysis assistant. "
-        f"The following is a structured knowledge graph query result — "
+        f"The following is a structured knowledge graph query result -- "
         f"not raw source code.\n\n"
         f"## CodePrism graph result\n\n```json\n{context}\n```\n\n"
         f"## Task\n\n{task['query']}"
