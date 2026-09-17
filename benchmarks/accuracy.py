@@ -114,7 +114,7 @@ async def _evaluate_anthropic(prompt: str, ground_truth: str) -> float:
     judge_prompt = _judge_prompt(ground_truth, answer)
     judge_resp = client.messages.create(
         model=_ANTHROPIC_MODEL,
-        max_tokens=10,
+        max_tokens=2000,
         messages=[{"role": "user", "content": judge_prompt}],
     )
     return _parse_score(judge_resp.content[0].text)
@@ -141,14 +141,14 @@ async def _evaluate_openai_compat(prompt: str, ground_truth: str) -> float:
 
     answer_resp = await client.chat.completions.create(
         model=model,
-        max_tokens=300,
+        max_tokens=1000,  # reasoning models use some tokens thinking before answering
         messages=[{"role": "user", "content": prompt}],
     )
     answer = answer_resp.choices[0].message.content or ""
 
     judge_resp = await client.chat.completions.create(
         model=model,
-        max_tokens=10,
+        max_tokens=2000,  # reasoning models need room to think before outputting the score
         messages=[{"role": "user", "content": _judge_prompt(ground_truth, answer)}],
     )
     return _parse_score(judge_resp.choices[0].message.content or "0")

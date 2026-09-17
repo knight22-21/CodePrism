@@ -9,9 +9,26 @@ same text format the LLM would receive it over the wire.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from codeprism import CodePrism
+from codeprism.core.storage import StorageManager
+
+
+async def _resolve_file_path(engine, task_file: str) -> str:
+    """
+    Map a short task file path (e.g. 'processor.py') to the actual path
+    stored in the graph (e.g. 'tests/fixtures/sample_python_project/processor.py').
+    Falls back to the original task_file if no match found.
+    """
+    all_files = await engine._storage.get_all_files()
+    task_suffix = task_file.replace("/", os.sep).replace("\\", os.sep)
+    for f in all_files:
+        stored = f.path.replace("/", os.sep).replace("\\", os.sep)
+        if stored == task_suffix or stored.endswith(os.sep + task_suffix):
+            return f.path
+    return task_file
 
 
 async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
@@ -37,9 +54,12 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
         engine = prism.engine
         tools = task.get("cp_tools", ["get_context"])
 
+        # Resolve short task file path to actual stored path
+        resolved_file = await _resolve_file_path(engine, task["file"])
+
         for tool in tools:
             if tool == "get_context":
-                ctx = await engine.get_context(task["file"], task["function"], depth=2)
+                ctx = await engine.get_context(resolved_file, task["function"], depth=2)
                 if ctx:
                     results.append({
                         "tool": "get_context",
@@ -57,7 +77,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                     })
 
             elif tool == "get_impact":
-                impact = await engine.get_impact(task["file"], task["function"])
+                impact = await engine.get_impact(resolved_file, task["function"])
                 if impact:
                     results.append({
                         "tool": "get_impact",
@@ -69,7 +89,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                     })
 
             elif tool == "get_callers":
-                callers = await engine.get_callers(task["file"], task["function"])
+                callers = await engine.get_callers(resolved_file, task["function"])
                 results.append({
                     "tool": "get_callers",
                     "function": task["function"],
@@ -78,11 +98,11 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                 })
 
             elif tool == "get_dependencies":
-                deps = await engine.get_dependencies(task["file"])
+                deps = await engine.get_dependencies(resolved_file)
                 if deps:
                     results.append({
                         "tool": "get_dependencies",
-                        "file": task["file"],
+                        "file": resolved_file,
                         "internal_deps": deps.internal_deps,
                         "external_deps": deps.external_deps,
                         "circular_deps": deps.circular_deps,
