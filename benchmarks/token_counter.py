@@ -11,6 +11,7 @@ Set BENCHMARK_TOKEN_BACKEND=claude|tiktoken|approx to force one backend.
 
 from __future__ import annotations
 
+import benchmarks._env  # noqa: F401 — loads .env before os.environ is read
 import os
 import re
 

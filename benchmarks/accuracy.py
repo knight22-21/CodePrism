@@ -15,6 +15,7 @@ and only measure token counts (free, no API calls).
 
 from __future__ import annotations
 
+import benchmarks._env  # noqa: F401 — loads .env before os.environ is read
 import os
 
 _SKIP = os.environ.get("BENCHMARK_SKIP_ACCURACY", "0") == "1"
@@ -23,7 +24,7 @@ _BACKEND = os.environ.get("BENCHMARK_JUDGE_BACKEND", "auto").lower()
 # Ollama cloud settings (https://ollama.com/v1 — OpenAI-compatible)
 _OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "https://ollama.com/v1")
 _OLLAMA_API_KEY = os.environ.get("OLLAMA_API_KEY", "")
-_OLLAMA_MODEL = os.environ.get("BENCHMARK_JUDGE_MODEL", "llama3.1")
+_OLLAMA_MODEL = os.environ.get("BENCHMARK_JUDGE_MODEL", "llama3.3:70b")
 
 # Anthropic settings
 _ANTHROPIC_MODEL = os.environ.get("BENCHMARK_JUDGE_MODEL", "claude-haiku-4-5-20251001")
