@@ -5,6 +5,46 @@ this file is the committed record.
 
 ---
 
+## Run 4 — 2026-09-17 | Real-world corpus (psf/requests v2.32.3) | Token + Accuracy
+
+**Corpus:** `benchmarks/repos/requests` (psf/requests v2.32.3, src/ layout)
+**Token backend:** tiktoken cl100k_base
+**Accuracy judge:** `gpt-oss:120b` via Ollama cloud
+**Tasks:** 10 (symbol_lookup, call_trace, impact_analysis, dependency_map)
+
+| Task ID | Type | Baseline | CodePrism | Reduction | Acc-Baseline | Acc-CodePrism |
+|---|---|---:|---:|---:|---:|---:|
+| requests_001 | symbol_lookup | 8,372 | 486 | 94.2% | 1.00 | **1.00** |
+| requests_002 | call_trace | 6,394 | 1,785 | 72.1% | 0.80 | 0.60 |
+| requests_003 | impact_analysis | 12,124 | 993 | 91.8% | 1.00 | 0.70 |
+| requests_004 | dependency_map | 6,394 | 348 | 94.6% | 0.20 | 0.30 |
+| requests_005 | symbol_lookup | 7,495 | 746 | 90.0% | 0.97 | **1.00** |
+| requests_006 | call_trace | 6,386 | 104 | 98.4% | 0.90 | 0.40 |
+| requests_007 | impact_analysis | 6,394 | 1,244 | 80.5% | 1.00 | 0.60 |
+| requests_008 | dependency_map | 2,367 | 188 | 92.1% | 0.30 | 0.00 |
+| requests_009 | call_trace | 2,377 | 360 | 84.9% | 1.00 | **1.00** |
+| requests_010 | dependency_map | 5,760 | 1,126 | 80.5% | 0.95 | 0.95 |
+| **AVG** | | | | **88.5%** | **0.81** | **0.66** |
+
+**Key results:**
+- **88.5% token reduction** on real-world files (6k–12k token baselines vs 135–380 in fixture).
+  This matches and exceeds the 60–80% claim — large files benefit most.
+- `requests_006` (who calls `Session.send`): **98.4% reduction**, 6,386 → 104 tokens.
+- Accuracy: baseline=0.81, CodePrism=0.66 — a 15-point gap, smaller than the fixture gap (28 pts).
+
+**Low-scoring tasks (investigation notes):**
+- `requests_004` / `requests_008` (dependency_map, 0.30 / 0.00): `get_dependencies` returns
+  import paths as stored in the graph, which may differ from how the judge expects them written
+  (e.g. `requests.compat` vs `from .compat import ...`). Ground truth needs refinement.
+- `requests_006` (call_trace 0.40): `get_callers` on `Session.send` returned an empty list —
+  cross-file call edges from `Session.request` to `Session.send` are within the same file, so
+  intra-file resolution should have wired them. Indicates an intra-file resolution gap for
+  method-to-method calls within the same class. Next indexer investigation target.
+- `requests_002` (call_trace 0.60): `get_context` for `Session.request` lists direct callees
+  but the judge expected the full chain including `prepare_request` sub-calls.
+
+---
+
 ## Run 3 — 2026-09-17 | Post cross-file call edge fix | Fixture Corpus
 
 **Fix applied:** `resolve_intrafile_refs` in `BaseParser` now passes CALLS refs that point at
