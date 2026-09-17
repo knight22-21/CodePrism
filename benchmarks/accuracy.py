@@ -24,7 +24,7 @@ _BACKEND = os.environ.get("BENCHMARK_JUDGE_BACKEND", "auto").lower()
 # Ollama cloud settings (https://ollama.com/v1 — OpenAI-compatible)
 _OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "https://ollama.com/v1")
 _OLLAMA_API_KEY = os.environ.get("OLLAMA_API_KEY", "")
-_OLLAMA_MODEL = os.environ.get("BENCHMARK_JUDGE_MODEL", "deepseek-v4.1-flash")
+_OLLAMA_MODEL = os.environ.get("BENCHMARK_JUDGE_MODEL", "gpt-oss:120b")
 
 # Anthropic settings
 _ANTHROPIC_MODEL = os.environ.get("BENCHMARK_JUDGE_MODEL", "claude-haiku-4-5-20251001")
