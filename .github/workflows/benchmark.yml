@@ -1,0 +1,40 @@
+name: Token Benchmark
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  token-benchmark:
+    name: Level 1 Token Reduction
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package + bench deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[bench]"
+          pip install tree-sitter-python
+
+      - name: Run token benchmark (fixture corpus, no API key)
+        run: python -m benchmarks.run_token_benchmark
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: token-benchmark-results
+          path: benchmarks/results/token_benchmark.json
+          if-no-files-found: warn
