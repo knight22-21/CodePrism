@@ -81,7 +81,7 @@
     "relevant_files": ["processor.py"],
     "cp_tools": ["get_impact"],
     "query": "Which functions would break if _validate changed its return type from bool to raising exceptions?",
-    "ground_truth": "PaymentProcessor.process calls _validate and depends on its boolean return value."
+    "ground_truth": "process is the direct dependent of _validate; run_payment and main are transitively affected through process."
   },
   {
     "id": "fixture_008",

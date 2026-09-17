@@ -65,6 +65,7 @@ async def build_codeprism_prompt(repo_path: str, task: dict) -> str:
                         "tool": "get_context",
                         "symbol": ctx.symbol.name,
                         "signature": ctx.symbol.signature,
+                        "docstring": ctx.symbol.docstring,
                         "kind": ctx.symbol.kind.value,
                         "line_start": ctx.symbol.line_start,
                         "direct_callers": [
