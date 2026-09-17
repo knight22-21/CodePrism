@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased] — v0.1.6
+## [v0.1.6] — 2026-09-17
 
 ### Added
 - **Level 2 latency benchmark** (`benchmarks/run_latency_benchmark.py`)
