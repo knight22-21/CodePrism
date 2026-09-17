@@ -231,12 +231,9 @@ class QueryEngine:
         syms = await self._storage.get_symbols_for_file(file.id)
         import_syms = [s for s in syms if s.kind == NodeKind.IMPORT]
 
-        # Anything with a matching non-import symbol in the graph = internal
-        all_syms = await self._storage.get_all_symbols()
-        known_names = {
-            s.name for s in all_syms
-            if s.kind != NodeKind.IMPORT and s.file_id != file.id
-        }
+        # Anything with a matching non-import symbol in the graph = internal.
+        # Uses a name-only projection query instead of loading all SymbolRecords.
+        known_names = await self._storage.get_non_import_symbol_names(file.id)
 
         internal: list[str] = []
         external: list[str] = []
