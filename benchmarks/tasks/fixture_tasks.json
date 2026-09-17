@@ -1,0 +1,122 @@
+[
+  {
+    "id": "fixture_001",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "symbol_lookup",
+    "file": "processor.py",
+    "function": "compute_checksum",
+    "relevant_files": ["processor.py"],
+    "cp_tools": ["get_context"],
+    "query": "What is the signature and purpose of the compute_checksum function? What does it return?",
+    "ground_truth": "compute_checksum(data: str) -> str. Computes and returns the SHA256 hexdigest of the input string."
+  },
+  {
+    "id": "fixture_002",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "call_trace",
+    "file": "processor.py",
+    "function": "compute_checksum",
+    "relevant_files": ["processor.py", "main.py"],
+    "cp_tools": ["get_callers"],
+    "query": "Which functions call compute_checksum? List every call site.",
+    "ground_truth": "compute_checksum is called by PaymentProcessor.process and run_payment."
+  },
+  {
+    "id": "fixture_003",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "impact_analysis",
+    "file": "processor.py",
+    "function": "compute_checksum",
+    "relevant_files": ["processor.py", "main.py"],
+    "cp_tools": ["get_impact"],
+    "query": "If compute_checksum changes its return type, which functions are at risk of breaking?",
+    "ground_truth": "PaymentProcessor.process and run_payment depend on compute_checksum."
+  },
+  {
+    "id": "fixture_004",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "dependency_map",
+    "file": "processor.py",
+    "function": "compute_checksum",
+    "relevant_files": ["processor.py"],
+    "cp_tools": ["get_dependencies"],
+    "query": "What external libraries does processor.py import? List all of them.",
+    "ground_truth": "processor.py imports os, hashlib, and typing (Optional)."
+  },
+  {
+    "id": "fixture_005",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "call_trace",
+    "file": "processor.py",
+    "function": "process",
+    "relevant_files": ["processor.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does PaymentProcessor.process call internally? List all function calls it makes.",
+    "ground_truth": "PaymentProcessor.process calls _validate and compute_checksum and _submit."
+  },
+  {
+    "id": "fixture_006",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "symbol_lookup",
+    "file": "processor.py",
+    "function": "_validate",
+    "relevant_files": ["processor.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does PaymentProcessor._validate do? What is its return condition?",
+    "ground_truth": "_validate returns True if 0 < amount <= 1,000,000, otherwise False."
+  },
+  {
+    "id": "fixture_007",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "impact_analysis",
+    "file": "processor.py",
+    "function": "_validate",
+    "relevant_files": ["processor.py"],
+    "cp_tools": ["get_impact"],
+    "query": "Which functions would break if _validate changed its return type from bool to raising exceptions?",
+    "ground_truth": "PaymentProcessor.process calls _validate and depends on its boolean return value."
+  },
+  {
+    "id": "fixture_008",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "symbol_lookup",
+    "file": "main.py",
+    "function": "run_payment",
+    "relevant_files": ["main.py"],
+    "cp_tools": ["get_context"],
+    "query": "What is the signature of run_payment and what does it return?",
+    "ground_truth": "run_payment(amount: float) -> bool. It validates, computes a checksum, then processes a payment."
+  },
+  {
+    "id": "fixture_009",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "call_trace",
+    "file": "main.py",
+    "function": "run_payment",
+    "relevant_files": ["main.py"],
+    "cp_tools": ["get_callers"],
+    "query": "Who calls run_payment in this codebase?",
+    "ground_truth": "run_payment is called by main via asyncio.run."
+  },
+  {
+    "id": "fixture_010",
+    "repo": "sample_python_project",
+    "repo_path": "tests/fixtures/sample_python_project",
+    "type": "dependency_map",
+    "file": "main.py",
+    "function": "run_payment",
+    "relevant_files": ["main.py", "processor.py"],
+    "cp_tools": ["get_dependencies"],
+    "query": "What does main.py import and where does each import come from?",
+    "ground_truth": "main.py imports PaymentProcessor and compute_checksum from processor (internal)."
+  }
+]
