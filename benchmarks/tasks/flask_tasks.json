@@ -1,0 +1,122 @@
+[
+  {
+    "id": "flask_001",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/sansio/scaffold.py",
+    "function": "route",
+    "relevant_files": ["src/flask/sansio/scaffold.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does Flask.route do and what arguments does it take?",
+    "ground_truth": "route(rule, **options) is a decorator that registers a URL rule for a view function. It calls add_url_rule internally, passing the endpoint name and the view function. Methods default to GET; HEAD and OPTIONS are added automatically."
+  },
+  {
+    "id": "flask_002",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "call_trace",
+    "file": "src/flask/app.py",
+    "function": "full_dispatch_request",
+    "relevant_files": ["src/flask/app.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does Flask.full_dispatch_request call internally to handle a request?",
+    "ground_truth": "full_dispatch_request calls preprocess_request, then dispatch_request (if preprocess_request returns None), and wraps exceptions with handle_user_exception. Finally it calls finalize_request to convert the return value into a Response."
+  },
+  {
+    "id": "flask_003",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "impact_analysis",
+    "file": "src/flask/app.py",
+    "function": "dispatch_request",
+    "relevant_files": ["src/flask/app.py"],
+    "cp_tools": ["get_impact"],
+    "query": "If Flask.dispatch_request changes its return type, which functions would be affected?",
+    "ground_truth": "full_dispatch_request calls dispatch_request and passes its return value to finalize_request. Changes to dispatch_request's return type would directly break full_dispatch_request and transitively wsgi_app, which calls full_dispatch_request."
+  },
+  {
+    "id": "flask_004",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "dependency_map",
+    "file": "src/flask/app.py",
+    "function": "full_dispatch_request",
+    "relevant_files": ["src/flask/app.py"],
+    "cp_tools": ["get_dependencies"],
+    "query": "What does flask/app.py import? List internal vs external dependencies.",
+    "ground_truth": "app.py imports internally from .cli, .ctx, .globals, .helpers, .sansio.app, .sansio.scaffold, .sessions, .signals, .templating, .wrappers. External: os, sys, collections.abc, datetime, inspect, itertools, types, urllib.parse, click, werkzeug."
+  },
+  {
+    "id": "flask_005",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/helpers.py",
+    "function": "url_for",
+    "relevant_files": ["src/flask/helpers.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does flask.url_for do and what parameters does it take?",
+    "ground_truth": "url_for(endpoint, *, _anchor, _method, _scheme, _external, **values) generates a URL for the given endpoint. It delegates to current_app.url_for(). Requires an active request or application context. Unknown keyword arguments are appended as query string parameters."
+  },
+  {
+    "id": "flask_006",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "call_trace",
+    "file": "src/flask/app.py",
+    "function": "handle_exception",
+    "relevant_files": ["src/flask/app.py"],
+    "cp_tools": ["get_callers"],
+    "query": "Which functions call Flask.handle_exception?",
+    "ground_truth": "handle_exception is called by handle_user_exception when an unhandled exception occurs that is not an HTTPException and has no registered error handler."
+  },
+  {
+    "id": "flask_007",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "impact_analysis",
+    "file": "src/flask/sansio/blueprints.py",
+    "function": "register",
+    "relevant_files": ["src/flask/sansio/blueprints.py", "src/flask/sansio/app.py"],
+    "cp_tools": ["get_impact"],
+    "query": "If Blueprint.register changes its signature, which Flask internals would be affected?",
+    "ground_truth": "register is called by Flask.register_blueprint in sansio/app.py. Changes to register would break register_blueprint and any code that calls register_blueprint to attach blueprints to the app."
+  },
+  {
+    "id": "flask_008",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "dependency_map",
+    "file": "src/flask/ctx.py",
+    "function": "push",
+    "relevant_files": ["src/flask/ctx.py"],
+    "cp_tools": ["get_dependencies"],
+    "query": "What does flask/ctx.py import? List internal vs external dependencies.",
+    "ground_truth": "ctx.py imports internally from .globals (_cv_app, _cv_request), .signals (appcontext_popped, appcontext_pushed), and .typing. External: contextvars, sys, typing, functools, types, werkzeug.exceptions."
+  },
+  {
+    "id": "flask_009",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/app.py",
+    "function": "make_response",
+    "relevant_files": ["src/flask/app.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does Flask.make_response accept and return?",
+    "ground_truth": "make_response(rv) converts the return value from a view function into a Response instance. It accepts str, bytes, dict, list, generator/iterator, tuple of (body, status, headers) in various combinations, a response_class instance, or a WSGI callable."
+  },
+  {
+    "id": "flask_010",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "call_trace",
+    "file": "src/flask/ctx.py",
+    "function": "push",
+    "relevant_files": ["src/flask/ctx.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does RequestContext.push do internally when setting up a request context?",
+    "ground_truth": "push() ensures an AppContext exists (pushing one if needed), sets the request context via _cv_request.set(self), then opens the session via session_interface.open_session, and finally calls match_request to match the URL against the routing map."
+  }
+]

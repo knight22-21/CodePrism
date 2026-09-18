@@ -1,0 +1,122 @@
+[
+  {
+    "id": "httpx_001",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_client.py",
+    "function": "request",
+    "relevant_files": ["httpx/_client.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does Client.request do? What does it call internally?",
+    "ground_truth": "Client.request builds a PreparedRequest via build_request() then calls send() with the result. It accepts method, url, content, data, files, json, params, headers, cookies, auth, follow_redirects, timeout, and extensions."
+  },
+  {
+    "id": "httpx_002",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "call_trace",
+    "file": "httpx/_client.py",
+    "function": "send",
+    "relevant_files": ["httpx/_client.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does Client.send call internally to handle auth and redirects?",
+    "ground_truth": "Client.send calls _set_timeout, _build_request_auth, then _send_handling_auth. It also calls response.read() if stream=False, and response.close() on error."
+  },
+  {
+    "id": "httpx_003",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "call_trace",
+    "file": "httpx/_client.py",
+    "function": "_send_single_request",
+    "relevant_files": ["httpx/_client.py", "httpx/_transports/default.py"],
+    "cp_tools": ["get_callers"],
+    "query": "Which functions call _send_single_request?",
+    "ground_truth": "_send_single_request is called by _send_handling_redirects."
+  },
+  {
+    "id": "httpx_004",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_client.py",
+    "function": "build_request",
+    "relevant_files": ["httpx/_client.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does BaseClient.build_request do and what does it return?",
+    "ground_truth": "build_request constructs and returns a Request instance. It merges url, headers, cookies, and params with client-level configuration by calling _merge_url, _merge_headers, _merge_cookies, and _merge_queryparams."
+  },
+  {
+    "id": "httpx_005",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_models.py",
+    "function": "raise_for_status",
+    "relevant_files": ["httpx/_models.py", "httpx/_exceptions.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does Response.raise_for_status do and when does it raise an exception?",
+    "ground_truth": "raise_for_status raises HTTPStatusError if the response status code indicates an error (4xx client error or 5xx server error). It returns the Response itself on success. It also raises RuntimeError if the request has not been set on the response."
+  },
+  {
+    "id": "httpx_006",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "impact_analysis",
+    "file": "httpx/_client.py",
+    "function": "build_request",
+    "relevant_files": ["httpx/_client.py"],
+    "cp_tools": ["get_impact"],
+    "query": "If BaseClient.build_request changes its return type, which callers would be affected?",
+    "ground_truth": "build_request is called by Client.request. Any change to build_request directly affects request, and transitively all HTTP shortcut methods: get, post, put, patch, delete, head, options."
+  },
+  {
+    "id": "httpx_007",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "impact_analysis",
+    "file": "httpx/_transports/default.py",
+    "function": "handle_request",
+    "relevant_files": ["httpx/_transports/default.py", "httpx/_client.py"],
+    "cp_tools": ["get_impact"],
+    "query": "If HTTPTransport.handle_request changes its signature, what breaks?",
+    "ground_truth": "handle_request is called by Client._send_single_request. Changes would transitively affect _send_handling_redirects, _send_handling_auth, send, and request — the full Client request pipeline."
+  },
+  {
+    "id": "httpx_008",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_auth.py",
+    "function": "auth_flow",
+    "relevant_files": ["httpx/_auth.py"],
+    "cp_tools": ["get_context"],
+    "query": "What does BasicAuth.auth_flow do to authenticate a request?",
+    "ground_truth": "BasicAuth.auth_flow sets the Authorization header on the request to a Basic auth token (base64-encoded username:password) then yields the request."
+  },
+  {
+    "id": "httpx_009",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "dependency_map",
+    "file": "httpx/_client.py",
+    "function": "send",
+    "relevant_files": ["httpx/_client.py"],
+    "cp_tools": ["get_dependencies"],
+    "query": "What does httpx/_client.py import? List internal vs external dependencies.",
+    "ground_truth": "httpx/_client.py imports internally from ._auth, ._config, ._decoders, ._exceptions, ._models, ._status_codes, ._transports.asgi, ._transports.base, ._transports.default, ._transports.wsgi, ._types, ._urls, ._utils, .__version__. External: datetime, enum, logging, typing, warnings, contextlib, types."
+  },
+  {
+    "id": "httpx_010",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "dependency_map",
+    "file": "httpx/_models.py",
+    "function": "raise_for_status",
+    "relevant_files": ["httpx/_models.py"],
+    "cp_tools": ["get_dependencies"],
+    "query": "What does httpx/_models.py import? List internal vs external dependencies.",
+    "ground_truth": "httpx/_models.py imports internally from ._content, ._decoders, ._exceptions, ._multipart, ._status_codes, ._types, ._urls, ._utils. External: datetime, email.message, json, typing, urllib.request, collections.abc, http.cookiejar."
+  }
+]
