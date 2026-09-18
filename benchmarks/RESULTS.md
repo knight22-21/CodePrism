@@ -5,6 +5,41 @@ this file is the committed record.
 
 ---
 
+## Run 10 — 2026-09-18 | Level 3 Symbol Resolution Accuracy | All Python corpora
+
+**Tool:** `benchmarks/run_symbol_accuracy.py` — tree-sitter oracle vs CodePrism indexed graph
+**Corpora:** fixture (2 files), psf/requests (36), pallets/flask (82), encode/httpx (61)
+**Total functions evaluated:** 2,274 (fixture 7 + requests 565 + flask 770 + httpx 932)
+
+### Symbol Indexing (precision / recall / F1)
+
+| Repo | GT functions | CP functions | Matched | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| fixture | 7 | 7 | 7 | **1.000** | **1.000** | **1.000** |
+| requests | 565 | 565 | 565 | **1.000** | **1.000** | **1.000** |
+| flask | 770 | 770 | 770 | **1.000** | **1.000** | **1.000** |
+| httpx | 932 | 932 | 932 | **1.000** | **1.000** | **1.000** |
+| **OVERALL** | **2,274** | **2,274** | **2,274** | **1.000** | **1.000** | **1.000** |
+
+All three thresholds PASS (precision ≥ 0.95, recall ≥ 0.90, F1 ≥ 0.92).
+
+### Caller Resolution (intra-file)
+
+| Repo | Precision | Recall |
+|---|---:|---:|
+| fixture | 0.875 | 1.000 |
+| requests | 0.611 | 0.788 |
+| flask | 0.642 | 0.711 |
+| httpx | 0.809 | 0.824 |
+| **OVERALL** | **0.688** | **0.774** |
+
+**Notes on caller resolution numbers:**
+- Precision < 1.0: CodePrism returns cross-file callers (correct!) that the intra-file GT oracle doesn't count — so these are GT misses, not false positives.
+- Recall ~0.7–0.8: CodePrism misses ~20–30% of intra-file call edges. These are real gaps — same-class method-to-method calls where `self.method()` isn't fully resolved as an intra-file edge in all cases.
+- httpx is strongest (0.809 / 0.824) because it uses fewer self-dispatch patterns. requests/flask use heavier inheritance + mixin patterns.
+
+---
+
 ## Run 9 — 2026-09-18 | Level 1 Token + Accuracy | encode/httpx 0.27.2
 
 **Corpus:** `benchmarks/repos/httpx` (async HTTP client, flat layout)
