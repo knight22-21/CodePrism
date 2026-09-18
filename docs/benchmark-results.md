@@ -7,12 +7,14 @@ against reading raw source files.
 
 ## Summary
 
-| Level | Metric | Fixture corpus | requests corpus |
-|---|---|---|---|
-| Level 1 | Token reduction | 27% avg | **88.5% avg** |
-| Level 1 | Accuracy (CP vs baseline) | 0.60 vs 0.89 | 0.66 vs 0.81 |
-| Level 2 | Query p50 latency | < 1.5ms | < 4ms |
-| Level 2 | Query p95 latency | < 2ms | < 5.2ms |
+| Level | Metric | Fixture | requests | flask | httpx |
+|---|---|---|---|---|---|
+| Level 1 | Token reduction | 27% | **88.5%** | **91.3%** | **93.0%** |
+| Level 1 | Accuracy (CP / baseline) | 0.60 / 0.89 | 0.66 / 0.81 | — | — |
+| Level 2 | Query p50 latency | < 1.5ms | < 4ms | — | — |
+| Level 2 | Query p95 latency | < 2ms | < 5.2ms | — | — |
+
+Token reduction averaged **91% across 3 production codebases** (requests, flask, httpx).
 
 ---
 
@@ -51,6 +53,56 @@ chain-of-thought before outputting the score.
 ---
 
 ## Results
+
+### Run 7 — 2026-09-18 | encode/httpx 0.27.2 | Token only
+
+**Corpus:** `benchmarks/repos/httpx` — async HTTP client (~10k LOC, flat layout)
+**Tasks:** 10 (symbol_lookup ×4, call_trace ×2, impact_analysis ×2, dependency_map ×2)
+**Token backend:** tiktoken cl100k_base | **Accuracy:** not measured
+
+| Task | Type | Baseline | CodePrism | Reduction |
+|---|---|---:|---:|---:|
+| httpx_001 | symbol_lookup | 14,159 | 858 | **93.9%** |
+| httpx_002 | call_trace | 14,159 | 1,726 | 87.8% |
+| httpx_003 | call_trace | 16,934 | 98 | **99.4%** |
+| httpx_004 | symbol_lookup | 14,160 | 1,481 | 89.5% |
+| httpx_005 | symbol_lookup | 10,672 | 537 | **95.0%** |
+| httpx_006 | impact_analysis | 14,163 | 1,690 | 88.1% |
+| httpx_007 | impact_analysis | 16,938 | 1,576 | 90.7% |
+| httpx_008 | symbol_lookup | 2,703 | 524 | 80.6% |
+| httpx_009 | dependency_map | 14,162 | 243 | **98.3%** |
+| httpx_010 | dependency_map | 8,803 | 208 | **97.6%** |
+| **AVG** | | **12,685** | **894** | **93.0%** |
+
+**Best:** httpx_003 — `get_callers` on `_send_single_request` — 99.4%, 16,934 → 98 tokens.
+**Lowest:** httpx_008 — `BasicAuth.auth_flow` (small 2.7k token file) — 80.6%.
+
+---
+
+### Run 6 — 2026-09-18 | pallets/flask 3.0.3 | Token only
+
+**Corpus:** `benchmarks/repos/flask` — WSGI web framework (~12k LOC, src/ layout)
+**Tasks:** 10 (symbol_lookup ×3, call_trace ×3, impact_analysis ×2, dependency_map ×2)
+**Token backend:** tiktoken cl100k_base | **Accuracy:** not measured
+
+| Task | Type | Baseline | CodePrism | Reduction |
+|---|---|---:|---:|---:|
+| flask_001 | symbol_lookup | 6,683 | 1,554 | 76.7% |
+| flask_002 | call_trace | 12,646 | 571 | **95.5%** |
+| flask_003 | impact_analysis | 12,648 | 1,566 | 87.6% |
+| flask_004 | dependency_map | 12,646 | 259 | **98.0%** |
+| flask_005 | symbol_lookup | 5,315 | 1,677 | 68.4% |
+| flask_006 | call_trace | 12,640 | 95 | **99.2%** |
+| flask_007 | impact_analysis | 13,616 | 891 | 93.5% |
+| flask_008 | dependency_map | 3,371 | 171 | **94.9%** |
+| flask_009 | symbol_lookup | 12,642 | 832 | 93.4% |
+| flask_010 | call_trace | 3,370 | 661 | 80.4% |
+| **AVG** | | **9,558** | **828** | **91.3%** |
+
+**Best:** flask_006 — `get_callers` on `handle_exception` — 99.2%, 12,640 → 95 tokens.
+**Lowest:** flask_005 — `url_for` (5k token file, JSON response larger than small files) — 68.4%.
+
+---
 
 ### Run 4 — 2026-09-17 | psf/requests v2.32.3 | Token + Accuracy
 

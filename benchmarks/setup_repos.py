@@ -20,6 +20,16 @@ REPOS = [
         "url": "https://github.com/psf/requests.git",
         "tag": "v2.32.3",
     },
+    {
+        "name": "flask",
+        "url": "https://github.com/pallets/flask.git",
+        "tag": "3.0.3",
+    },
+    {
+        "name": "httpx",
+        "url": "https://github.com/encode/httpx.git",
+        "tag": "0.27.2",
+    },
 ]
 
 REPOS_DIR = Path(__file__).parent / "repos"
