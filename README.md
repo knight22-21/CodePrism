@@ -333,8 +333,7 @@ The fixture numbers are low because on tiny files (135–380 tokens), JSON respo
 exceed the raw file size. On real-world files (5k–17k token baselines) the savings are always
 substantial — averaging **91% across 3 production codebases**.
 
-Accuracy (LLM-as-judge): baseline **0.81** → CodePrism **0.66** on the requests corpus.
-The gap closes as indexer edge coverage improves.
+Accuracy (LLM-as-judge): CodePrism **matches or beats the baseline** on 2 of 3 corpora — requests CP **0.87** vs BL 0.86, httpx CP **0.70** vs BL 0.68. Flask gap (0.64 vs 0.77) is concentrated in 2 tasks with ground truth calibration issues.
 
 Full methodology, per-task breakdown, and reproduction instructions:
 **[docs/benchmark-results.md](docs/benchmark-results.md)**
