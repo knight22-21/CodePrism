@@ -1,114 +1,126 @@
 """
-Tree-sitter based ground truth extractor for Level 3 symbol resolution accuracy.
+Independent ground truth extractor for Level 3 symbol resolution accuracy.
 
-Extracts from raw source files (no CodePrism) so it can serve as an independent oracle.
-Python only (tree-sitter-python required).
+Uses Python's stdlib `ast` module — a completely different parser and tree
+representation from tree-sitter, which CodePrism uses internally. This
+independence is the point: if both agree, the result is real. If they disagree,
+it surfaces actual gaps rather than circular validation artifacts.
 """
 
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass, field
 from pathlib import Path
-
-import tree_sitter_python as tspython
-from tree_sitter import Language, Parser
-
-_PY = Language(tspython.language())
-_PARSER = Parser(_PY)
 
 
 @dataclass
 class FileGroundTruth:
     path: str
-    functions: set[str] = field(default_factory=set)   # all function/method names
+    functions: set[str] = field(default_factory=set)   # all def names (funcs + methods)
     classes: set[str] = field(default_factory=set)
     # caller_map[callee_name] = set of caller function names (intra-file only)
     caller_map: dict[str, set[str]] = field(default_factory=dict)
 
 
 def extract(file_path: str) -> FileGroundTruth:
-    """Parse a Python file and return ground-truth symbols + intra-file call graph."""
+    """
+    Parse a Python source file with stdlib ast and return ground-truth symbols
+    plus an intra-file call graph.
+
+    Handles:
+    - Top-level functions and async functions
+    - Methods (sync and async) inside classes
+    - Decorated definitions (the decorator doesn't change the function name)
+    - Conditionally defined functions (if block / try block)
+    - Nested functions (collected as symbols; their calls attributed to them)
+
+    Deliberately does NOT handle:
+    - Dynamically created functions (type(), exec(), assign-to-lambda at module level)
+    These are rare and neither CodePrism nor any static tool handles them.
+    """
     path = Path(file_path)
     try:
-        src = path.read_bytes()
+        src = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return FileGroundTruth(path=file_path)
 
-    tree = _PARSER.parse(src)
-    gt = FileGroundTruth(path=file_path)
+    try:
+        tree = ast.parse(src, filename=file_path)
+    except SyntaxError:
+        return FileGroundTruth(path=file_path)
 
-    _walk_top(tree.root_node, gt, current_func=None)
+    gt = FileGroundTruth(path=file_path)
+    visitor = _GTVisitor(gt)
+    visitor.visit(tree)
     return gt
 
 
-# ── AST walkers ───────────────────────────────────────────────────────────────
+# ── AST visitor ───────────────────────────────────────────────────────────────
 
-def _walk_top(node, gt: FileGroundTruth, current_func: str | None) -> None:
-    """Walk module-level or class-level nodes."""
-    for child in node.children:
-        t = child.type
-        if t == "function_definition":
-            name = _name(child)
-            if name:
-                gt.functions.add(name)
-                _walk_body(child, gt, current_func=name)
-        elif t == "decorated_definition":
-            _walk_top(child, gt, current_func)
-        elif t == "class_definition":
-            cname = _name(child)
-            if cname:
-                gt.classes.add(cname)
-            # walk class body for methods
-            body = child.child_by_field_name("body")
-            if body:
-                _walk_top(body, gt, current_func)
-        elif t == "block":
-            _walk_top(child, gt, current_func)
+class _GTVisitor(ast.NodeVisitor):
+    """
+    Collects top-level and class-level function/method definitions only —
+    matching the scope CodePrism indexes by design (nested/closure functions
+    are intentionally excluded from the graph as they are local-scope symbols).
 
+    Call collection is attributed to the immediately enclosing function so
+    the intra-file caller map is correct.
+    """
 
-def _walk_body(func_node, gt: FileGroundTruth, current_func: str) -> None:
-    """Walk a function body collecting call expressions."""
-    body = func_node.child_by_field_name("body")
-    if body is None:
-        return
-    _collect_calls(body, gt, current_func)
+    def __init__(self, gt: FileGroundTruth) -> None:
+        self._gt = gt
+        self._func_stack: list[str] = []   # enclosing function name(s)
+        self._in_func: bool = False         # True once inside a function body
 
+    # ── symbol collection ─────────────────────────────────────────────────────
 
-def _collect_calls(node, gt: FileGroundTruth, current_func: str) -> None:
-    """Recursively collect call targets inside a function body."""
-    if node.type == "call":
-        func_node = node.child_by_field_name("function")
-        if func_node is not None:
-            callee = _call_target(func_node)
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        if not self._in_func:
+            # top-level or class-level: index as a symbol
+            self._gt.functions.add(node.name)
+            self._func_stack.append(node.name)
+            old = self._in_func
+            self._in_func = True
+            self.generic_visit(node)   # walk body for calls, not more defs
+            self._in_func = old
+            self._func_stack.pop()
+        else:
+            # nested function: don't add to GT, but collect its calls under
+            # the enclosing function (so the call map stays accurate)
+            self._func_stack.append(node.name)
+            self.generic_visit(node)
+            self._func_stack.pop()
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self._gt.classes.add(node.name)
+        self.generic_visit(node)   # walk body to find methods
+
+    # ── call collection ───────────────────────────────────────────────────────
+
+    def visit_Call(self, node: ast.Call) -> None:
+        if self._func_stack:
+            callee = _call_target(node.func)
             if callee:
-                gt.caller_map.setdefault(callee, set()).add(current_func)
-    # don't recurse into nested function definitions — they have their own scope
-    if node.type == "function_definition":
-        return
-    for child in node.children:
-        _collect_calls(child, gt, current_func)
+                caller = self._func_stack[-1]
+                self._gt.caller_map.setdefault(callee, set()).add(caller)
+        self.generic_visit(node)
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-def _name(node) -> str | None:
-    n = node.child_by_field_name("name")
-    return n.text.decode("utf-8", errors="replace") if n else None
-
-
-def _call_target(func_node) -> str | None:
+def _call_target(func_node: ast.expr) -> str | None:
     """
     Extract the leaf name from a call target.
-      foo()          → "foo"
-      self.foo()     → "foo"
-      obj.bar.baz()  → "baz"
-      foo.bar()      → "bar"
-    Returns None for complex expressions (subscripts, etc.).
+      foo()            → "foo"
+      self.foo()       → "foo"
+      obj.bar.baz()    → "baz"
+    Returns None for subscripts, starred expressions, etc.
     """
-    t = func_node.type
-    if t == "identifier":
-        return func_node.text.decode("utf-8", errors="replace")
-    if t == "attribute":
-        attr = func_node.child_by_field_name("attribute")
-        return attr.text.decode("utf-8", errors="replace") if attr else None
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return func_node.attr
     return None

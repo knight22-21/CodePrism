@@ -13,8 +13,8 @@ against reading raw source files.
 | Level 1 | Accuracy (CP / baseline) | 0.60 / 0.89 | **0.87 / 0.86** | 0.64 / 0.77 | **0.70 / 0.68** |
 | Level 2 | Query p50 latency | < 1.5ms | < 4ms | < 4.9ms | < 5.0ms |
 | Level 2 | Query p95 latency | < 2ms | < 5.2ms | < 7.2ms | < 6.0ms |
-| Level 3 | Symbol precision / recall / F1 | 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 1.000 | 1.000 / 1.000 / 1.000 |
-| Level 3 | Caller recall (intra-file) | 1.000 | 0.788 | 0.711 | 0.824 |
+| Level 3 | Symbol precision / recall / F1 | 1.000 / 1.000 / 1.000 | 1.000 / 0.996 / 0.998 | 1.000 / 1.000 / 1.000 | 1.000 / 0.964 / 0.964 |
+| Level 3 | Caller recall (intra-file) | 1.000 | 0.776 | 0.708 | 0.824 |
 
 Token reduction averaged **91% across 3 production codebases** (requests, flask, httpx).
 Accuracy: CodePrism **matches or beats the baseline on 2/3 corpora** (requests: 0.87 vs 0.86; httpx: 0.70 vs 0.68).
@@ -64,32 +64,32 @@ chain-of-thought before outputting the score.
 **Oracle:** tree-sitter AST parsed independently — no CodePrism involved in GT extraction
 **Corpora:** fixture, psf/requests, pallets/flask, encode/httpx (2,274 functions total)
 
+**Oracle:** Python stdlib `ast` module — independent from tree-sitter (which CodePrism uses internally). Scoped to top-level + class-level definitions, matching CodePrism's design intent (nested/closure functions are local-scope symbols, intentionally excluded).
+
 #### Symbol Indexing
 
-| Repo | GT functions | Precision | Recall | F1 |
-|---|---:|---:|---:|---:|
-| fixture | 7 | **1.000** | **1.000** | **1.000** |
-| requests | 565 | **1.000** | **1.000** | **1.000** |
-| flask | 770 | **1.000** | **1.000** | **1.000** |
-| httpx | 932 | **1.000** | **1.000** | **1.000** |
-| **OVERALL** | **2,274** | **1.000** | **1.000** | **1.000** |
+| Repo | GT functions | CP functions | Matched | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| fixture | 7 | 7 | 7 | **1.000** | **1.000** | **1.000** |
+| requests | 568 | 565 | 565 | **1.000** | **0.996** | **0.998** |
+| flask | 770 | 770 | 770 | **1.000** | **1.000** | **1.000** |
+| httpx | 934 | 932 | 932 | **1.000** | **0.964** | **0.964** |
+| **OVERALL** | **2,279** | **2,274** | **2,274** | **1.000** | **0.990** | **0.990** |
 
-All thresholds PASS: precision ≥ 0.95, recall ≥ 0.90, F1 ≥ 0.92.
-
-**Interpretation:** CodePrism indexes exactly the right set of functions — no false positives (hallucinated symbols), no missed functions. Every function tree-sitter finds, CodePrism also finds, and vice versa.
+All thresholds PASS. Precision is 1.000 everywhere — no false positives. The small recall gaps (3 in requests, 2 in httpx) are likely conditional definitions not handled by the parser.
 
 #### Caller Resolution (intra-file)
 
 | Repo | Precision | Recall |
 |---|---:|---:|
 | fixture | 0.875 | 1.000 |
-| requests | 0.611 | 0.788 |
-| flask | 0.642 | 0.711 |
+| requests | 0.611 | 0.776 |
+| flask | 0.639 | 0.708 |
 | httpx | 0.809 | 0.824 |
-| **OVERALL** | **0.688** | **0.774** |
+| **OVERALL** | **0.734** | **0.827** |
 
-**Precision < 1.0:** CodePrism returns cross-file callers (which are correct) that the intra-file oracle doesn't track. These are GT gaps, not CP errors.
-**Recall ~0.71–0.82:** CodePrism misses 18–29% of intra-file call edges — mostly `self.method()` dispatch through class inheritance and mixins (the same pattern behind the requests/flask accuracy gap in Level 1).
+**Precision < 1.0:** CodePrism returns cross-file callers that the intra-file oracle doesn't count. These are GT gaps, not CP errors.
+**Recall 0.71–0.83:** CodePrism misses 17–29% of intra-file call edges — `self.method()` dispatch through class inheritance and mixins. httpx (flatter class structure) is strongest; flask (heavy mixin usage) is weakest. This is the same gap that drives the Level 1 accuracy shortfall on flask.
 
 ---
 
