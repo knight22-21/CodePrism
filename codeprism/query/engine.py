@@ -235,13 +235,21 @@ class QueryEngine:
         # Uses a name-only projection query instead of loading all SymbolRecords.
         known_names = await self._storage.get_non_import_symbol_names(file.id)
 
+        # Group by source module (stored in signature since parser v0.1.7).
+        # Falls back to symbol name for DBs indexed before the signature fix.
+        from collections import defaultdict
+        module_symbols: dict[str, list[str]] = defaultdict(list)
+        for imp in import_syms:
+            source_module = imp.signature or imp.name
+            module_symbols[source_module].append(imp.name)
+
         internal: list[str] = []
         external: list[str] = []
-        for imp in import_syms:
-            if imp.name in known_names:
-                internal.append(imp.name)
+        for source_module, names in module_symbols.items():
+            if any(name in known_names for name in names):
+                internal.append(source_module)
             else:
-                external.append(imp.name)
+                external.append(source_module)
 
         all_files_map = {f.id: f.path for f in await self._storage.get_all_files()}
         raw_cycles = self._graph.get_import_cycles_for_file(file.id)
