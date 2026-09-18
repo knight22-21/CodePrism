@@ -671,7 +671,13 @@ async def _visualize(path: str, out: str) -> None:
 
     elements: list[dict] = []
     for node in nodes:
-        elements.append({"data": node})
+        nd = dict(node)
+        # Shorten file node labels to just filename for readability
+        if nd.get("kind") in ("NodeKind.FILE", "file"):
+            nd["label"] = Path(nd["name"]).name
+        else:
+            nd["label"] = nd.get("name", "")
+        elements.append({"data": nd})
     for i, edge in enumerate(edges):
         ed = dict(edge)
         if not ed.get("id"):
@@ -688,7 +694,7 @@ async def _visualize(path: str, out: str) -> None:
     out_path.write_text(html, encoding="utf-8")
 
     console.print(f"[green]Visualization saved:[/green] [bold]{out_path.resolve()}[/bold]")
-    console.print(f"[dim]{len(nodes)} nodes, {len(edges)} edges — open in any browser[/dim]")
+    console.print(f"[dim]{len(nodes)} nodes, {len(edges)} edges. Open in any browser.[/dim]")
     if len(nodes) > 2000:
         console.print(
             "[yellow]Large graph (>2000 nodes) — 'Files' view recommended for performance.[/yellow]"
@@ -800,7 +806,7 @@ const cy=cytoscape({
   elements:filtered('files'),
   style:[
     {selector:'node',style:{
-      'label':'data(name)',
+      'label':'data(label)',
       'font-size':'9px','color':'#c9d1d9',
       'text-valign':'center','text-halign':'right','text-margin-x':'4px',
       'background-color':function(e){return NC[e.data('kind')]||'#555';},
@@ -854,7 +860,7 @@ function relayout(){
 function doSearch(q){
   cy.elements().removeClass('hi faded');
   if(!q)return;
-  const m=cy.nodes().filter(n=>(n.data('name')||'').toLowerCase().includes(q.toLowerCase()));
+  const m=cy.nodes().filter(n=>(n.data('label')||n.data('name')||'').toLowerCase().includes(q.toLowerCase()));
   if(!m.length)return;
   cy.elements().addClass('faded');
   m.forEach(n=>{n.removeClass('faded').addClass('hi');n.connectedEdges().removeClass('faded');n.neighborhood().removeClass('faded');});
