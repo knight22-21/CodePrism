@@ -5,6 +5,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased] — v0.1.7
+
+### Fixed
+- **`get_dependencies` output format** (`python_parser` + `engine`):
+  was returning imported symbol names (`HTTPAdapter`, `_basic_auth_str`) instead of
+  source modules (`.adapters`, `.auth`). Root cause: `source_module` was stored in
+  `extra{}` which is excluded from SQLite persistence. Fix: store `source_module` in
+  the `signature` field (persisted). `get_dependencies` now groups import symbols by
+  source module and returns deduplicated module paths. Falls back to symbol names for
+  DBs indexed before this change (backward compatible). Re-index required for updated output.
+- **Benchmark ground truths** (`requests_004`, `requests_006`, `requests_008`):
+  updated to match actual tool output — module paths for dependency_map tasks,
+  and both callers (`Session.request` and `SessionRedirectMixin.resolve_redirects`)
+  for the `get_callers("send")` task.
+
+---
+
 ## [v0.1.6] — 2026-09-17
 
 ### Added
