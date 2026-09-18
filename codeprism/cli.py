@@ -639,6 +639,255 @@ def _upsert_agent_instructions(file: Path, block: str, marker: str) -> None:
         file.write_text(existing.rstrip() + "\n\n" + block + "\n", encoding="utf-8")
 
 
+# ── visualize ─────────────────────────────────────────────────────────────────
+
+
+@app.command()
+def visualize(
+    path: str = typer.Argument(..., help="Indexed project directory"),
+    out: str = typer.Option("graph.html", "--out", "-o", help="Output HTML file"),
+) -> None:
+    """Generate a self-contained interactive graph visualization (opens in any browser)."""
+    asyncio.run(_visualize(path, out))
+
+
+async def _visualize(path: str, out: str) -> None:
+    import json as _json
+
+    from .core.graph import GraphEngine
+    from .core.paths import get_db_path
+    from .core.storage import StorageManager
+
+    db_path = get_db_path(path)
+    storage = StorageManager(db_path)
+    await storage.initialize()
+    graph = GraphEngine()
+    await graph.load_from_storage(storage)
+    await storage.close()
+
+    raw = graph.to_json()
+    nodes = raw["nodes"]
+    edges = raw["edges"]
+
+    elements: list[dict] = []
+    for node in nodes:
+        elements.append({"data": node})
+    for i, edge in enumerate(edges):
+        ed = dict(edge)
+        if not ed.get("id"):
+            ed["id"] = f"e{i}"
+        elements.append({"data": ed})
+
+    # Escape </script> sequences that would break the inline script block
+    data_json = _json.dumps(elements, separators=(",", ":")).replace("</", "<\\/")
+
+    html = _VIZ_HTML_TEMPLATE.replace("__DATA__", data_json).replace(
+        "__TITLE__", Path(path).name
+    )
+    out_path = Path(out)
+    out_path.write_text(html, encoding="utf-8")
+
+    console.print(f"[green]Visualization saved:[/green] [bold]{out_path.resolve()}[/bold]")
+    console.print(f"[dim]{len(nodes)} nodes, {len(edges)} edges — open in any browser[/dim]")
+    if len(nodes) > 2000:
+        console.print(
+            "[yellow]Large graph (>2000 nodes) — 'Files' view recommended for performance.[/yellow]"
+        )
+
+
+_VIZ_HTML_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>CodePrism — __TITLE__</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column}
+#toolbar{display:flex;align-items:center;gap:10px;padding:7px 14px;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0;flex-wrap:wrap}
+#proj{font-weight:600;font-size:13px;color:#58a6ff;margin-right:4px}
+.vbtn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:3px 11px;border-radius:6px;cursor:pointer;font-size:12px}
+.vbtn.active{background:#1f6feb;border-color:#1f6feb;color:#fff}
+#search{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:3px 9px;border-radius:6px;font-size:12px;width:160px}
+#search:focus{outline:none;border-color:#58a6ff}
+#rstats{font-size:11px;color:#8b949e;margin-left:auto}
+#main{display:flex;flex:1;overflow:hidden}
+#cy{flex:1}
+#panel{width:240px;background:#161b22;border-left:1px solid #30363d;padding:11px;overflow-y:auto;flex-shrink:0}
+#panel h3{font-size:12px;color:#58a6ff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.drow{font-size:11px;margin-bottom:5px;word-break:break-all;line-height:1.4}
+.dk{color:#8b949e}
+.dv{color:#e6edf3}
+#legend{display:flex;flex-wrap:wrap;gap:8px;padding:5px 14px;background:#161b22;border-top:1px solid #30363d;flex-shrink:0}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:#8b949e}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.le{width:14px;height:2px;flex-shrink:0}
+.sep{color:#30363d;font-size:14px}
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <span id="proj">CodePrism: __TITLE__</span>
+  <button class="vbtn active" onclick="setView('files')" id="btn-files">Files</button>
+  <button class="vbtn" onclick="setView('symbols')" id="btn-symbols">Symbols</button>
+  <button class="vbtn" onclick="setView('all')" id="btn-all">All</button>
+  <input id="search" type="text" placeholder="Search…" oninput="doSearch(this.value)"/>
+  <button class="vbtn" onclick="relayout()">Re-layout</button>
+  <button class="vbtn" onclick="cy.fit()">Fit</button>
+  <span id="rstats"></span>
+</div>
+<div id="main">
+  <div id="cy"></div>
+  <div id="panel">
+    <h3>Details</h3>
+    <div id="dcontent"><span style="color:#8b949e;font-size:11px">Click a node or edge</span></div>
+  </div>
+</div>
+<div id="legend">
+  <div class="li"><div class="ld" style="background:#58a6ff"></div>file</div>
+  <div class="li"><div class="ld" style="background:#a371f7"></div>class</div>
+  <div class="li"><div class="ld" style="background:#3fb950"></div>function</div>
+  <div class="li"><div class="ld" style="background:#f0883e"></div>variable</div>
+  <div class="li"><div class="ld" style="background:#8b949e"></div>import</div>
+  <span class="sep">|</span>
+  <div class="li"><div class="le" style="background:#f85149"></div>calls</div>
+  <div class="li"><div class="le" style="background:#58a6ff"></div>imports</div>
+  <div class="li"><div class="le" style="background:#a371f7"></div>inherits</div>
+  <div class="li"><div class="le" style="background:#30363d"></div>defines</div>
+  <div class="li"><div class="le" style="background:#f0883e"></div>uses</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+<script>
+const ALL=__DATA__;
+
+const NC={'NodeKind.FILE':'#58a6ff','NodeKind.CLASS':'#a371f7','NodeKind.FUNCTION':'#3fb950',
+  'NodeKind.VARIABLE':'#f0883e','NodeKind.IMPORT':'#8b949e','NodeKind.TYPE':'#ffa657',
+  'file':'#58a6ff','class':'#a371f7','function':'#3fb950','variable':'#f0883e',
+  'import':'#8b949e','type':'#ffa657'};
+const EC={'EdgeKind.CALLS':'#f85149','EdgeKind.IMPORTS':'#58a6ff','EdgeKind.INHERITS':'#a371f7',
+  'EdgeKind.DEFINES':'#30363d','EdgeKind.USES':'#f0883e','EdgeKind.DATA_FLOWS':'#ffa657',
+  'EdgeKind.EXPORTS':'#79c0ff','EdgeKind.TESTS':'#56d364','EdgeKind.REFERENCES':'#8b949e',
+  'calls':'#f85149','imports':'#58a6ff','inherits':'#a371f7','defines':'#30363d',
+  'uses':'#f0883e','data_flows':'#ffa657','exports':'#79c0ff','tests':'#56d364'};
+
+const FILE_KINDS=new Set(['NodeKind.FILE','file']);
+const SYM_KINDS=new Set(['NodeKind.CLASS','NodeKind.FUNCTION','class','function']);
+const FILE_EDGES=new Set(['EdgeKind.IMPORTS','imports']);
+const SYM_EDGES=new Set(['EdgeKind.CALLS','EdgeKind.INHERITS','calls','inherits']);
+
+function filtered(view){
+  const nodes=ALL.filter(e=>!e.data.source);
+  const edges=ALL.filter(e=>e.data.source);
+  let ns,es;
+  if(view==='files'){
+    ns=nodes.filter(n=>FILE_KINDS.has(n.data.kind));
+    const ids=new Set(ns.map(n=>n.data.id));
+    es=edges.filter(e=>FILE_EDGES.has(e.data.kind)&&ids.has(e.data.source)&&ids.has(e.data.target));
+  }else if(view==='symbols'){
+    ns=nodes.filter(n=>SYM_KINDS.has(n.data.kind));
+    const ids=new Set(ns.map(n=>n.data.id));
+    es=edges.filter(e=>SYM_EDGES.has(e.data.kind)&&ids.has(e.data.source)&&ids.has(e.data.target));
+  }else{
+    ns=nodes;
+    const ids=new Set(ns.map(n=>n.data.id));
+    es=edges.filter(e=>ids.has(e.data.source)&&ids.has(e.data.target));
+  }
+  return[...ns,...es];
+}
+
+const cy=cytoscape({
+  container:document.getElementById('cy'),
+  elements:filtered('files'),
+  style:[
+    {selector:'node',style:{
+      'label':'data(name)',
+      'font-size':'9px','color':'#c9d1d9',
+      'text-valign':'center','text-halign':'right','text-margin-x':'4px',
+      'background-color':function(e){return NC[e.data('kind')]||'#555';},
+      'width':14,'height':14,
+      'border-width':'1px','border-color':'#30363d',
+      'min-zoomed-font-size':'7px',
+    }},
+    {selector:'edge',style:{
+      'width':1,
+      'line-color':function(e){return EC[e.data('kind')]||'#555';},
+      'target-arrow-color':function(e){return EC[e.data('kind')]||'#555';},
+      'target-arrow-shape':'triangle',
+      'curve-style':'bezier',
+      'opacity':0.55,
+      'arrow-scale':0.6,
+    }},
+    {selector:':selected',style:{'border-width':'3px','border-color':'#f0f6ff','opacity':1}},
+    {selector:'.faded',style:{'opacity':0.08}},
+    {selector:'.hi',style:{'border-width':'2px','border-color':'#f0883e','opacity':1}},
+  ],
+  layout:{name:'cose',animate:false,randomize:false},
+});
+
+function updateStats(){
+  document.getElementById('rstats').textContent=cy.nodes().length+' nodes · '+cy.edges().length+' edges';
+}
+
+let currentView='files';
+function setView(v){
+  currentView=v;
+  ['files','symbols','all'].forEach(n=>{
+    document.getElementById('btn-'+n).classList.toggle('active',n===v);
+  });
+  doSearch('');
+  document.getElementById('search').value='';
+  cy.elements().remove();
+  cy.add(filtered(v));
+  relayout();
+}
+
+function relayout(){
+  const n=cy.nodes().length;
+  let cfg;
+  if(n>800) cfg={name:'random',animate:false};
+  else if(n>200) cfg={name:'cose',animate:false,randomize:false,numIter:200};
+  else cfg={name:'cose',animate:true,animationDuration:400,randomize:false};
+  cy.layout(cfg).run();
+  setTimeout(updateStats,600);
+}
+
+function doSearch(q){
+  cy.elements().removeClass('hi faded');
+  if(!q)return;
+  const m=cy.nodes().filter(n=>(n.data('name')||'').toLowerCase().includes(q.toLowerCase()));
+  if(!m.length)return;
+  cy.elements().addClass('faded');
+  m.forEach(n=>{n.removeClass('faded').addClass('hi');n.connectedEdges().removeClass('faded');n.neighborhood().removeClass('faded');});
+}
+
+function showDetail(d){
+  let h='';
+  for(const[k,v]of Object.entries(d)){
+    if(v!=null&&v!=='')h+=`<div class="drow"><span class="dk">${k}: </span><span class="dv">${String(v).slice(0,160)}</span></div>`;
+  }
+  document.getElementById('dcontent').innerHTML=h||'<em>No data</em>';
+}
+
+cy.on('tap','node',e=>showDetail(e.target.data()));
+cy.on('tap','edge',function(e){
+  const d=e.target.data();
+  const src=cy.getElementById(d.source).data('name')||d.source;
+  const tgt=cy.getElementById(d.target).data('name')||d.target;
+  showDetail({kind:d.kind,from:src,to:tgt,line:d.line_number});
+});
+cy.on('tap',function(e){
+  if(e.target===cy){
+    document.getElementById('dcontent').innerHTML='<span style="color:#8b949e;font-size:11px">Click a node or edge</span>';
+    cy.elements().removeClass('hi faded');
+  }
+});
+
+updateStats();
+</script>
+</body>
+</html>"""
+
+
 # ── scan ──────────────────────────────────────────────────────────────────────
 
 

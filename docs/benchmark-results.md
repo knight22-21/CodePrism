@@ -334,6 +334,15 @@ agent turns net faster: the model processes 88% less data per turn at < 4ms cost
   across multiple files). Direct impact is captured; 2nd+ degree hops may be incomplete.
 - **src/-layout dependency classification:** In projects with `src/` layout (flask), some relative
   imports in sub-packages are partially classified. Re-indexing after a graph-fix resolves this.
+- **Caller recall gap (0.71–0.83):** The Level 3 benchmark shows CodePrism misses ~17–29% of
+  intra-file caller edges. Root cause analysis identified three patterns that static analysis
+  cannot resolve without type inference: (1) `super().__init__()` calls where the object is a
+  call expression rather than an identifier, (2) self-recursive calls (prevented by the
+  self-edge check), and (3) `self.inherited_method()` calls inside subclasses where the method
+  is defined in a parent/mixin class — the unqualified name lookup finds the mixin method
+  (correct), but the cross-class name collision (two classes with the same method name) means
+  the unqualified approach occasionally resolves to the wrong class's method. Both problems
+  require class hierarchy tracking to solve properly.
 - **Judge variability:** Using `gpt-oss:120b` via Ollama cloud introduces run-to-run score
   variance of ±0.1–0.2 on individual tasks. Averages across 10 tasks are stable; single-task
   scores should be interpreted with caution.
