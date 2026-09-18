@@ -45,7 +45,7 @@
     "relevant_files": ["src/requests/sessions.py"],
     "cp_tools": ["get_dependencies"],
     "query": "What does requests/sessions.py import? List internal vs external dependencies.",
-    "ground_truth": "sessions.py imports internally from requests.adapters, requests.auth, requests.cookies, requests.exceptions, requests.hooks, requests.models, requests.utils. External: os, time, collections."
+    "ground_truth": "sessions.py imports internally from .adapters, .auth, .cookies, .exceptions, .hooks, .models, .status_codes, .structures, .utils, ._internal_utils. External: os, sys, time, collections, datetime, .compat (re-exports stdlib symbols so classified external)."
   },
   {
     "id": "requests_005",
@@ -69,7 +69,7 @@
     "relevant_files": ["src/requests/sessions.py"],
     "cp_tools": ["get_callers"],
     "query": "Which functions call Session.send?",
-    "ground_truth": "Session.send is called by Session.request."
+    "ground_truth": "Session.send is called by Session.request and by SessionRedirectMixin.resolve_redirects (which calls self.send on each redirect hop)."
   },
   {
     "id": "requests_007",
@@ -93,7 +93,7 @@
     "relevant_files": ["src/requests/auth.py"],
     "cp_tools": ["get_dependencies"],
     "query": "What does requests/auth.py import?",
-    "ground_truth": "auth.py imports hashlib, os, re, time from stdlib and uses requests.compat, requests.cookies, requests.utils internally."
+    "ground_truth": "auth.py imports internally from ._internal_utils, .compat, .cookies, .utils. External stdlib: base64, hashlib, os, re, threading, time, warnings."
   },
   {
     "id": "requests_009",

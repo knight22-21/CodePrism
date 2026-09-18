@@ -242,6 +242,8 @@ class PythonParser(BaseParser):
                         file_path=file_path, file_id=file_id,
                         name=mod, kind=NodeKind.IMPORT,
                         line_start=line, line_end=line,
+                        # signature stores the source module so it survives the DB roundtrip
+                        signature=mod,
                         extra={"is_from_import": False, "source_module": mod},
                     )
                     result.symbols.append(sym)
@@ -261,6 +263,8 @@ class PythonParser(BaseParser):
                             file_path=file_path, file_id=file_id,
                             name=key, kind=NodeKind.IMPORT,
                             line_start=line, line_end=line,
+                            # signature = real module name (not the alias)
+                            signature=mod,
                             extra={"is_from_import": False, "source_module": mod, "alias": alias},
                         )
                         result.symbols.append(sym)
@@ -280,6 +284,7 @@ class PythonParser(BaseParser):
                         file_path=file_path, file_id=file_id,
                         name=f"{source_module}.*", kind=NodeKind.IMPORT,
                         line_start=line, line_end=line,
+                        signature=source_module,
                         extra={"is_from_import": True, "source_module": source_module},
                     )
                     result.symbols.append(sym)
@@ -289,6 +294,8 @@ class PythonParser(BaseParser):
                         file_path=file_path, file_id=file_id,
                         name=imported, kind=NodeKind.IMPORT,
                         line_start=line, line_end=line,
+                        # signature stores the source module for use in get_dependencies
+                        signature=source_module,
                         extra={"is_from_import": True, "source_module": source_module},
                     )
                     result.symbols.append(sym)
@@ -303,6 +310,7 @@ class PythonParser(BaseParser):
                             file_path=file_path, file_id=file_id,
                             name=alias, kind=NodeKind.IMPORT,
                             line_start=line, line_end=line,
+                            signature=source_module,
                             extra={"is_from_import": True, "source_module": source_module, "original": imported},
                         )
                         result.symbols.append(sym)
