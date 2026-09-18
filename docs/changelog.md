@@ -5,7 +5,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased] — v0.1.7
+## [v0.1.7] — 2026-09-18
+
+### Added
+- **Benchmark corpus expansion**: added pallets/flask 3.0.3 and encode/httpx 0.27.2
+  as benchmark corpora (10 tasks each — symbol_lookup, call_trace, impact_analysis,
+  dependency_map). Token reduction: flask 91.3%, httpx 93.0%. Overall average across
+  3 production codebases: **91%**.
 
 ### Fixed
 - **`get_dependencies` output format** (`python_parser` + `engine`):
