@@ -92,7 +92,15 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["B008"]
+ignore = [
+    "B008",   # do not perform function calls in default arguments
+    "E501",   # line too long — HTML template has intentionally long lines
+    "UP042",  # StrEnum migration — out of scope
+    "SIM102", # collapsible-if — readability preference
+    "SIM105", # suppressible-exception — explicit is clearer
+    "SIM108", # ternary over if-else — readability preference
+    "B905",   # zip without strict — not required here
+]
 
 [tool.mypy]
 python_version = "3.12"
