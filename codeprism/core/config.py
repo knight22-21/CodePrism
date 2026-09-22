@@ -29,7 +29,7 @@ class MCPConfig(BaseModel):
 class CodePrismConfig(BaseModel):
     project_path: Optional[str] = None
     languages: list[str] = Field(
-        default_factory=lambda: ["python", "javascript", "typescript"]
+        default_factory=lambda: ["python", "javascript", "typescript", "go"]
     )
     enable_embeddings: bool = False
     enable_security_gate: bool = True
