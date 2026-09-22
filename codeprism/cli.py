@@ -669,23 +669,42 @@ async def _visualize(path: str, out: str) -> None:
     nodes = raw["nodes"]
     edges = raw["edges"]
 
-    elements: list[dict] = []
-    for node in nodes:
-        nd = dict(node)
-        # Shorten file node labels to just filename for readability
-        if nd.get("kind") in ("NodeKind.FILE", "file"):
-            nd["label"] = Path(nd["name"]).name
-        else:
-            nd["label"] = nd.get("name", "")
-        elements.append({"data": nd})
-    for i, edge in enumerate(edges):
-        ed = dict(edge)
-        if not ed.get("id"):
-            ed["id"] = f"e{i}"
-        elements.append({"data": ed})
+    _KIND = {
+        "NodeKind.FILE": "file", "NodeKind.FUNCTION": "function",
+        "NodeKind.CLASS": "class", "NodeKind.VARIABLE": "variable",
+        "NodeKind.IMPORT": "import",
+    }
+    _EKIND = {
+        "EdgeKind.CALLS": "calls", "EdgeKind.IMPORTS": "imports",
+        "EdgeKind.INHERITS": "inherits", "EdgeKind.CONTAINS": "contains",
+    }
 
-    # Escape </script> sequences that would break the inline script block
-    data_json = _json.dumps(elements, separators=(",", ":")).replace("</", "<\\/")
+    node_list = []
+    for n in nodes:
+        nd = dict(n)
+        kind = _KIND.get(nd.get("kind", ""), nd.get("kind", ""))
+        label = Path(nd["name"]).name if kind == "file" else nd.get("name", "")
+        node_list.append({
+            "id": nd["id"],
+            "name": nd.get("name", ""),
+            "label": label,
+            "kind": kind,
+            "file": nd.get("file", ""),
+            "line": nd.get("line", 0),
+        })
+
+    link_list = []
+    for e in edges:
+        ed = dict(e)
+        kind = _EKIND.get(ed.get("kind", ""), ed.get("kind", ""))
+        link_list.append({
+            "source": ed.get("source", ""),
+            "target": ed.get("target", ""),
+            "kind": kind,
+        })
+
+    graph_data = {"nodes": node_list, "links": link_list}
+    data_json = _json.dumps(graph_data, separators=(",", ":")).replace("</", "<\\/")
 
     html = _VIZ_HTML_TEMPLATE.replace("__DATA__", data_json).replace(
         "__TITLE__", Path(path).name
@@ -694,10 +713,10 @@ async def _visualize(path: str, out: str) -> None:
     out_path.write_text(html, encoding="utf-8")
 
     console.print(f"[green]Visualization saved:[/green] [bold]{out_path.resolve()}[/bold]")
-    console.print(f"[dim]{len(nodes)} nodes, {len(edges)} edges. Open in any browser.[/dim]")
-    if len(nodes) > 2000:
+    console.print(f"[dim]{len(node_list)} nodes, {len(link_list)} edges. Open in any browser.[/dim]")
+    if len(node_list) > 2000:
         console.print(
-            "[yellow]Large graph (>2000 nodes) — 'Files' view recommended for performance.[/yellow]"
+            "[yellow]Large graph (>2000 nodes) — 'Files' or 'Symbols' view recommended.[/yellow]"
         )
 
 
@@ -708,187 +727,260 @@ _VIZ_HTML_TEMPLATE = """\
 <meta charset="utf-8"/>
 <title>CodePrism — __TITLE__</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column}
-#toolbar{display:flex;align-items:center;gap:10px;padding:7px 14px;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0;flex-wrap:wrap}
-#proj{font-weight:600;font-size:13px;color:#58a6ff;margin-right:4px}
-.vbtn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:3px 11px;border-radius:6px;cursor:pointer;font-size:12px}
-.vbtn.active{background:#1f6feb;border-color:#1f6feb;color:#fff}
-#search{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:3px 9px;border-radius:6px;font-size:12px;width:160px}
-#search:focus{outline:none;border-color:#58a6ff}
-#rstats{font-size:11px;color:#8b949e;margin-left:auto}
-#main{display:flex;flex:1;overflow:hidden}
-#cy{flex:1}
-#panel{width:240px;background:#161b22;border-left:1px solid #30363d;padding:11px;overflow-y:auto;flex-shrink:0}
-#panel h3{font-size:12px;color:#58a6ff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
-.drow{font-size:11px;margin-bottom:5px;word-break:break-all;line-height:1.4}
-.dk{color:#8b949e}
-.dv{color:#e6edf3}
-#legend{display:flex;flex-wrap:wrap;gap:8px;padding:5px 14px;background:#161b22;border-top:1px solid #30363d;flex-shrink:0}
-.li{display:flex;align-items:center;gap:4px;font-size:10px;color:#8b949e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#02030f;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;color:#b8c4dc}
+/* ── toolbar ── */
+#toolbar{
+  position:fixed;top:0;left:0;right:0;z-index:30;
+  display:flex;align-items:center;gap:10px;padding:10px 18px;
+  background:linear-gradient(180deg,rgba(2,4,20,0.97) 0%,rgba(2,4,20,0.85) 100%);
+  backdrop-filter:blur(20px);border-bottom:1px solid rgba(56,209,255,0.08)
+}
+#proj{
+  font-weight:700;font-size:14px;letter-spacing:.04em;margin-right:8px;white-space:nowrap;
+  background:linear-gradient(90deg,#38d1ff,#a855f7);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text
+}
+.vbtn{
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  color:#667;padding:5px 16px;border-radius:999px;cursor:pointer;font-size:11px;
+  letter-spacing:.02em;transition:all .2s;white-space:nowrap
+}
+.vbtn:hover{background:rgba(56,209,255,0.1);border-color:rgba(56,209,255,0.4);color:#38d1ff}
+.vbtn.active{
+  background:linear-gradient(135deg,rgba(56,209,255,0.18),rgba(168,85,247,0.18));
+  border-color:rgba(56,209,255,0.6);color:#38d1ff;font-weight:600
+}
+#search{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:#bcc;padding:5px 13px;border-radius:999px;font-size:11px;width:160px;outline:none;
+  transition:border-color .2s
+}
+#search::placeholder{color:#445}
+#search:focus{border-color:rgba(56,209,255,0.5);background:rgba(56,209,255,0.04)}
+.sep{width:1px;height:18px;background:rgba(255,255,255,0.08);flex-shrink:0}
+#stats{font-size:10px;color:#445;white-space:nowrap}
+#spinbtn{margin-left:auto}
+/* ── detail panel ── */
+#panel{
+  position:fixed;right:0;top:0;bottom:0;width:230px;z-index:20;
+  background:rgba(2,4,22,0.94);backdrop-filter:blur(20px);
+  border-left:1px solid rgba(56,209,255,0.1);
+  padding:58px 14px 14px;overflow-y:auto;
+  transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)
+}
+#panel.open{transform:translateX(0)}
+#phdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+#phdr h3{
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;
+  color:#38d1ff
+}
+#pclose{
+  cursor:pointer;color:#445;font-size:16px;line-height:1;padding:2px 4px;
+  border-radius:4px;transition:all .15s
+}
+#pclose:hover{color:#38d1ff;background:rgba(56,209,255,0.1)}
+.dr{
+  font-size:11px;margin-bottom:8px;padding:6px 8px;
+  background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.04)
+}
+.dk{color:#445;font-size:10px;display:block;margin-bottom:2px;letter-spacing:.04em}
+.dv{color:#bcc;word-break:break-all;line-height:1.4}
+.pkind{
+  display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;
+  letter-spacing:.04em;margin-top:2px
+}
+/* ── legend ── */
+#legend{
+  position:fixed;bottom:16px;left:16px;z-index:30;
+  background:rgba(2,4,20,0.75);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.06);border-radius:10px;
+  padding:10px 14px;display:flex;flex-direction:column;gap:7px
+}
+#legend-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#334;margin-bottom:1px}
+.li{display:flex;align-items:center;gap:8px;font-size:10px;color:#556}
 .ld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.le{width:14px;height:2px;flex-shrink:0}
-.sep{color:#30363d;font-size:14px}
+/* ── edge legend ── */
+#elegend{
+  position:fixed;bottom:16px;left:160px;z-index:30;
+  background:rgba(2,4,20,0.75);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.06);border-radius:10px;
+  padding:10px 14px;display:flex;flex-direction:column;gap:7px
+}
+.el{display:flex;align-items:center;gap:8px;font-size:10px;color:#556}
+.elc{width:18px;height:2px;border-radius:1px;flex-shrink:0}
+#graph{width:100vw;height:100vh;display:block}
 </style>
 </head>
 <body>
 <div id="toolbar">
-  <span id="proj">CodePrism: __TITLE__</span>
-  <button class="vbtn active" onclick="setView('files')" id="btn-files">Files</button>
-  <button class="vbtn" onclick="setView('symbols')" id="btn-symbols">Symbols</button>
-  <button class="vbtn" onclick="setView('all')" id="btn-all">All</button>
-  <input id="search" type="text" placeholder="Search…" oninput="doSearch(this.value)"/>
-  <button class="vbtn" onclick="relayout()">Re-layout</button>
-  <button class="vbtn" onclick="cy.fit()">Fit</button>
-  <span id="rstats"></span>
+  <span id="proj">CodePrism</span>
+  <div class="sep"></div>
+  <button class="vbtn active" id="btn-files" onclick="setView('files')">Files</button>
+  <button class="vbtn" id="btn-symbols" onclick="setView('symbols')">Symbols</button>
+  <button class="vbtn" id="btn-all" onclick="setView('all')">All</button>
+  <div class="sep"></div>
+  <input id="search" placeholder="Search nodes..." oninput="doSearch(this.value)"/>
+  <span id="stats"></span>
+  <button class="vbtn" id="spinbtn" onclick="toggleSpin()">&#9654; Spin</button>
 </div>
-<div id="main">
-  <div id="cy"></div>
-  <div id="panel">
-    <h3>Details</h3>
-    <div id="dcontent"><span style="color:#8b949e;font-size:11px">Click a node or edge</span></div>
+<div id="panel">
+  <div id="phdr">
+    <h3>Node Details</h3>
+    <span id="pclose" onclick="closePanel()">&times;</span>
   </div>
+  <div id="pbody"></div>
 </div>
 <div id="legend">
-  <div class="li"><div class="ld" style="background:#58a6ff"></div>file</div>
-  <div class="li"><div class="ld" style="background:#a371f7"></div>class</div>
-  <div class="li"><div class="ld" style="background:#3fb950"></div>function</div>
-  <div class="li"><div class="ld" style="background:#f0883e"></div>variable</div>
-  <div class="li"><div class="ld" style="background:#8b949e"></div>import</div>
-  <span class="sep">|</span>
-  <div class="li"><div class="le" style="background:#f85149"></div>calls</div>
-  <div class="li"><div class="le" style="background:#58a6ff"></div>imports</div>
-  <div class="li"><div class="le" style="background:#a371f7"></div>inherits</div>
-  <div class="li"><div class="le" style="background:#30363d"></div>defines</div>
-  <div class="li"><div class="le" style="background:#f0883e"></div>uses</div>
+  <div id="legend-title">Nodes</div>
+  <div class="li"><div class="ld" style="background:#00d4ff;box-shadow:0 0 6px #00d4ff88"></div>file</div>
+  <div class="li"><div class="ld" style="background:#a855f7;box-shadow:0 0 6px #a855f788"></div>class</div>
+  <div class="li"><div class="ld" style="background:#22c55e;box-shadow:0 0 6px #22c55e88"></div>function</div>
+  <div class="li"><div class="ld" style="background:#f97316;box-shadow:0 0 6px #f9731688"></div>variable</div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+<div id="elegend">
+  <div id="legend-title">Edges</div>
+  <div class="el"><div class="elc" style="background:#f87171"></div>calls</div>
+  <div class="el"><div class="elc" style="background:#38bdf8"></div>imports</div>
+  <div class="el"><div class="elc" style="background:#c084fc"></div>inherits</div>
+</div>
+<div id="graph"></div>
+<script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1/dist/3d-force-graph.min.js"></script>
 <script>
-const ALL=__DATA__;
+const RAW=__DATA__;
 
-const NC={'NodeKind.FILE':'#58a6ff','NodeKind.CLASS':'#a371f7','NodeKind.FUNCTION':'#3fb950',
-  'NodeKind.VARIABLE':'#f0883e','NodeKind.IMPORT':'#8b949e','NodeKind.TYPE':'#ffa657',
-  'file':'#58a6ff','class':'#a371f7','function':'#3fb950','variable':'#f0883e',
-  'import':'#8b949e','type':'#ffa657'};
-const EC={'EdgeKind.CALLS':'#f85149','EdgeKind.IMPORTS':'#58a6ff','EdgeKind.INHERITS':'#a371f7',
-  'EdgeKind.DEFINES':'#30363d','EdgeKind.USES':'#f0883e','EdgeKind.DATA_FLOWS':'#ffa657',
-  'EdgeKind.EXPORTS':'#79c0ff','EdgeKind.TESTS':'#56d364','EdgeKind.REFERENCES':'#8b949e',
-  'calls':'#f85149','imports':'#58a6ff','inherits':'#a371f7','defines':'#30363d',
-  'uses':'#f0883e','data_flows':'#ffa657','exports':'#79c0ff','tests':'#56d364'};
+const NC={file:'#00d4ff',class:'#a855f7',function:'#22c55e',variable:'#f97316',import:'#1e2a3a'};
+const NS={file:8,class:5,function:3,variable:2,import:1.5};
+const KIND_COLOR={file:'#00d4ff',class:'#a855f7',function:'#22c55e',variable:'#f97316'};
+// Edge colours — solid, fully opaque so they render visibly in 3D
+const LC={calls:'#f87171',imports:'#38bdf8',inherits:'#c084fc',contains:'#1e2a3a'};
+const PC={calls:'#ff4466',imports:'#00d4ff',inherits:'#c084fc'};
 
-const FILE_KINDS=new Set(['NodeKind.FILE','file']);
-const SYM_KINDS=new Set(['NodeKind.CLASS','NodeKind.FUNCTION','class','function']);
-const FILE_EDGES=new Set(['EdgeKind.IMPORTS','imports']);
-const SYM_EDGES=new Set(['EdgeKind.CALLS','EdgeKind.INHERITS','calls','inherits']);
+const nodeById={};
+RAW.nodes.forEach(function(n){nodeById[n.id]=Object.assign({},n);});
 
-function filtered(view){
-  const nodes=ALL.filter(e=>!e.data.source);
-  const edges=ALL.filter(e=>e.data.source);
-  let ns,es;
+var hiSet=new Set();
+
+function nodeColor(n){
+  if(hiSet.size&&!hiSet.has(n.id))return '#0d0d1e';
+  return NC[n.kind]||'#4a5568';
+}
+function nodeVal(n){
+  var base=NS[n.kind]||2;
+  return hiSet.size&&hiSet.has(n.id)?base*3:base;
+}
+
+function viewData(view){
+  var nOk,eOk;
   if(view==='files'){
-    ns=nodes.filter(n=>FILE_KINDS.has(n.data.kind));
-    const ids=new Set(ns.map(n=>n.data.id));
-    es=edges.filter(e=>FILE_EDGES.has(e.data.kind)&&ids.has(e.data.source)&&ids.has(e.data.target));
+    nOk=function(n){return n.kind==='file';};
+    eOk=function(l){return l.kind==='imports';};
   }else if(view==='symbols'){
-    ns=nodes.filter(n=>SYM_KINDS.has(n.data.kind));
-    const ids=new Set(ns.map(n=>n.data.id));
-    es=edges.filter(e=>SYM_EDGES.has(e.data.kind)&&ids.has(e.data.source)&&ids.has(e.data.target));
+    nOk=function(n){return n.kind==='class'||n.kind==='function';};
+    eOk=function(l){return l.kind==='calls'||l.kind==='inherits';};
   }else{
-    ns=nodes;
-    const ids=new Set(ns.map(n=>n.data.id));
-    es=edges.filter(e=>ids.has(e.data.source)&&ids.has(e.data.target));
+    nOk=function(){return true;};
+    eOk=function(){return true;};
   }
-  return[...ns,...es];
+  var ids=new Set();
+  var nodes=RAW.nodes.filter(function(n){
+    if(nOk(n)){ids.add(n.id);return true;}return false;
+  }).map(function(n){return nodeById[n.id];});
+  var links=RAW.links.filter(function(l){
+    return eOk(l)&&ids.has(l.source)&&ids.has(l.target);
+  }).map(function(l){return{source:l.source,target:l.target,kind:l.kind};});
+  return{nodes:nodes,links:links};
 }
 
-const cy=cytoscape({
-  container:document.getElementById('cy'),
-  elements:filtered('files'),
-  style:[
-    {selector:'node',style:{
-      'label':'data(label)',
-      'font-size':'9px','color':'#c9d1d9',
-      'text-valign':'center','text-halign':'right','text-margin-x':'4px',
-      'background-color':function(e){return NC[e.data('kind')]||'#555';},
-      'width':14,'height':14,
-      'border-width':'1px','border-color':'#30363d',
-      'min-zoomed-font-size':'7px',
-    }},
-    {selector:'edge',style:{
-      'width':1,
-      'line-color':function(e){return EC[e.data('kind')]||'#555';},
-      'target-arrow-color':function(e){return EC[e.data('kind')]||'#555';},
-      'target-arrow-shape':'triangle',
-      'curve-style':'bezier',
-      'opacity':0.55,
-      'arrow-scale':0.6,
-    }},
-    {selector:':selected',style:{'border-width':'3px','border-color':'#f0f6ff','opacity':1}},
-    {selector:'.faded',style:{'opacity':0.08}},
-    {selector:'.hi',style:{'border-width':'2px','border-color':'#f0883e','opacity':1}},
-  ],
-  layout:{name:'cose',animate:false,randomize:false},
-});
+var Graph,curView='files',spinning=true;
 
-function updateStats(){
-  document.getElementById('rstats').textContent=cy.nodes().length+' nodes · '+cy.edges().length+' edges';
+function initGraph(){
+  Graph=ForceGraph3D()(document.getElementById('graph'))
+    .backgroundColor('#02030f')
+    .nodeId('id')
+    .nodeLabel(function(n){
+      return '<div style="background:rgba(2,4,22,0.92);border:1px solid rgba(56,209,255,0.25);border-radius:6px;padding:6px 10px;font-size:12px;color:#dde;max-width:220px">'
+        +'<b style="color:'+(NC[n.kind]||'#aaa')+'">'+escHtml(n.label||n.name||'')+'</b>'
+        +'<br><span style="color:#556;font-size:10px">'+n.kind+'</span></div>';
+    })
+    .nodeColor(nodeColor)
+    .nodeVal(nodeVal)
+    .nodeOpacity(0.92)
+    .linkColor(function(l){return LC[l.kind]||'#1e2a3a';})
+    .linkWidth(1.5)
+    .linkOpacity(0.7)
+    .linkDirectionalArrowLength(4)
+    .linkDirectionalArrowRelPos(1)
+    .linkDirectionalArrowColor(function(l){return LC[l.kind]||'#1e2a3a';})
+    .linkDirectionalParticles(function(l){
+      return l.kind==='calls'?4:l.kind==='imports'?3:l.kind==='inherits'?3:0;
+    })
+    .linkDirectionalParticleSpeed(0.006)
+    .linkDirectionalParticleWidth(2.5)
+    .linkDirectionalParticleColor(function(l){return PC[l.kind]||'#ffffff';})
+    .onNodeClick(openPanel)
+    .onBackgroundClick(closePanel);
+
+  Graph.controls().autoRotate=true;
+  Graph.controls().autoRotateSpeed=0.8;
+  Graph.controls().addEventListener('start',function(){
+    spinning=false;
+    Graph.controls().autoRotate=false;
+    document.getElementById('spinbtn').textContent='▶ Spin';
+  });
+
+  setView('files');
 }
 
-let currentView='files';
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function refreshAppearance(){
+  Graph.nodeColor(nodeColor).nodeVal(nodeVal);
+}
+
 function setView(v){
-  currentView=v;
-  ['files','symbols','all'].forEach(n=>{
+  curView=v;hiSet.clear();
+  document.getElementById('search').value='';
+  ['files','symbols','all'].forEach(function(n){
     document.getElementById('btn-'+n).classList.toggle('active',n===v);
   });
-  doSearch('');
-  document.getElementById('search').value='';
-  cy.elements().remove();
-  cy.add(filtered(v));
-  relayout();
-}
-
-function relayout(){
-  const n=cy.nodes().length;
-  let cfg;
-  if(n>800) cfg={name:'random',animate:false};
-  else if(n>200) cfg={name:'cose',animate:false,randomize:false,numIter:200};
-  else cfg={name:'cose',animate:true,animationDuration:400,randomize:false};
-  cy.layout(cfg).run();
-  setTimeout(updateStats,600);
+  var d=viewData(v);
+  Graph.graphData(d);
+  var ec=d.links.length;
+  document.getElementById('stats').textContent=d.nodes.length+' nodes · '+ec+' edges';
 }
 
 function doSearch(q){
-  cy.elements().removeClass('hi faded');
-  if(!q)return;
-  const m=cy.nodes().filter(n=>(n.data('label')||n.data('name')||'').toLowerCase().includes(q.toLowerCase()));
-  if(!m.length)return;
-  cy.elements().addClass('faded');
-  m.forEach(n=>{n.removeClass('faded').addClass('hi');n.connectedEdges().removeClass('faded');n.neighborhood().removeClass('faded');});
+  hiSet.clear();
+  if(q.trim()){
+    var ql=q.toLowerCase();
+    Graph.graphData().nodes.forEach(function(n){
+      if((n.label||n.name||'').toLowerCase().indexOf(ql)>=0)hiSet.add(n.id);
+    });
+  }
+  refreshAppearance();
 }
 
-function showDetail(d){
-  let h='';
-  for(const[k,v]of Object.entries(d)){
-    if(v!=null&&v!=='')h+=`<div class="drow"><span class="dk">${k}: </span><span class="dv">${String(v).slice(0,160)}</span></div>`;
-  }
-  document.getElementById('dcontent').innerHTML=h||'<em>No data</em>';
+function toggleSpin(){
+  spinning=!spinning;
+  Graph.controls().autoRotate=spinning;
+  document.getElementById('spinbtn').textContent=spinning?'⏸ Pause':'▶ Spin';
 }
 
-cy.on('tap','node',e=>showDetail(e.target.data()));
-cy.on('tap','edge',function(e){
-  const d=e.target.data();
-  const src=cy.getElementById(d.source).data('name')||d.source;
-  const tgt=cy.getElementById(d.target).data('name')||d.target;
-  showDetail({kind:d.kind,from:src,to:tgt,line:d.line_number});
-});
-cy.on('tap',function(e){
-  if(e.target===cy){
-    document.getElementById('dcontent').innerHTML='<span style="color:#8b949e;font-size:11px">Click a node or edge</span>';
-    cy.elements().removeClass('hi faded');
-  }
-});
+function openPanel(node){
+  var kc=KIND_COLOR[node.kind]||'#667';
+  document.getElementById('pbody').innerHTML=
+    '<div class="dr"><span class="dk">NAME</span><span class="dv">'+escHtml(node.name||node.label||'')+'</span></div>'
+    +'<div class="dr"><span class="dk">KIND</span><span class="pkind" style="background:'+kc+'22;color:'+kc+';border:1px solid '+kc+'44">'+escHtml(node.kind)+'</span></div>'
+    +(node.file?'<div class="dr"><span class="dk">FILE</span><span class="dv">'+escHtml((node.file||'').split('/').pop().split('\\\\').pop())+'</span></div>':'')
+    +(node.line?'<div class="dr"><span class="dk">LINE</span><span class="dv">'+node.line+'</span></div>':'');
+  document.getElementById('panel').classList.add('open');
+}
+function closePanel(){document.getElementById('panel').classList.remove('open');}
 
-updateStats();
+initGraph();
 </script>
 </body>
 </html>"""
