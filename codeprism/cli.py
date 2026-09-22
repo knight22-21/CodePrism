@@ -963,7 +963,32 @@ function viewData(view){
   return{nodes:nodes,links:links};
 }
 
-var Graph,curView='files',spinning=true;
+var Graph,curView='files',spinning=true,spinRAF=null,spinAngle=0;
+
+function spinFrame(){
+  if(!spinning){spinRAF=null;return;}
+  spinAngle+=0.003;
+  var p=Graph.camera().position;
+  var r=Math.sqrt(p.x*p.x+p.z*p.z);
+  if(r<10)r=400;
+  Graph.cameraPosition({x:r*Math.sin(spinAngle),z:r*Math.cos(spinAngle)});
+  spinRAF=requestAnimationFrame(spinFrame);
+}
+
+function setSpin(on){
+  spinning=on;
+  var btn=document.getElementById('spin-btn');
+  var lbl=document.getElementById('spin-lbl');
+  if(on){
+    btn.classList.add('on');lbl.textContent='Spinning';
+    var p=Graph.camera().position;
+    spinAngle=Math.atan2(p.x,p.z);
+    if(!spinRAF)spinFrame();
+  }else{
+    btn.classList.remove('on');lbl.textContent='Paused';
+  }
+}
+function toggleSpin(){setSpin(!spinning);}
 
 function initGraph(){
   Graph=ForceGraph3D()(document.getElementById('graph'))
@@ -993,25 +1018,10 @@ function initGraph(){
   Graph.d3Force('charge').strength(-120);
   Graph.d3Force('link').distance(40);
 
-  Graph.controls().autoRotate=true;
-  Graph.controls().autoRotateSpeed=0.8;
-  Graph.controls().addEventListener('start',function(){
-    if(spinning){setSpin(false);}
-  });
-
   setView('files');
+  // Start spin after two frames so camera is positioned
+  requestAnimationFrame(function(){requestAnimationFrame(function(){setSpin(true);});});
 }
-
-function setSpin(on){
-  spinning=on;
-  Graph.controls().autoRotate=on;
-  if(on)Graph.resumeAnimation();
-  var btn=document.getElementById('spin-btn');
-  var lbl=document.getElementById('spin-lbl');
-  if(on){btn.classList.add('on');lbl.textContent='Spinning';}
-  else{btn.classList.remove('on');lbl.textContent='Paused';}
-}
-function toggleSpin(){setSpin(!spinning);}
 
 function setView(v){
   curView=v;hiSet.clear();
