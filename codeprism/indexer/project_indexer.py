@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import fnmatch
+import hashlib
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,6 +37,7 @@ _LANGUAGE_EXTENSIONS: dict[str, frozenset[str]] = {
 @dataclass
 class IndexResult:
     file_count: int = 0
+    files_skipped: int = 0
     symbol_count: int = 0
     edge_count: int = 0
     duration_seconds: float = 0.0
@@ -63,23 +65,53 @@ class ProjectIndexer:
 
     # ── Public entry ─────────────────────────────────────────────────────────
 
-    async def index(self, project_path: str) -> IndexResult:
+    async def index(self, project_path: str, force: bool = False) -> IndexResult:
+        """Index *project_path*.
+
+        When *force* is False (default) files whose SHA-256 checksum matches
+        the stored record are skipped — only changed, new, and deleted files
+        are processed.  Pass ``force=True`` to always re-parse everything.
+        """
         start = time.time()
         errors: list[str] = []
 
         source_files = self._find_source_files(project_path)
+
+        # Load existing checksums for incremental skipping (empty when force=True)
+        existing: dict[str, str] = {}  # path → stored checksum
+        if not force:
+            for rec in await self._storage.get_all_files():
+                existing[rec.path] = rec.checksum or ""
+
+        # Remove records for files that were deleted since last index
+        on_disk = set(source_files)
+        for path in list(existing):
+            if path not in on_disk:
+                rec = await self._storage.get_file_by_path(path)
+                if rec:
+                    await self._storage.delete_edges_for_file(path)
+                    await self._storage.delete_symbols_for_file(rec.id)
+                    await self._storage.delete_file(rec.id)
+
         if not source_files:
+            await self._graph.load_from_storage(self._storage)
             return IndexResult(duration_seconds=time.time() - start)
 
-        # Parse all files concurrently; tree-sitter is CPU-bound → thread pool
+        # Parse changed / new files concurrently; unchanged ones are skipped
         sem = asyncio.Semaphore(8)
+        skipped = 0
 
         async def parse_one(fp: str):
+            nonlocal skipped
             async with sem:
                 try:
                     content = await asyncio.to_thread(
                         Path(fp).read_text, encoding="utf-8", errors="replace"
                     )
+                    new_checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
+                    if not force and existing.get(fp) == new_checksum:
+                        skipped += 1
+                        return None
                     parser = self._registry.get(fp)
                     return await asyncio.to_thread(parser.parse, fp, content)
                 except Exception as exc:
@@ -103,7 +135,7 @@ class ProjectIndexer:
         if all_edges:
             await self._storage.upsert_edges_batch(all_edges)
 
-        # Cross-file reference resolution
+        # Cross-file reference resolution (only for newly parsed files)
         all_unresolved: list[UnresolvedRef] = [
             ref for pr in parse_results for ref in pr.unresolved_refs
         ]
@@ -122,6 +154,7 @@ class ProjectIndexer:
         stats = await self._storage.get_stats()
         return IndexResult(
             file_count=stats["file_count"],
+            files_skipped=skipped,
             symbol_count=(
                 stats["function_count"] + stats["class_count"]
                 + stats["variable_count"] + stats["import_count"]
