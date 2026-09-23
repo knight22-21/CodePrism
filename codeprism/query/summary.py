@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from ..core.graph import GraphEngine
 from ..core.models import FileRecord, NodeKind, SymbolRecord
@@ -19,7 +18,7 @@ class ModuleSummary:
     public_api: list[SymbolRecord] = field(default_factory=list)
     dependencies: list[str] = field(default_factory=list)
     complexity_score: float = 0.0
-    test_coverage_file: Optional[str] = None
+    test_coverage_file: str | None = None
     key_classes: list[SymbolRecord] = field(default_factory=list)
 
 
@@ -27,7 +26,7 @@ async def get_module_summary(
     graph: GraphEngine,
     storage: StorageManager,
     file_path: str,
-) -> Optional[ModuleSummary]:
+) -> ModuleSummary | None:
     """Produce a human-readable summary of the module at *file_path*."""
     file = await storage.get_file_by_path(file_path)
     if not file:
@@ -82,7 +81,7 @@ async def _find_test_file(
     storage: StorageManager,
     stem: str,
     skip_path: str,
-) -> Optional[str]:
+) -> str | None:
     all_files = await storage.get_all_files()
     for f in all_files:
         if f.path == skip_path:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ..core.graph import GraphEngine
 from ..core.models import FileRecord, NodeKind, SymbolRecord
@@ -28,7 +27,7 @@ async def get_context(
     file_path: str,
     symbol_name: str,
     depth: int = 2,
-) -> Optional[ContextResult]:
+) -> ContextResult | None:
     """Assemble the minimal structured context for *symbol_name* in *file_path*.
 
     depth=1 — symbol + direct callers/callees
@@ -70,7 +69,7 @@ async def get_context(
     )
 
 
-def _pick(syms: list[SymbolRecord], name: str) -> Optional[SymbolRecord]:
+def _pick(syms: list[SymbolRecord], name: str) -> SymbolRecord | None:
     matches = [s for s in syms if s.name == name]
     if not matches:
         return None

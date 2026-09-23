@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -75,12 +75,12 @@ class ProjectWatcher:
         self,
         updater: IncrementalUpdater,
         debounce_ms: int = 500,
-        on_update: Optional[UpdateCallback] = None,
+        on_update: UpdateCallback | None = None,
     ) -> None:
         self._updater = updater
         self._debounce_ms = debounce_ms
         self._on_update = on_update
-        self._observer: Optional[Observer] = None
+        self._observer: Observer | None = None
 
     async def run(self, project_path: str) -> None:
         """Watch *project_path* forever; cancel the coroutine to stop."""

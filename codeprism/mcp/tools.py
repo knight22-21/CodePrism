@@ -16,7 +16,6 @@ from ..query.engine import (
 from ..query.impact import ImpactResult
 from ..query.summary import ModuleSummary
 
-
 # ── Atom serializers ──────────────────────────────────────────────────────────
 
 

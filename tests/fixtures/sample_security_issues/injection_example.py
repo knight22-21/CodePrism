@@ -1,6 +1,5 @@
 """Intentionally insecure — used only in detector tests."""
 
-import os
 import subprocess
 
 

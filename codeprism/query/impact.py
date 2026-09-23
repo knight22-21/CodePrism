@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ..core.graph import GraphEngine
-from ..core.models import FileRecord, NodeKind, SymbolRecord
+from ..core.models import SymbolRecord
 from ..core.storage import StorageManager
 from .context import _pick
 
@@ -28,7 +27,7 @@ async def get_impact(
     storage: StorageManager,
     file_path: str,
     symbol_name: str,
-) -> Optional[ImpactResult]:
+) -> ImpactResult | None:
     """Return the full impact analysis for changing *symbol_name* in *file_path*."""
     file = await storage.get_file_by_path(file_path)
     if not file:

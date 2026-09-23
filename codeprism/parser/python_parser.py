@@ -5,8 +5,6 @@ from __future__ import annotations
 import hashlib
 import os
 import time
-from pathlib import Path
-from typing import Optional
 
 from ..core.models import (
     EdgeKind,
@@ -39,7 +37,8 @@ class PythonParser(BaseParser):
     def __init__(self) -> None:
         try:
             import tree_sitter_python as tsp
-            from tree_sitter import Language, Parser as TSParser
+            from tree_sitter import Language
+            from tree_sitter import Parser as TSParser
             self._language = Language(tsp.language())
             self._parser = TSParser(self._language)
         except Exception as exc:
@@ -369,7 +368,7 @@ class PythonParser(BaseParser):
     # ── AST helpers ───────────────────────────────────────────────────────────
 
     @staticmethod
-    def _get_docstring(body_node) -> Optional[str]:
+    def _get_docstring(body_node) -> str | None:
         if not body_node:
             return None
         for child in body_node.named_children:

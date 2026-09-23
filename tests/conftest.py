@@ -1,10 +1,11 @@
 import shutil
-import pytest
 from pathlib import Path
 
-from codeprism.core.storage import StorageManager
+import pytest
+
 from codeprism.core.graph import GraphEngine
-from codeprism.core.models import FileRecord, SymbolRecord, EdgeRecord, NodeKind, EdgeKind
+from codeprism.core.models import EdgeKind, EdgeRecord, FileRecord, NodeKind, SymbolRecord
+from codeprism.core.storage import StorageManager
 
 PYTHON_FIXTURE = Path(__file__).parent / "fixtures" / "sample_python_project"
 

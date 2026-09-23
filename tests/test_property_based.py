@@ -9,20 +9,17 @@ from __future__ import annotations
 
 import string
 
-import pytest
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from codeprism.core.graph import GraphEngine
 from codeprism.core.models import EdgeKind, NodeKind
-from codeprism.security.detectors.secrets import SecretsDetector
-from codeprism.security.detectors.injection import InjectionDetector
-from codeprism.security.detectors.crypto import WeakCryptoDetector
-from codeprism.security.scanner import SecurityScanner
 from codeprism.query.engine import SearchMatch
-
+from codeprism.security.detectors.crypto import WeakCryptoDetector
+from codeprism.security.detectors.injection import InjectionDetector
+from codeprism.security.detectors.secrets import SecretsDetector
+from codeprism.security.scanner import SecurityScanner
 from tests.conftest import make_edge, make_file, make_symbol
-
 
 # ── Strategies ────────────────────────────────────────────────────────────────
 

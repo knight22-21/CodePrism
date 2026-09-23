@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -13,9 +12,9 @@ class DetectionResult:
 
     severity: str           # INFO | WARN | BLOCK
     category: str           # detector family name
-    line_number: Optional[int]
+    line_number: int | None
     description: str
-    fix_suggestion: Optional[str] = None
+    fix_suggestion: str | None = None
     detector: str = ""
 
     def to_dict(self) -> dict:

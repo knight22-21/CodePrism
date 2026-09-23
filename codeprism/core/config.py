@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +26,7 @@ class MCPConfig(BaseModel):
 
 
 class CodePrismConfig(BaseModel):
-    project_path: Optional[str] = None
+    project_path: str | None = None
     languages: list[str] = Field(
         default_factory=lambda: ["python", "javascript", "typescript"]
     )
@@ -39,7 +38,7 @@ class CodePrismConfig(BaseModel):
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     @classmethod
-    def load(cls, path: Path) -> "CodePrismConfig":
+    def load(cls, path: Path) -> CodePrismConfig:
         """Load config from a TOML file; returns defaults if file absent."""
         if not path.exists():
             return cls()
@@ -54,5 +53,5 @@ class CodePrismConfig(BaseModel):
         return cls(**raw, **nested)
 
     @classmethod
-    def default(cls) -> "CodePrismConfig":
+    def default(cls) -> CodePrismConfig:
         return cls()

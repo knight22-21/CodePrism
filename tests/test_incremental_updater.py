@@ -1,14 +1,11 @@
 """Tests for IncrementalUpdater — checksum gating, graph surgery, persistence."""
 
-from pathlib import Path
 
-import pytest
 
 from codeprism.core.config import CodePrismConfig
 from codeprism.core.models import NodeKind
 from codeprism.indexer.incremental_updater import IncrementalUpdater
 from codeprism.indexer.project_indexer import ProjectIndexer
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 

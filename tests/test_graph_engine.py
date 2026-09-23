@@ -1,10 +1,8 @@
 """Tests for GraphEngine (in-memory NetworkX wrapper)."""
 
-import pytest
 from codeprism.core.graph import GraphEngine
 from codeprism.core.models import EdgeKind, NodeKind
 from tests.conftest import make_edge, make_file, make_symbol
-
 
 # ── Basic mutation ────────────────────────────────────────────────────────────
 
