@@ -4,13 +4,11 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 app = typer.Typer(
     name="codeprism",
@@ -53,7 +51,7 @@ def _parse_target(target: str) -> tuple[str, str]:
 @app.command()
 def index(
     path: str = typer.Argument(..., help="Project directory to index"),
-    languages: Optional[str] = typer.Option(
+    languages: str | None = typer.Option(
         None, "--languages", "-l",
         help="Comma-separated language list (default: python,javascript,typescript)"
     ),
@@ -66,14 +64,14 @@ def index(
     asyncio.run(_index(path, languages, embeddings))
 
 
-async def _index(path: str, languages: Optional[str], embeddings: bool = False) -> None:
+async def _index(path: str, languages: str | None, embeddings: bool = False) -> None:
     from .core.config import CodePrismConfig
     from .core.graph import GraphEngine
     from .core.paths import get_db_path
     from .core.storage import StorageManager
     from .indexer.project_indexer import ProjectIndexer
 
-    langs = [l.strip() for l in languages.split(",")] if languages else None
+    langs = [lang.strip() for lang in languages.split(",")] if languages else None
     config = CodePrismConfig(languages=langs, enable_embeddings=embeddings) if langs \
         else CodePrismConfig(enable_embeddings=embeddings)
 
@@ -274,14 +272,14 @@ async def _callers(target: str, project: str) -> None:
 @app.command()
 def search(
     query: str = typer.Argument(..., help="Symbol name or substring"),
-    kind: Optional[str] = typer.Option(None, "--kind", "-k", help="function|class|variable"),
+    kind: str | None = typer.Option(None, "--kind", "-k", help="function|class|variable"),
     project: str = typer.Option(".", "--project", "-p", help="Project path"),
 ) -> None:
     """Find symbols matching a query string."""
     asyncio.run(_search(query, kind, project))
 
 
-async def _search(query: str, kind: Optional[str], project: str) -> None:
+async def _search(query: str, kind: str | None, project: str) -> None:
     engine, storage = await _open_session(project)
     try:
         matches = await engine.search_symbols(query, kind)
@@ -446,7 +444,6 @@ def setup(
 
 
 def _setup(agent: str, project: str, global_: bool) -> None:
-    import json
 
     abs_project = str(Path(project).resolve())
     server_entry = {
@@ -1084,7 +1081,7 @@ initGraph();
 def scan(
     target: str = typer.Argument(..., help="File path to scan"),
     all_: bool = typer.Option(False, "--all", "-a", help="Scan all indexed files"),
-    diff: Optional[str] = typer.Option(
+    diff: str | None = typer.Option(
         None, "--diff",
         help="Git diff range to scan, e.g. HEAD~1..HEAD or main..feature",
     ),
@@ -1100,7 +1097,7 @@ def scan(
     asyncio.run(_scan(target, all_, diff, project))
 
 
-async def _scan(target: str, all_: bool, diff: Optional[str], project: str) -> None:
+async def _scan(target: str, all_: bool, diff: str | None, project: str) -> None:
     from .security.scanner import SecurityScanner
 
     scanner = SecurityScanner()
@@ -1112,7 +1109,6 @@ async def _scan(target: str, all_: bool, diff: Optional[str], project: str) -> N
     if all_:
         engine, storage = await _open_session(project)
         try:
-            stats = await engine.get_stats()
             fm = await engine.get_file_map(project)
         finally:
             await storage.close()
@@ -1139,7 +1135,7 @@ async def _scan(target: str, all_: bool, diff: Optional[str], project: str) -> N
         content = Path(target).read_text(encoding="utf-8")
     except FileNotFoundError:
         console.print(f"[red]File not found:[/red] {target}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     report = scanner.scan_content(content, target)
     _print_scan_report(report, target)
@@ -1161,7 +1157,7 @@ async def _scan_git_diff(diff_range: str, scanner) -> None:
         )
     except subprocess.CalledProcessError as exc:
         console.print(f"[red]git diff failed:[/red] {exc.stderr.strip()}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
 
     changed_files = [f.strip() for f in proc.stdout.splitlines() if f.strip()]
     if not changed_files:

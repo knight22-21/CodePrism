@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import aiosqlite
 
@@ -100,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_session_session ON session_events(session_id);
 class StorageManager:
     def __init__(self, db_path: Path) -> None:
         self._db_path = db_path
-        self._db: Optional[aiosqlite.Connection] = None
+        self._db: aiosqlite.Connection | None = None
 
     async def initialize(self) -> None:
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -142,12 +141,12 @@ class StorageManager:
         )
         await self.db.commit()
 
-    async def get_file_by_path(self, path: str) -> Optional[FileRecord]:
+    async def get_file_by_path(self, path: str) -> FileRecord | None:
         async with self.db.execute("SELECT * FROM files WHERE path = ?", (path,)) as cur:
             row = await cur.fetchone()
         return FileRecord(**dict(row)) if row else None
 
-    async def get_file_by_id(self, file_id: str) -> Optional[FileRecord]:
+    async def get_file_by_id(self, file_id: str) -> FileRecord | None:
         async with self.db.execute("SELECT * FROM files WHERE id = ?", (file_id,)) as cur:
             row = await cur.fetchone()
         return FileRecord(**dict(row)) if row else None
@@ -225,12 +224,12 @@ class StorageManager:
             rows = await cur.fetchall()
         return [_row_to_symbol(r) for r in rows]
 
-    async def get_symbol_by_id(self, symbol_id: str) -> Optional[SymbolRecord]:
+    async def get_symbol_by_id(self, symbol_id: str) -> SymbolRecord | None:
         async with self.db.execute("SELECT * FROM symbols WHERE id = ?", (symbol_id,)) as cur:
             row = await cur.fetchone()
         return _row_to_symbol(row) if row else None
 
-    async def find_symbols(self, name: str, kind: Optional[str] = None) -> list[SymbolRecord]:
+    async def find_symbols(self, name: str, kind: str | None = None) -> list[SymbolRecord]:
         if kind:
             async with self.db.execute(
                 "SELECT * FROM symbols WHERE name = ? AND kind = ?", (name, kind)
@@ -241,7 +240,7 @@ class StorageManager:
                 rows = await cur.fetchall()
         return [_row_to_symbol(r) for r in rows]
 
-    async def search_symbols(self, query: str, kind: Optional[str] = None) -> list[SymbolRecord]:
+    async def search_symbols(self, query: str, kind: str | None = None) -> list[SymbolRecord]:
         pattern = f"%{query}%"
         if kind:
             async with self.db.execute(
@@ -320,7 +319,7 @@ class StorageManager:
             rows = await cur.fetchall()
         return [_row_to_edge(r) for r in rows]
 
-    async def get_edges_from(self, from_id: str, kind: Optional[str] = None) -> list[EdgeRecord]:
+    async def get_edges_from(self, from_id: str, kind: str | None = None) -> list[EdgeRecord]:
         if kind:
             async with self.db.execute(
                 "SELECT * FROM edges WHERE from_id = ? AND kind = ?", (from_id, kind)
@@ -331,7 +330,7 @@ class StorageManager:
                 rows = await cur.fetchall()
         return [_row_to_edge(r) for r in rows]
 
-    async def get_edges_to(self, to_id: str, kind: Optional[str] = None) -> list[EdgeRecord]:
+    async def get_edges_to(self, to_id: str, kind: str | None = None) -> list[EdgeRecord]:
         if kind:
             async with self.db.execute(
                 "SELECT * FROM edges WHERE to_id = ? AND kind = ?", (to_id, kind)
@@ -404,7 +403,7 @@ class StorageManager:
 
     # ── Aggregate stats ───────────────────────────────────────────────────────
 
-    async def get_stats(self, path_prefix: Optional[str] = None) -> dict[str, object]:
+    async def get_stats(self, path_prefix: str | None = None) -> dict[str, object]:
         async def scalar(sql: str, params: tuple = ()) -> int:
             async with self.db.execute(sql, params) as cur:
                 row = await cur.fetchone()

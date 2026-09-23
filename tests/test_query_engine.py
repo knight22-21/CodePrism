@@ -1,9 +1,7 @@
 """Tests for QueryEngine — find_symbol, search, file map, deps, stats."""
 
-import pytest
 
 from codeprism.core.models import NodeKind
-
 
 # ── find_symbol ────────────────────────────────────────────────────────────────
 

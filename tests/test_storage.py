@@ -1,9 +1,7 @@
 """Tests for StorageManager (SQLite persistence layer)."""
 
-import pytest
-from codeprism.core.models import EdgeKind, EdgeRecord, FileRecord, NodeKind, SymbolRecord
+from codeprism.core.models import EdgeKind, FileRecord, NodeKind
 from tests.conftest import make_edge, make_file, make_symbol
-
 
 # ── File CRUD ─────────────────────────────────────────────────────────────────
 

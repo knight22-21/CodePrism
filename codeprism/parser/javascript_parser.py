@@ -6,7 +6,6 @@ import hashlib
 import os
 import time
 from pathlib import Path
-from typing import Optional
 
 from ..core.models import (
     EdgeKind,
@@ -77,7 +76,6 @@ class JavaScriptParser(BaseParser):
 
         result = ParseResult(file=file_rec)
         name_to_id: dict[str, str] = {}
-        root_type = "program"  # js/ts root node
 
         self._process_program(tree.root_node, file_path, file_id, source, result, name_to_id)
         self._resolve_intrafile_refs(result, name_to_id)
@@ -86,7 +84,8 @@ class JavaScriptParser(BaseParser):
     # ── Parser construction ───────────────────────────────────────────────────
 
     def _get_parser(self, ext: str):
-        from tree_sitter import Language, Parser as TSParser
+        from tree_sitter import Language
+        from tree_sitter import Parser as TSParser
 
         if ext in (".ts", ".mts"):
             if self._ts_parser is None:
@@ -151,7 +150,6 @@ class JavaScriptParser(BaseParser):
 
         body_node = node.child_by_field_name("body")
         docstring = self._get_jsdoc(node, source)
-        complexity = self._complexity(body_node)
 
         sym = SymbolRecord.create(
             file_path=file_path, file_id=file_id,
@@ -337,7 +335,7 @@ class JavaScriptParser(BaseParser):
                             name_to_id[alias] = sym.id
             elif child.type in ("identifier", "namespace_import"):
                 # import Foo from '...' or import * as Foo from '...'
-                name_text = child.text.decode("utf-8").lstrip("* as ").strip()
+                name_text = child.text.decode("utf-8").removeprefix("*").removeprefix(" as ").strip()
                 if name_text:
                     sym = SymbolRecord.create(
                         file_path=file_path, file_id=file_id,
@@ -452,7 +450,7 @@ class JavaScriptParser(BaseParser):
     # ── AST helpers ───────────────────────────────────────────────────────────
 
     @staticmethod
-    def _get_jsdoc(node, source: bytes) -> Optional[str]:
+    def _get_jsdoc(node, source: bytes) -> str | None:
         """Extract JSDoc comment immediately preceding the node."""
         start = node.start_byte
         # Look for /** ... */ before the node
@@ -465,7 +463,7 @@ class JavaScriptParser(BaseParser):
                     line.strip().lstrip("/*").lstrip("* ").rstrip()
                     for line in doc.splitlines()
                 ]
-                return " ".join(l for l in lines if l)
+                return " ".join(ln for ln in lines if ln)
         return None
 
     @staticmethod

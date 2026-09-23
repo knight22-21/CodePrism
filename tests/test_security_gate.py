@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from codeprism.security.gate import SecurityGate
 from codeprism.security.scanner import SecurityScanner
 
@@ -193,6 +191,7 @@ async def test_gate_has_warnings_property():
 async def test_session_write_with_secret_reports_block(tmp_path):
     """End-to-end: record_write surfaces the security status from the scanner."""
     import shutil
+
     from codeprism.core.config import CodePrismConfig
     from codeprism.core.graph import GraphEngine
     from codeprism.core.storage import StorageManager

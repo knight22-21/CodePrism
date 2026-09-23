@@ -5,7 +5,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from ..core.models import EdgeKind, EdgeRecord, FileRecord, NodeKind, SymbolRecord
 
@@ -17,7 +16,7 @@ class UnresolvedRef:
     ref_name: str      # name of the target symbol or module
     kind: EdgeKind
     file_path: str
-    line_number: Optional[int] = None
+    line_number: int | None = None
 
 
 @dataclass

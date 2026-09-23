@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Optional
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -12,8 +13,8 @@ from .session import SessionManager
 from .tools import (
     context_to_dict,
     data_flow_to_dict,
-    deps_to_dict,
     dependents_to_dict,
+    deps_to_dict,
     file_map_to_dict,
     impact_to_dict,
     search_matches_to_dict,
@@ -23,8 +24,8 @@ from .tools import (
 # ── Module-level state ────────────────────────────────────────────────────────
 
 _project_path: str = "."
-_engine: Optional[QueryEngine] = None
-_session_manager: Optional[SessionManager] = None
+_engine: QueryEngine | None = None
+_session_manager: SessionManager | None = None
 
 
 def configure(project_path: str) -> None:
@@ -127,7 +128,7 @@ mcp = FastMCP(
 @mcp.tool()
 async def index_project(
     path: str,
-    languages: Optional[list[str]] = None,
+    languages: list[str] | None = None,
     embeddings: bool = False,
 ) -> dict[str, Any]:
     """Build or rebuild the knowledge graph for a project directory.
@@ -182,7 +183,7 @@ async def update_file(path: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def get_graph_stats(path: Optional[str] = None) -> dict[str, Any]:
+async def get_graph_stats(path: str | None = None) -> dict[str, Any]:
     """Return aggregate statistics about the indexed knowledge graph.
 
     path: optional project path filter — scopes stats to files under that directory.
@@ -283,8 +284,8 @@ async def get_data_flow(file: str, symbol: str) -> dict[str, Any]:
 @mcp.tool()
 async def search_symbol(
     query: str,
-    project_path: Optional[str] = None,
-    kind: Optional[str] = None,
+    project_path: str | None = None,
+    kind: str | None = None,
 ) -> dict[str, Any]:
     """Find symbols by name (substring match).
 
@@ -319,7 +320,7 @@ async def get_dependents(file: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def scan_file(file: str, content: Optional[str] = None) -> dict[str, Any]:
+async def scan_file(file: str, content: str | None = None) -> dict[str, Any]:
     """Run all security detectors on a file.
 
     content: if provided, scans this proposed content (pre-write check);

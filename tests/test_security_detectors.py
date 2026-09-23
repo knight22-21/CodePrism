@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from codeprism.security.detectors.crypto import WeakCryptoDetector
 from codeprism.security.detectors.dependencies import DependenciesDetector
 from codeprism.security.detectors.env_vars import EnvVarDetector

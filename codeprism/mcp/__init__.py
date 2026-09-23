@@ -1,7 +1,7 @@
 """MCP server package."""
 
 from .server import configure, init_engine, init_session_manager, mcp
-from .session import SessionManager, SessionContext, UndoResult
+from .session import SessionContext, SessionManager, UndoResult
 
 __all__ = [
     "mcp",

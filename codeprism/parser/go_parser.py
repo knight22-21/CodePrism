@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import os
 import time
-from typing import Optional
 
 from ..core.models import (
     EdgeKind,
@@ -35,7 +34,8 @@ class GoParser(BaseParser):
     def __init__(self) -> None:
         try:
             import tree_sitter_go as tsg
-            from tree_sitter import Language, Parser as TSParser
+            from tree_sitter import Language
+            from tree_sitter import Parser as TSParser
             self._language = Language(tsg.language())
             self._parser = TSParser(self._language)
         except Exception as exc:

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .core import (
     CodePrismConfig,
     EdgeKind,
@@ -18,6 +16,7 @@ from .core import (
     StorageManager,
     SymbolRecord,
 )
+from .mcp.session import Session, SessionContext, SessionManager, UndoResult
 from .query.context import ContextResult
 from .query.engine import QueryEngine
 from .query.impact import ImpactResult
@@ -25,7 +24,6 @@ from .query.summary import ModuleSummary
 from .security import CVEResult, SecurityGate, SecurityReport, SecurityScanner
 from .security import check_package as check_package_cve
 from .security import check_requirements as check_requirements_cve
-from .mcp.session import Session, SessionContext, SessionManager, UndoResult
 
 __version__ = "0.1.0"
 
@@ -59,17 +57,17 @@ class CodePrism:
     def __init__(
         self,
         project_path: str,
-        config: Optional[CodePrismConfig] = None,
+        config: CodePrismConfig | None = None,
     ) -> None:
         self.project_path = project_path
         self.config = config or CodePrismConfig()
-        self._storage: Optional[StorageManager] = None
-        self._graph: Optional[GraphEngine] = None
-        self._engine: Optional[QueryEngine] = None
+        self._storage: StorageManager | None = None
+        self._graph: GraphEngine | None = None
+        self._engine: QueryEngine | None = None
 
     # ── Async context-manager protocol ───────────────────────────────────────
 
-    async def __aenter__(self) -> "CodePrism":
+    async def __aenter__(self) -> CodePrism:
         await self.initialize()
         return self
 
@@ -112,15 +110,15 @@ class CodePrism:
 
     async def get_context(
         self, file: str, symbol: str, depth: int = 2
-    ) -> Optional[ContextResult]:
+    ) -> ContextResult | None:
         return await self.engine.get_context(file, symbol, depth)
 
     async def get_impact(
         self, file: str, symbol: str
-    ) -> Optional[ImpactResult]:
+    ) -> ImpactResult | None:
         return await self.engine.get_impact(file, symbol)
 
-    async def get_module_summary(self, file: str) -> Optional[ModuleSummary]:
+    async def get_module_summary(self, file: str) -> ModuleSummary | None:
         return await self.engine.get_module_summary(file)
 
     # ── Session tracking (spec §7) ────────────────────────────────────────────

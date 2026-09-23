@@ -176,8 +176,8 @@ def test_callers_found(project):
 
 def test_setup_claude_creates_settings(tmp_path):
     """setup claude writes .claude/settings.json in CWD."""
-    import os
     import json
+    import os
 
     orig = os.getcwd()
     os.chdir(tmp_path)
@@ -195,8 +195,8 @@ def test_setup_claude_creates_settings(tmp_path):
 
 def test_setup_claude_merges_existing_servers(tmp_path):
     """setup claude merges into an existing settings.json without overwriting."""
-    import os
     import json
+    import os
 
     orig = os.getcwd()
     os.chdir(tmp_path)
@@ -217,8 +217,8 @@ def test_setup_claude_merges_existing_servers(tmp_path):
 
 def test_setup_cursor_creates_mcp_json(tmp_path):
     """setup cursor writes .cursor/mcp.json."""
-    import os
     import json
+    import os
 
     orig = os.getcwd()
     os.chdir(tmp_path)

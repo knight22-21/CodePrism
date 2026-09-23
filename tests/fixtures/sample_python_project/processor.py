@@ -1,8 +1,6 @@
 """Payment processor module."""
 
-import os
 import hashlib
-from typing import Optional
 
 
 class PaymentError(Exception):

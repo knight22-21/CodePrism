@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..core.graph import GraphEngine
-from ..core.models import EdgeKind, FileRecord, NodeKind, SymbolRecord
+from ..core.models import FileRecord, NodeKind, SymbolRecord
 from ..core.storage import StorageManager
 from . import context as _ctx_mod
 from . import impact as _imp_mod
@@ -15,7 +15,6 @@ from . import summary as _sum_mod
 from .context import ContextResult
 from .impact import ImpactResult
 from .summary import ModuleSummary
-
 
 # ── Additional result types ───────────────────────────────────────────────────
 
@@ -25,7 +24,7 @@ class SearchMatch:
     symbol: SymbolRecord
     file_path: str
     score: float = 1.0
-    docstring_excerpt: Optional[str] = None
+    docstring_excerpt: str | None = None
 
 
 @dataclass
@@ -79,8 +78,8 @@ class QueryEngine:
     def __init__(self, graph: GraphEngine, storage: StorageManager) -> None:
         self._graph = graph
         self._storage = storage
-        self._embedder: Optional[Any] = None
-        self._embed_store: Optional[Any] = None
+        self._embedder: Any | None = None
+        self._embed_store: Any | None = None
 
     def set_embeddings(self, embedder: Any, store: Any) -> None:
         """Inject embeddings components to enable semantic search."""
@@ -91,33 +90,33 @@ class QueryEngine:
 
     async def get_context(
         self, file_path: str, symbol_name: str, depth: int = 2
-    ) -> Optional[ContextResult]:
+    ) -> ContextResult | None:
         return await _ctx_mod.get_context(
             self._graph, self._storage, file_path, symbol_name, depth
         )
 
     async def get_impact(
         self, file_path: str, symbol_name: str
-    ) -> Optional[ImpactResult]:
+    ) -> ImpactResult | None:
         return await _imp_mod.get_impact(
             self._graph, self._storage, file_path, symbol_name
         )
 
-    async def get_module_summary(self, file_path: str) -> Optional[ModuleSummary]:
+    async def get_module_summary(self, file_path: str) -> ModuleSummary | None:
         return await _sum_mod.get_module_summary(
             self._graph, self._storage, file_path
         )
 
     # ── Symbol lookup ─────────────────────────────────────────────────────────
 
-    async def find_symbol(self, file_path: str, name: str) -> Optional[SymbolRecord]:
+    async def find_symbol(self, file_path: str, name: str) -> SymbolRecord | None:
         file = await self._storage.get_file_by_path(file_path)
         if not file:
             return None
         syms = await self._storage.get_symbols_for_file(file.id)
         return _ctx_mod._pick(syms, name)
 
-    async def get_file(self, file_path: str) -> Optional[FileRecord]:
+    async def get_file(self, file_path: str) -> FileRecord | None:
         return await self._storage.get_file_by_path(file_path)
 
     # ── Callers / callees ─────────────────────────────────────────────────────
@@ -137,14 +136,14 @@ class QueryEngine:
     # ── Search ────────────────────────────────────────────────────────────────
 
     async def search_symbols(
-        self, query: str, kind: Optional[str] = None
+        self, query: str, kind: str | None = None
     ) -> list[SearchMatch]:
         if self._embedder is not None and self._embed_store is not None:
             return await self._semantic_search(query, kind)
         return await self._substring_search(query, kind)
 
     async def _substring_search(
-        self, query: str, kind: Optional[str] = None
+        self, query: str, kind: str | None = None
     ) -> list[SearchMatch]:
         raw = await self._storage.search_symbols(query, kind)
         all_files = await self._storage.get_all_files()
@@ -160,7 +159,7 @@ class QueryEngine:
         ]
 
     async def _semantic_search(
-        self, query: str, kind: Optional[str] = None
+        self, query: str, kind: str | None = None
     ) -> list[SearchMatch]:
         import asyncio as _asyncio
         vector = await _asyncio.to_thread(self._embedder.encode_one, query)
@@ -223,7 +222,7 @@ class QueryEngine:
 
     # ── Dependencies ──────────────────────────────────────────────────────────
 
-    async def get_dependencies(self, file_path: str) -> Optional[DependencyResult]:
+    async def get_dependencies(self, file_path: str) -> DependencyResult | None:
         file = await self._storage.get_file_by_path(file_path)
         if not file:
             return None
@@ -265,7 +264,7 @@ class QueryEngine:
             circular_deps=circular,
         )
 
-    async def get_dependents(self, file_path: str) -> Optional[DependentResult]:
+    async def get_dependents(self, file_path: str) -> DependentResult | None:
         file = await self._storage.get_file_by_path(file_path)
         if not file:
             return None
@@ -290,7 +289,7 @@ class QueryEngine:
 
     async def get_data_flow(
         self, file_path: str, symbol_name: str
-    ) -> Optional[DataFlowResult]:
+    ) -> DataFlowResult | None:
         sym = await self.find_symbol(file_path, symbol_name)
         if not sym:
             return None
@@ -318,5 +317,5 @@ class QueryEngine:
 
     # ── Stats ─────────────────────────────────────────────────────────────────
 
-    async def get_stats(self, path_prefix: Optional[str] = None) -> dict:
+    async def get_stats(self, path_prefix: str | None = None) -> dict:
         return await self._storage.get_stats(path_prefix=path_prefix)

@@ -1,13 +1,14 @@
 """Tests for MCP tool functions — called directly, not via MCP protocol."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 import codeprism.mcp.server as _srv
 from codeprism.mcp.server import (
     check_secret_exposure,
-    get_callers,
     get_callees,
+    get_callers,
     get_context,
     get_data_flow,
     get_dependencies,

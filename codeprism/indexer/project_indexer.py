@@ -7,7 +7,6 @@ import fnmatch
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from ..core.config import CodePrismConfig
 from ..core.graph import GraphEngine
@@ -53,8 +52,8 @@ class ProjectIndexer:
         self,
         graph: GraphEngine,
         storage: StorageManager,
-        config: Optional[CodePrismConfig] = None,
-        registry: Optional[ParserRegistry] = None,
+        config: CodePrismConfig | None = None,
+        registry: ParserRegistry | None = None,
     ) -> None:
         self._graph = graph
         self._storage = storage

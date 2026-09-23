@@ -1,9 +1,7 @@
 """Tests for get_context(), get_impact(), and get_module_summary()."""
 
-import pytest
 
 from codeprism.core.models import NodeKind
-
 
 # ── get_context ───────────────────────────────────────────────────────────────
 

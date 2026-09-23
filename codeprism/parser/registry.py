@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 from .base import BaseParser
 from .generic_parser import GenericParser
@@ -65,7 +64,7 @@ class ParserRegistry:
 
 
 # Module-level default registry
-_default_registry: Optional[ParserRegistry] = None
+_default_registry: ParserRegistry | None = None
 
 
 def get_registry() -> ParserRegistry:

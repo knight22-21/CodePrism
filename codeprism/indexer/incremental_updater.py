@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from ..core.graph import GraphEngine
 from ..core.models import EdgeRecord, NodeKind
@@ -29,7 +28,7 @@ class IncrementalUpdater:
         self,
         graph: GraphEngine,
         storage: StorageManager,
-        registry: Optional[ParserRegistry] = None,
+        registry: ParserRegistry | None = None,
     ) -> None:
         self._graph = graph
         self._storage = storage

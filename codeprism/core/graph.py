@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import networkx as nx
 
 from .models import (
@@ -78,13 +76,13 @@ class GraphEngine:
     def has_node(self, node_id: str) -> bool:
         return self._g.has_node(node_id)
 
-    def get_symbol(self, symbol_id: str) -> Optional[SymbolRecord]:
+    def get_symbol(self, symbol_id: str) -> SymbolRecord | None:
         if not self._g.has_node(symbol_id):
             return None
         record = self._g.nodes[symbol_id].get("record")
         return record if isinstance(record, SymbolRecord) else None
 
-    def get_file(self, file_id: str) -> Optional[FileRecord]:
+    def get_file(self, file_id: str) -> FileRecord | None:
         if not self._g.has_node(file_id):
             return None
         record = self._g.nodes[file_id].get("record")
@@ -118,18 +116,18 @@ class GraphEngine:
 
     # ── Generic edge access ───────────────────────────────────────────────────
 
-    def get_edges_from(self, node_id: str, kind: Optional[EdgeKind] = None) -> list[EdgeRecord]:
+    def get_edges_from(self, node_id: str, kind: EdgeKind | None = None) -> list[EdgeRecord]:
         edges = []
         for _u, _v, data in self._g.out_edges(node_id, data=True):
-            rec: Optional[EdgeRecord] = data.get("record")
+            rec: EdgeRecord | None = data.get("record")
             if rec and (kind is None or rec.kind == kind):
                 edges.append(rec)
         return edges
 
-    def get_edges_to(self, node_id: str, kind: Optional[EdgeKind] = None) -> list[EdgeRecord]:
+    def get_edges_to(self, node_id: str, kind: EdgeKind | None = None) -> list[EdgeRecord]:
         edges = []
         for _u, _v, data in self._g.in_edges(node_id, data=True):
-            rec: Optional[EdgeRecord] = data.get("record")
+            rec: EdgeRecord | None = data.get("record")
             if rec and (kind is None or rec.kind == kind):
                 edges.append(rec)
         return edges
@@ -193,7 +191,7 @@ class GraphEngine:
     def find_all_paths(self, from_id: str, to_id: str, cutoff: int = 6) -> list[list[str]]:
         try:
             return list(nx.all_simple_paths(self._g, from_id, to_id, cutoff=cutoff))
-        except (nx.NodeNotFound, nx.NetworkXNoPath, nx.NodeNotFound):
+        except (nx.NodeNotFound, nx.NetworkXNoPath):
             return []
 
     # ── Stats ─────────────────────────────────────────────────────────────────
