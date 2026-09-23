@@ -53,18 +53,31 @@ def index(
     path: str = typer.Argument(..., help="Project directory to index"),
     languages: str | None = typer.Option(
         None, "--languages", "-l",
-        help="Comma-separated language list (default: python,javascript,typescript)"
+        help="Comma-separated language list (default: python,javascript,typescript,go)"
     ),
     embeddings: bool = typer.Option(
         False, "--embeddings", "-e",
         help="Also build semantic vector index (requires codeprism[embeddings])"
     ),
+    force: bool = typer.Option(
+        False, "--force", "-f",
+        help="Re-parse all files even if unchanged (skip incremental check)"
+    ),
 ) -> None:
-    """Build the knowledge graph for a project directory."""
-    asyncio.run(_index(path, languages, embeddings))
+    """Build the knowledge graph for a project directory.
+
+    Re-runs are incremental by default: only changed or new files are parsed.
+    Use --force to re-parse everything from scratch.
+    """
+    asyncio.run(_index(path, languages, embeddings, force))
 
 
-async def _index(path: str, languages: str | None, embeddings: bool = False) -> None:
+async def _index(
+    path: str,
+    languages: str | None,
+    embeddings: bool = False,
+    force: bool = False,
+) -> None:
     from .core.config import CodePrismConfig
     from .core.graph import GraphEngine
     from .core.paths import get_db_path
@@ -80,18 +93,24 @@ async def _index(path: str, languages: str | None, embeddings: bool = False) -> 
     await storage.initialize()
     graph = GraphEngine()
 
-    console.print(f"Indexing [bold]{path}[/bold] ...")
+    mode = "[dim](full re-index)[/dim]" if force else "[dim](incremental)[/dim]"
+    console.print(f"Indexing [bold]{path}[/bold] {mode}")
     if embeddings:
         console.print("[dim]Embeddings enabled — will build vector index after parsing...[/dim]")
     indexer = ProjectIndexer(graph, storage, config)
-    result = await indexer.index(path)
+    result = await indexer.index(path, force=force)
     await storage.close()
 
     if result.success:
+        skipped_note = (
+            f" · [dim]{result.files_skipped} unchanged[/dim]"
+            if result.files_skipped else ""
+        )
         console.print(
             f"[green]Done.[/green] "
             f"{result.file_count} files · {result.symbol_count} symbols · "
             f"{result.edge_count} edges · {result.duration_seconds:.2f}s"
+            f"{skipped_note}"
         )
         if embeddings:
             console.print("[green]Semantic index built.[/green] search_symbol now uses embeddings.")

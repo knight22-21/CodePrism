@@ -217,3 +217,105 @@ async def test_idempotent_reindex(storage, graph, py_project, py_indexer):
     # Symbol count must be the same after a re-index
     assert r1.symbol_count == r2.symbol_count
     assert r1.file_count == r2.file_count
+
+
+# ── Incremental indexing ───────────────────────────────────────────────────────
+
+
+async def test_second_run_skips_unchanged_files(storage, graph, tmp_path):
+    """Second index of an unchanged directory reports all files as skipped."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "a.py").write_text("def foo(): pass\n")
+    (proj / "b.py").write_text("def bar(): pass\n")
+
+    config = CodePrismConfig(languages=["python"])
+    indexer = ProjectIndexer(graph, storage, config)
+    await indexer.index(str(proj))
+    r2 = await indexer.index(str(proj))
+
+    assert r2.files_skipped == 2
+
+
+async def test_first_run_has_no_skipped_files(storage, graph, tmp_path):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "a.py").write_text("def foo(): pass\n")
+
+    config = CodePrismConfig(languages=["python"])
+    indexer = ProjectIndexer(graph, storage, config)
+    r1 = await indexer.index(str(proj))
+
+    assert r1.files_skipped == 0
+
+
+async def test_only_changed_file_is_reparsed(storage, graph, tmp_path):
+    """When one of two files changes, only that file is re-parsed."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "a.py").write_text("def foo(): pass\n")
+    (proj / "b.py").write_text("def bar(): pass\n")
+
+    config = CodePrismConfig(languages=["python"])
+    indexer = ProjectIndexer(graph, storage, config)
+    await indexer.index(str(proj))
+
+    (proj / "a.py").write_text("def foo_v2(): pass\n")
+    r2 = await indexer.index(str(proj))
+
+    assert r2.files_skipped == 1  # b.py unchanged
+    names = {s.name for s in await storage.get_all_symbols() if s.kind.value == "function"}
+    assert "foo_v2" in names
+    assert "bar" in names
+
+
+async def test_force_flag_reparses_all(storage, graph, tmp_path):
+    """force=True must re-parse every file regardless of checksums."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "a.py").write_text("def foo(): pass\n")
+
+    config = CodePrismConfig(languages=["python"])
+    indexer = ProjectIndexer(graph, storage, config)
+    await indexer.index(str(proj))
+    r2 = await indexer.index(str(proj), force=True)
+
+    assert r2.files_skipped == 0
+
+
+async def test_deleted_file_removed_from_storage(storage, graph, tmp_path):
+    """A file removed from disk must be purged from storage on the next index."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "keep.py").write_text("def keep(): pass\n")
+    (proj / "gone.py").write_text("def gone(): pass\n")
+
+    config = CodePrismConfig(languages=["python"])
+    indexer = ProjectIndexer(graph, storage, config)
+    await indexer.index(str(proj))
+
+    (proj / "gone.py").unlink()
+    await indexer.index(str(proj))
+
+    all_files = await storage.get_all_files()
+    paths = {f.path for f in all_files}
+    assert not any("gone" in p for p in paths)
+
+
+async def test_deleted_file_symbols_purged(storage, graph, tmp_path):
+    """Symbols belonging to a deleted file must not remain in storage."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "keep.py").write_text("def keep(): pass\n")
+    (proj / "gone.py").write_text("def gone_func(): pass\n")
+
+    config = CodePrismConfig(languages=["python"])
+    indexer = ProjectIndexer(graph, storage, config)
+    await indexer.index(str(proj))
+
+    (proj / "gone.py").unlink()
+    await indexer.index(str(proj))
+
+    names = {s.name for s in await storage.get_all_symbols()}
+    assert "gone_func" not in names
+    assert "keep" in names
