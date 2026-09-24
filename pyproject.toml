@@ -45,6 +45,7 @@ dependencies = [
     "tree-sitter-javascript",
     "tree-sitter-typescript",
     "tree-sitter-go",
+    "tree-sitter-rust",
     "networkx>=3.3",
     "aiosqlite>=0.20",
     "pydantic>=2.8",
