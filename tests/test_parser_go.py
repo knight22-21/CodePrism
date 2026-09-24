@@ -121,6 +121,7 @@ def test_no_parse_errors(result):
 
 async def test_index_go_project(storage, graph, tmp_path):
     import shutil
+
     from codeprism.core.config import CodePrismConfig
     from codeprism.indexer.project_indexer import ProjectIndexer
 

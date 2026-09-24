@@ -145,6 +145,7 @@ def test_no_errors_during_parse(result):
 
 async def test_index_typescript_project(storage, graph, tmp_path):
     import shutil
+
     from codeprism.core.config import CodePrismConfig
     from codeprism.indexer.project_indexer import ProjectIndexer
 
