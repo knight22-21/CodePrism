@@ -46,6 +46,7 @@ _LANGUAGE_EXTENSIONS: dict[str, frozenset[str]] = {
     "javascript": frozenset({".js", ".jsx", ".mjs"}),
     "typescript": frozenset({".ts", ".tsx", ".mts"}),
     "go": frozenset({".go"}),
+    "rust": frozenset({".rs"}),
 }
 
 

@@ -462,7 +462,10 @@ async def _watch(path: str) -> None:
 
 @app.command()
 def setup(
-    agent: str = typer.Argument("claude", help="Target agent: claude | cursor"),
+    agent: str = typer.Argument(
+        "claude",
+        help="Target agent: claude | cursor | windsurf | continue | zed",
+    ),
     project: str = typer.Option(".", "--project", "-p", help="Project path to serve"),
     global_: bool = typer.Option(
         False, "--global", "-g", help="Write to global config (~/.claude/settings.json)"
@@ -473,6 +476,9 @@ def setup(
     Examples:
         codeprism setup claude --project /path/to/repo
         codeprism setup cursor --project /path/to/repo --global
+        codeprism setup windsurf --project /path/to/repo
+        codeprism setup continue --project /path/to/repo
+        codeprism setup zed --project /path/to/repo
     """
     _setup(agent, project, global_)
 
@@ -490,8 +496,17 @@ def _setup(agent: str, project: str, global_: bool) -> None:
         _write_claude_config(server_entry, global_)
     elif agent == "cursor":
         _write_cursor_config(server_entry, global_)
+    elif agent == "windsurf":
+        _write_windsurf_config(server_entry, global_)
+    elif agent in ("continue", "continue.dev"):
+        _write_continue_config(server_entry, global_)
+    elif agent == "zed":
+        _write_zed_config(server_entry, global_)
     else:
-        console.print(f"[red]Unknown agent:[/red] {agent!r}. Supported: claude, cursor")
+        console.print(
+            f"[red]Unknown agent:[/red] {agent!r}. "
+            "Supported: claude, cursor, windsurf, continue, zed"
+        )
         raise typer.Exit(1)
 
 
@@ -640,6 +655,97 @@ def _write_cursor_config(server_entry: dict, global_: bool) -> None:
         f"[green]Done.[/green] Usage instructions written to [bold]{cursorrules.resolve()}[/bold]."
     )
     console.print("[dim]Restart Cursor to pick up the change.[/dim]")
+
+
+def _write_windsurf_config(server_entry: dict, global_: bool) -> None:
+    import json
+
+    if global_:
+        config_dir = Path.home() / ".codeium" / "windsurf"
+    else:
+        config_dir = Path(".windsurf")
+
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "mcp_config.json"
+
+    existing: dict = {}
+    if config_file.exists():
+        try:
+            existing = json.loads(config_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    servers = existing.setdefault("mcpServers", {})
+    servers["codeprism"] = server_entry
+    config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+    _upsert_agent_instructions(Path("CLAUDE.md"), _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+
+    scope = "global (~/.codeium/windsurf/)" if global_ else "project (.windsurf/)"
+    console.print(
+        f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
+    )
+    console.print("[dim]Restart Windsurf / Cascade to pick up the change.[/dim]")
+
+
+def _write_continue_config(server_entry: dict, global_: bool) -> None:
+    import json
+
+    # Continue.dev only has a global config; warn if --global not passed
+    config_file = Path.home() / ".continue" / "config.json"
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+
+    existing: dict = {}
+    if config_file.exists():
+        try:
+            existing = json.loads(config_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    servers = existing.setdefault("mcpServers", {})
+    servers["codeprism"] = server_entry
+    config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+    _upsert_agent_instructions(Path("CLAUDE.md"), _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+
+    console.print(f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold].")
+    console.print("[dim]Reload the Continue extension to pick up the change.[/dim]")
+
+
+def _write_zed_config(server_entry: dict, global_: bool) -> None:
+    import json
+
+    if global_:
+        config_file = Path.home() / ".config" / "zed" / "settings.json"
+    else:
+        config_file = Path(".zed") / "settings.json"
+
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+
+    existing: dict = {}
+    if config_file.exists():
+        try:
+            existing = json.loads(config_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    # Zed uses context_servers, not mcpServers
+    ctx_servers = existing.setdefault("context_servers", {})
+    ctx_servers["codeprism"] = {
+        "command": {
+            "path": server_entry["command"],
+            "args": server_entry["args"],
+        }
+    }
+    config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+
+    _upsert_agent_instructions(Path("CLAUDE.md"), _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+
+    scope = "global (~/.config/zed/)" if global_ else "project (.zed/)"
+    console.print(
+        f"[green]Done.[/green] CodePrism context server added to [bold]{config_file}[/bold] ({scope})."
+    )
+    console.print("[dim]Restart Zed to pick up the change.[/dim]")
 
 
 def _upsert_agent_instructions(file: Path, block: str, marker: str) -> None:
