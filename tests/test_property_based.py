@@ -36,9 +36,13 @@ identifier = st.text(
     max_size=40,
 ).filter(lambda s: s[0].isalpha())
 
-node_kind = st.sampled_from([
-    NodeKind.FUNCTION, NodeKind.CLASS, NodeKind.VARIABLE,
-])
+node_kind = st.sampled_from(
+    [
+        NodeKind.FUNCTION,
+        NodeKind.CLASS,
+        NodeKind.VARIABLE,
+    ]
+)
 
 edge_kind = st.sampled_from(list(EdgeKind))
 
@@ -149,13 +153,14 @@ def test_secrets_all_results_have_fix_suggestion(content):
 @given(
     query=st.text(
         alphabet=string.ascii_letters + string.digits + " _",
-        min_size=1, max_size=40,
+        min_size=1,
+        max_size=40,
     )
 )
 @settings(max_examples=150)
 def test_injection_detects_fstring_sql(query):
     """f-string SQL concatenation must always be flagged."""
-    content = f'cursor.execute(f"SELECT * FROM users WHERE name = \'{{{query}}}\'")\n'
+    content = f"cursor.execute(f\"SELECT * FROM users WHERE name = '{{{query}}}'\")\n"
     det = InjectionDetector()
     results = det.scan(content)
     assert len(results) >= 1, f"Expected SQL injection finding for: {content!r}"

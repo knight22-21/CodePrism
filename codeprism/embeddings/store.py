@@ -5,8 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 _IMPORT_ERROR = (
-    "chromadb is required for embeddings support.\n"
-    "Install with:  pip install codeprism[embeddings]"
+    "chromadb is required for embeddings support.\nInstall with:  pip install codeprism[embeddings]"
 )
 
 

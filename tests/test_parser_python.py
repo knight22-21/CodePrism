@@ -71,6 +71,7 @@ def parser() -> PythonParser:
 
 # ── File record ────────────────────────────────────────────────────────────────
 
+
 def test_file_record_language(parser):
     result = parser.parse("/project/test.py", SIMPLE)
     assert result.file.language == "python"
@@ -89,6 +90,7 @@ def test_file_record_checksum_is_stable(parser):
 
 
 # ── Imports ────────────────────────────────────────────────────────────────────
+
 
 def test_extracts_plain_import(parser):
     result = parser.parse("/project/test.py", SIMPLE)
@@ -118,6 +120,7 @@ def test_extracts_from_import_single(parser):
 
 # ── Classes ────────────────────────────────────────────────────────────────────
 
+
 def test_extracts_class_names(parser):
     result = parser.parse("/project/test.py", SIMPLE)
     classes = {s.name for s in result.symbols if s.kind == NodeKind.CLASS}
@@ -144,6 +147,7 @@ def test_class_public_flag(parser):
 
 
 # ── Functions ──────────────────────────────────────────────────────────────────
+
 
 def test_extracts_top_level_functions(parser):
     result = parser.parse("/project/test.py", SIMPLE)
@@ -191,6 +195,7 @@ def test_decorated_function_extracted(parser):
 
 # ── Variables ──────────────────────────────────────────────────────────────────
 
+
 def test_extracts_module_variable(parser):
     result = parser.parse("/project/test.py", SIMPLE)
     variables = {s.name for s in result.symbols if s.kind == NodeKind.VARIABLE}
@@ -198,6 +203,7 @@ def test_extracts_module_variable(parser):
 
 
 # ── Edges — defines ────────────────────────────────────────────────────────────
+
 
 def test_defines_edge_file_to_class(parser):
     result = parser.parse("/project/test.py", SIMPLE)
@@ -226,6 +232,7 @@ def test_defines_edge_file_to_function(parser):
 
 # ── Edges — inherits ────────────────────────────────────────────────────────────
 
+
 def test_intrafile_inherits_resolved(parser):
     result = parser.parse("/project/test.py", SIMPLE)
     inherits = [e for e in result.edges if e.kind == EdgeKind.INHERITS]
@@ -244,6 +251,7 @@ def test_cross_file_inherits_stays_unresolved(parser):
 
 
 # ── Edges — calls ──────────────────────────────────────────────────────────────
+
 
 def test_intrafile_calls_resolved(parser):
     result = parser.parse("/project/test.py", SIMPLE)
@@ -270,6 +278,7 @@ def test_cross_file_call_stays_unresolved(parser):
 
 # ── Complexity ────────────────────────────────────────────────────────────────
 
+
 def test_complexity_simple_function(parser):
     src = "def simple():\n    return 1\n"
     result = parser.parse("/project/f.py", src)
@@ -292,6 +301,7 @@ def test_complexity_branchy_function(parser):
 
 
 # ── Fixture file ───────────────────────────────────────────────────────────────
+
 
 def test_parse_fixture_file(parser):
     fixture = FIXTURE_DIR / "processor.py"

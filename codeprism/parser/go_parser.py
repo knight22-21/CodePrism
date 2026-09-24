@@ -16,16 +16,18 @@ from ..core.models import (
 )
 from .base import BaseParser, ParseResult, UnresolvedRef
 
-_GO_BRANCH_TYPES = frozenset({
-    "if_statement",
-    "for_statement",
-    "range_clause",
-    "select_statement",
-    "switch_statement",
-    "expression_case",
-    "default_case",
-    "type_switch_statement",
-})
+_GO_BRANCH_TYPES = frozenset(
+    {
+        "if_statement",
+        "for_statement",
+        "range_clause",
+        "select_statement",
+        "switch_statement",
+        "expression_case",
+        "default_case",
+        "type_switch_statement",
+    }
+)
 
 
 class GoParser(BaseParser):
@@ -36,6 +38,7 @@ class GoParser(BaseParser):
             import tree_sitter_go as tsg
             from tree_sitter import Language
             from tree_sitter import Parser as TSParser
+
             self._language = Language(tsg.language())
             self._parser = TSParser(self._language)
         except Exception as exc:
@@ -85,7 +88,9 @@ class GoParser(BaseParser):
         for node in root.named_children:
             t = node.type
             if t == "function_declaration":
-                self._extract_function(node, file_path, file_id, source, result, name_to_id, receiver_type=None)
+                self._extract_function(
+                    node, file_path, file_id, source, result, name_to_id, receiver_type=None
+                )
             elif t == "method_declaration":
                 self._extract_method(node, file_path, file_id, source, result, name_to_id)
             elif t == "type_declaration":
@@ -97,7 +102,9 @@ class GoParser(BaseParser):
 
     # ── Function extraction ───────────────────────────────────────────────────
 
-    def _extract_function(self, node, file_path, file_id, source, result, name_to_id, receiver_type):
+    def _extract_function(
+        self, node, file_path, file_id, source, result, name_to_id, receiver_type
+    ):
         name_node = node.child_by_field_name("name")
         if not name_node:
             return
@@ -119,8 +126,10 @@ class GoParser(BaseParser):
         is_public = name[0].isupper() if name else False
 
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.FUNCTION,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.FUNCTION,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=sig,
@@ -132,17 +141,27 @@ class GoParser(BaseParser):
         if receiver_type:
             name_to_id[f"{receiver_type}.{name}"] = sym.id
 
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=file_id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=file_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
         if body_node:
             for callee, line in self._extract_call_names(body_node):
-                result.unresolved_refs.append(UnresolvedRef(
-                    from_id=sym.id, ref_name=callee,
-                    kind=EdgeKind.CALLS, file_path=file_path, line_number=line,
-                ))
+                result.unresolved_refs.append(
+                    UnresolvedRef(
+                        from_id=sym.id,
+                        ref_name=callee,
+                        kind=EdgeKind.CALLS,
+                        file_path=file_path,
+                        line_number=line,
+                    )
+                )
 
     def _extract_method(self, node, file_path, file_id, source, result, name_to_id):
         name_node = node.child_by_field_name("name")  # field_identifier
@@ -177,10 +196,14 @@ class GoParser(BaseParser):
             type_kind = type_node.type if type_node else "unknown"
 
             # struct and interface → CLASS, others → TYPE
-            node_kind = NodeKind.CLASS if type_kind in ("struct_type", "interface_type") else NodeKind.TYPE
+            node_kind = (
+                NodeKind.CLASS if type_kind in ("struct_type", "interface_type") else NodeKind.TYPE
+            )
             sym = SymbolRecord.create(
-                file_path=file_path, file_id=file_id,
-                name=name, kind=node_kind,
+                file_path=file_path,
+                file_id=file_id,
+                name=name,
+                kind=node_kind,
                 line_start=node.start_point[0] + 1,
                 line_end=node.end_point[0] + 1,
                 signature=f"type {name} {type_kind}",
@@ -189,10 +212,15 @@ class GoParser(BaseParser):
             )
             result.symbols.append(sym)
             name_to_id[name] = sym.id
-            result.edges.append(EdgeRecord.create(
-                kind=EdgeKind.DEFINES, from_id=file_id, to_id=sym.id,
-                file_path=file_path, line_number=node.start_point[0] + 1,
-            ))
+            result.edges.append(
+                EdgeRecord.create(
+                    kind=EdgeKind.DEFINES,
+                    from_id=file_id,
+                    to_id=sym.id,
+                    file_path=file_path,
+                    line_number=node.start_point[0] + 1,
+                )
+            )
 
     # ── Import extraction ─────────────────────────────────────────────────────
 
@@ -208,17 +236,25 @@ class GoParser(BaseParser):
             pkg_name = raw_path.split("/")[-1]
             alias = alias_node.text.decode("utf-8") if alias_node else pkg_name
             sym = SymbolRecord.create(
-                file_path=file_path, file_id=file_id,
-                name=alias, kind=NodeKind.IMPORT,
-                line_start=line, line_end=line,
+                file_path=file_path,
+                file_id=file_id,
+                name=alias,
+                kind=NodeKind.IMPORT,
+                line_start=line,
+                line_end=line,
                 extra={"is_from_import": False, "source_module": raw_path},
             )
             result.symbols.append(sym)
             name_to_id[alias] = sym.id
-            result.unresolved_refs.append(UnresolvedRef(
-                from_id=file_id, ref_name=raw_path,
-                kind=EdgeKind.IMPORTS, file_path=file_path, line_number=line,
-            ))
+            result.unresolved_refs.append(
+                UnresolvedRef(
+                    from_id=file_id,
+                    ref_name=raw_path,
+                    kind=EdgeKind.IMPORTS,
+                    file_path=file_path,
+                    line_number=line,
+                )
+            )
 
         for child in node.named_children:
             if child.type == "import_spec":
@@ -239,8 +275,10 @@ class GoParser(BaseParser):
                 if id_node.type == "identifier":
                     name = id_node.text.decode("utf-8")
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=name, kind=NodeKind.VARIABLE,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=name,
+                        kind=NodeKind.VARIABLE,
                         line_start=child.start_point[0] + 1,
                         line_end=child.end_point[0] + 1,
                         is_public=name[0].isupper() if name else False,

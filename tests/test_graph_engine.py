@@ -6,6 +6,7 @@ from tests.conftest import make_edge, make_file, make_symbol
 
 # ── Basic mutation ────────────────────────────────────────────────────────────
 
+
 def test_add_file_and_get():
     g = GraphEngine()
     f = make_file()
@@ -64,6 +65,7 @@ def test_remove_edge_by_id():
 
 # ── Caller / callee ───────────────────────────────────────────────────────────
 
+
 def test_callers_and_callees():
     g = GraphEngine()
     f = make_file()
@@ -115,6 +117,7 @@ def test_callers_only_includes_calls_edges():
 
 # ── Neighbourhood traversal ───────────────────────────────────────────────────
 
+
 def test_get_neighbors_depth_1():
     g = GraphEngine()
     f = make_file()
@@ -156,6 +159,7 @@ def test_get_neighbors_isolated_node():
 
 # ── Transitive analysis ───────────────────────────────────────────────────────
 
+
 def test_transitive_dependents():
     g = GraphEngine()
     f = make_file()
@@ -194,6 +198,7 @@ def test_transitive_dependencies():
 
 # ── Subgraph ──────────────────────────────────────────────────────────────────
 
+
 def test_get_subgraph_contains_center():
     g = GraphEngine()
     f = make_file()
@@ -225,6 +230,7 @@ def test_get_subgraph_respects_depth():
 
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
+
 
 def test_stats_counts():
     g = GraphEngine()
@@ -258,6 +264,7 @@ def test_stats_edge_count():
 
 # ── Load from storage ─────────────────────────────────────────────────────────
 
+
 async def test_load_from_storage(storage):
     f = make_file()
     await storage.upsert_file(f)
@@ -279,6 +286,7 @@ async def test_load_from_storage(storage):
 
 
 # ── Serialization ─────────────────────────────────────────────────────────────
+
 
 def test_to_json_structure():
     g = GraphEngine()

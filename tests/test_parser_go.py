@@ -17,6 +17,7 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 def parser():
     from codeprism.parser.go_parser import GoParser
+
     return GoParser()
 
 

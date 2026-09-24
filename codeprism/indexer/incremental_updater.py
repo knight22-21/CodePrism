@@ -127,11 +127,13 @@ class IncrementalUpdater:
         for ref in unresolved:
             target_id = name_to_id.get(ref.ref_name)
             if target_id and target_id != ref.from_id:
-                resolved.append(EdgeRecord.create(
-                    kind=ref.kind,
-                    from_id=ref.from_id,
-                    to_id=target_id,
-                    file_path=ref.file_path,
-                    line_number=ref.line_number,
-                ))
+                resolved.append(
+                    EdgeRecord.create(
+                        kind=ref.kind,
+                        from_id=ref.from_id,
+                        to_id=target_id,
+                        file_path=ref.file_path,
+                        line_number=ref.line_number,
+                    )
+                )
         return resolved

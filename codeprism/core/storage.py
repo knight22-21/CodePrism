@@ -135,8 +135,14 @@ class StorageManager:
                 indexed_at    = excluded.indexed_at
             """,
             (
-                file.id, file.path, file.language, file.size_bytes,
-                file.checksum, file.last_modified, file.line_count, file.indexed_at,
+                file.id,
+                file.path,
+                file.language,
+                file.size_bytes,
+                file.checksum,
+                file.last_modified,
+                file.line_count,
+                file.indexed_at,
             ),
         )
         await self.db.commit()
@@ -182,9 +188,17 @@ class StorageManager:
                 complexity_score = excluded.complexity_score
             """,
             (
-                symbol.id, symbol.file_id, symbol.name, symbol.kind.value,
-                symbol.line_start, symbol.line_end, symbol.signature, symbol.docstring,
-                int(symbol.is_async), int(symbol.is_public), symbol.complexity_score,
+                symbol.id,
+                symbol.file_id,
+                symbol.name,
+                symbol.kind.value,
+                symbol.line_start,
+                symbol.line_end,
+                symbol.signature,
+                symbol.docstring,
+                int(symbol.is_async),
+                int(symbol.is_public),
+                symbol.complexity_score,
             ),
         )
         await self.db.commit()
@@ -210,9 +224,17 @@ class StorageManager:
             """,
             [
                 (
-                    s.id, s.file_id, s.name, s.kind.value,
-                    s.line_start, s.line_end, s.signature, s.docstring,
-                    int(s.is_async), int(s.is_public), s.complexity_score,
+                    s.id,
+                    s.file_id,
+                    s.name,
+                    s.kind.value,
+                    s.line_start,
+                    s.line_end,
+                    s.signature,
+                    s.docstring,
+                    int(s.is_async),
+                    int(s.is_public),
+                    s.complexity_score,
                 )
                 for s in symbols
             ],
@@ -289,8 +311,14 @@ class StorageManager:
                 is_conditional = excluded.is_conditional
             """,
             (
-                edge.id, edge.kind.value, edge.from_id, edge.to_id,
-                edge.file_path, edge.line_number, edge.weight, int(edge.is_conditional),
+                edge.id,
+                edge.kind.value,
+                edge.from_id,
+                edge.to_id,
+                edge.file_path,
+                edge.line_number,
+                edge.weight,
+                int(edge.is_conditional),
             ),
         )
         await self.db.commit()
@@ -306,8 +334,14 @@ class StorageManager:
             """,
             [
                 (
-                    e.id, e.kind.value, e.from_id, e.to_id,
-                    e.file_path, e.line_number, e.weight, int(e.is_conditional),
+                    e.id,
+                    e.kind.value,
+                    e.from_id,
+                    e.to_id,
+                    e.file_path,
+                    e.line_number,
+                    e.weight,
+                    int(e.is_conditional),
                 )
                 for e in edges
             ],
@@ -361,9 +395,17 @@ class StorageManager:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                issue.id, issue.file_id, issue.symbol_id, issue.detector,
-                issue.severity.value, issue.category, issue.line_number,
-                issue.description, issue.fix_suggestion, issue.detected_at, int(issue.resolved),
+                issue.id,
+                issue.file_id,
+                issue.symbol_id,
+                issue.detector,
+                issue.severity.value,
+                issue.category,
+                issue.line_number,
+                issue.description,
+                issue.fix_suggestion,
+                issue.detected_at,
+                int(issue.resolved),
             ),
         )
         await self.db.commit()
@@ -386,9 +428,15 @@ class StorageManager:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                event.id, event.session_id, event.event_type.value,
-                event.file_path, event.symbol_name, event.content_before,
-                event.content_after, event.security_report, event.created_at,
+                event.id,
+                event.session_id,
+                event.event_type.value,
+                event.file_path,
+                event.symbol_name,
+                event.content_before,
+                event.content_after,
+                event.security_report,
+                event.created_at,
             ),
         )
         await self.db.commit()
@@ -411,24 +459,26 @@ class StorageManager:
 
         if path_prefix:
             prefix = path_prefix.rstrip("/\\") + "%"
-            file_count = await scalar(
-                "SELECT COUNT(*) FROM files WHERE path LIKE ?", (prefix,)
-            )
+            file_count = await scalar("SELECT COUNT(*) FROM files WHERE path LIKE ?", (prefix,))
             function_count = await scalar(
                 "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
-                "WHERE s.kind = 'function' AND f.path LIKE ?", (prefix,)
+                "WHERE s.kind = 'function' AND f.path LIKE ?",
+                (prefix,),
             )
             class_count = await scalar(
                 "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
-                "WHERE s.kind = 'class' AND f.path LIKE ?", (prefix,)
+                "WHERE s.kind = 'class' AND f.path LIKE ?",
+                (prefix,),
             )
             variable_count = await scalar(
                 "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
-                "WHERE s.kind = 'variable' AND f.path LIKE ?", (prefix,)
+                "WHERE s.kind = 'variable' AND f.path LIKE ?",
+                (prefix,),
             )
             import_count = await scalar(
                 "SELECT COUNT(*) FROM symbols s JOIN files f ON s.file_id = f.id "
-                "WHERE s.kind = 'import' AND f.path LIKE ?", (prefix,)
+                "WHERE s.kind = 'import' AND f.path LIKE ?",
+                (prefix,),
             )
             edge_count = await scalar(
                 "SELECT COUNT(*) FROM edges WHERE file_path LIKE ?", (prefix,)
@@ -444,7 +494,8 @@ class StorageManager:
                 row = await cur.fetchone()
             files_with_symbols = await scalar(
                 "SELECT COUNT(DISTINCT s.file_id) FROM symbols s "
-                "JOIN files f ON s.file_id = f.id WHERE f.path LIKE ?", (prefix,)
+                "JOIN files f ON s.file_id = f.id WHERE f.path LIKE ?",
+                (prefix,),
             )
         else:
             file_count = await scalar("SELECT COUNT(*) FROM files")
@@ -459,15 +510,11 @@ class StorageManager:
                 lang_rows = await cur.fetchall()
             async with self.db.execute("SELECT MAX(indexed_at) FROM files") as cur:
                 row = await cur.fetchone()
-            files_with_symbols = await scalar(
-                "SELECT COUNT(DISTINCT file_id) FROM symbols"
-            )
+            files_with_symbols = await scalar("SELECT COUNT(DISTINCT file_id) FROM symbols")
 
         languages = [r[0] for r in lang_rows]
         last_indexed_at = float(row[0]) if row and row[0] is not None else None
-        coverage_percent = (
-            round(files_with_symbols / file_count * 100, 1) if file_count else 0.0
-        )
+        coverage_percent = round(files_with_symbols / file_count * 100, 1) if file_count else 0.0
 
         return {
             "file_count": file_count,
@@ -483,6 +530,7 @@ class StorageManager:
 
 
 # ─── Row converters (module-level for reuse) ──────────────────────────────────
+
 
 def _row_to_symbol(row: aiosqlite.Row) -> SymbolRecord:
     d = dict(row)

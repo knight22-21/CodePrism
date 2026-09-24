@@ -35,7 +35,7 @@ _PATTERNS = [
     ),
     # Well-known key formats
     (
-        re.compile(r'AKIA[0-9A-Z]{16}'),
+        re.compile(r"AKIA[0-9A-Z]{16}"),
         "BLOCK",
         "AWS access key ID",
         "Remove immediately and rotate via IAM console",
@@ -47,13 +47,13 @@ _PATTERNS = [
         "Use IAM roles or AWS Secrets Manager",
     ),
     (
-        re.compile(r'\bsk-[a-zA-Z0-9]{20,}'),
+        re.compile(r"\bsk-[a-zA-Z0-9]{20,}"),
         "BLOCK",
         "Possible OpenAI API key",
         "Revoke at platform.openai.com and load from environment",
     ),
     (
-        re.compile(r'\bghp_[a-zA-Z0-9]{36}\b'),
+        re.compile(r"\bghp_[a-zA-Z0-9]{36}\b"),
         "BLOCK",
         "GitHub personal access token",
         "Revoke at github.com/settings/tokens immediately",

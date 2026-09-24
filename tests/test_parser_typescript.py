@@ -17,6 +17,7 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 def parser():
     from codeprism.parser.javascript_parser import JavaScriptParser
+
     return JavaScriptParser()
 
 

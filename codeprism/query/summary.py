@@ -13,6 +13,7 @@ from ..core.storage import StorageManager
 @dataclass
 class ModuleSummary:
     """High-level summary of a single source file."""
+
     file: FileRecord
     purpose: str = ""
     public_api: list[SymbolRecord] = field(default_factory=list)
@@ -34,14 +35,11 @@ async def get_module_summary(
 
     syms = await storage.get_symbols_for_file(file.id)
 
-    classes   = [s for s in syms if s.kind == NodeKind.CLASS]
+    classes = [s for s in syms if s.kind == NodeKind.CLASS]
     functions = [s for s in syms if s.kind == NodeKind.FUNCTION]
-    imports   = [s for s in syms if s.kind == NodeKind.IMPORT]
+    imports = [s for s in syms if s.kind == NodeKind.IMPORT]
 
-    public_api = [
-        s for s in syms
-        if s.is_public and s.kind in (NodeKind.FUNCTION, NodeKind.CLASS)
-    ]
+    public_api = [s for s in syms if s.is_public and s.kind in (NodeKind.FUNCTION, NodeKind.CLASS)]
 
     # Average function complexity
     complexities = [s.complexity_score for s in functions if s.complexity_score]

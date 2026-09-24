@@ -12,8 +12,9 @@ from ..core.models import EdgeKind, EdgeRecord, FileRecord, NodeKind, SymbolReco
 @dataclass
 class UnresolvedRef:
     """A cross-file call/inherits/imports that cannot be resolved from one file alone."""
+
     from_id: str
-    ref_name: str      # name of the target symbol or module
+    ref_name: str  # name of the target symbol or module
     kind: EdgeKind
     file_path: str
     line_number: int | None = None
@@ -22,6 +23,7 @@ class UnresolvedRef:
 @dataclass
 class ParseResult:
     """Everything a parser extracted from a single file."""
+
     file: FileRecord
     symbols: list[SymbolRecord] = field(default_factory=list)
     edges: list[EdgeRecord] = field(default_factory=list)
@@ -72,13 +74,15 @@ class BaseParser(ABC):
                 still.append(ref)
                 continue
             if target_id and target_id != ref.from_id:
-                result.edges.append(EdgeRecord.create(
-                    kind=ref.kind,
-                    from_id=ref.from_id,
-                    to_id=target_id,
-                    file_path=ref.file_path,
-                    line_number=ref.line_number,
-                ))
+                result.edges.append(
+                    EdgeRecord.create(
+                        kind=ref.kind,
+                        from_id=ref.from_id,
+                        to_id=target_id,
+                        file_path=ref.file_path,
+                        line_number=ref.line_number,
+                    )
+                )
             else:
                 still.append(ref)
         result.unresolved_refs = still

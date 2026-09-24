@@ -52,6 +52,7 @@ async def test_record_read_stores_event(session_env):
 
 async def test_record_read_event_type(session_env):
     from codeprism.core.models import SessionEventKind
+
     manager, proj, storage = session_env
     await manager.record_read(SESSION_ID, str(proj / "processor.py"), "process")
     events = await storage.get_session_events(SESSION_ID)
@@ -77,6 +78,7 @@ async def test_record_read_multiple_symbols(session_env):
 
 async def test_record_write_stores_event(session_env):
     from codeprism.core.models import SessionEventKind
+
     manager, proj, storage = session_env
     fp = str(proj / "processor.py")
     before = Path(fp).read_text(encoding="utf-8")
@@ -232,6 +234,7 @@ async def test_undo_write_no_writes_is_noop(session_env):
 
 async def test_undo_write_records_undo_event(session_env):
     from codeprism.core.models import SessionEventKind
+
     manager, proj, storage = session_env
     fp = str(proj / "processor.py")
     before = Path(fp).read_text(encoding="utf-8")

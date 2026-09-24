@@ -71,25 +71,19 @@ def test_stats_verbose(project):
 
 
 def test_search_finds_symbol(project):
-    result = runner.invoke(
-        app, ["search", "compute", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["search", "compute", "--project", str(project)])
     assert result.exit_code == 0
     assert "compute_checksum" in result.output
 
 
 def test_search_no_match(project):
-    result = runner.invoke(
-        app, ["search", "zzz_no_match_xyz", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["search", "zzz_no_match_xyz", "--project", str(project)])
     assert result.exit_code == 0
     assert "No matches" in result.output
 
 
 def test_search_kind_filter(project):
-    result = runner.invoke(
-        app, ["search", "", "--kind", "class", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["search", "", "--kind", "class", "--project", str(project)])
     assert result.exit_code == 0
 
 
@@ -98,25 +92,19 @@ def test_search_kind_filter(project):
 
 def test_context_found(project):
     proc = str(project / "processor.py")
-    result = runner.invoke(
-        app, ["context", f"{proc}::compute_checksum", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["context", f"{proc}::compute_checksum", "--project", str(project)])
     assert result.exit_code == 0
     assert "compute_checksum" in result.output
 
 
 def test_context_missing_symbol(project):
     proc = str(project / "processor.py")
-    result = runner.invoke(
-        app, ["context", f"{proc}::no_such_fn", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["context", f"{proc}::no_such_fn", "--project", str(project)])
     assert result.exit_code != 0 or "Not found" in result.output
 
 
 def test_context_bad_format(project):
-    result = runner.invoke(
-        app, ["context", "no_double_colon_here", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["context", "no_double_colon_here", "--project", str(project)])
     # Should show error
     assert result.exit_code != 0 or "Error" in result.output
 
@@ -126,18 +114,14 @@ def test_context_bad_format(project):
 
 def test_impact_found(project):
     proc = str(project / "processor.py")
-    result = runner.invoke(
-        app, ["impact", f"{proc}::compute_checksum", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["impact", f"{proc}::compute_checksum", "--project", str(project)])
     assert result.exit_code == 0
     assert "severity" in result.output.lower() or "Impact" in result.output
 
 
 def test_impact_missing(project):
     proc = str(project / "processor.py")
-    result = runner.invoke(
-        app, ["impact", f"{proc}::no_fn_xyz", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["impact", f"{proc}::no_fn_xyz", "--project", str(project)])
     assert result.exit_code != 0 or "Not found" in result.output
 
 
@@ -146,17 +130,13 @@ def test_impact_missing(project):
 
 def test_summary_found(project):
     proc = str(project / "processor.py")
-    result = runner.invoke(
-        app, ["summary", proc, "--project", str(project)]
-    )
+    result = runner.invoke(app, ["summary", proc, "--project", str(project)])
     assert result.exit_code == 0
     assert "processor" in result.output.lower()
 
 
 def test_summary_missing(project):
-    result = runner.invoke(
-        app, ["summary", "/no/such/file.py", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["summary", "/no/such/file.py", "--project", str(project)])
     assert result.exit_code != 0 or "Not found" in result.output
 
 
@@ -165,9 +145,7 @@ def test_summary_missing(project):
 
 def test_callers_found(project):
     proc = str(project / "processor.py")
-    result = runner.invoke(
-        app, ["callers", f"{proc}::compute_checksum", "--project", str(project)]
-    )
+    result = runner.invoke(app, ["callers", f"{proc}::compute_checksum", "--project", str(project)])
     assert result.exit_code == 0
 
 

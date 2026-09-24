@@ -12,5 +12,6 @@ async def run_payment(amount: float) -> bool:
 
 def main() -> None:
     import asyncio
+
     result = asyncio.run(run_payment(99.99))
     print("Payment result:", result)

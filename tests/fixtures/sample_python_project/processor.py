@@ -5,6 +5,7 @@ import hashlib
 
 class PaymentError(Exception):
     """Raised when a payment fails."""
+
     pass
 
 

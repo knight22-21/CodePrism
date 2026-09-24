@@ -16,20 +16,36 @@ from ..core.storage import StorageManager
 from ..parser.base import UnresolvedRef
 from ..parser.registry import ParserRegistry
 
-_DEFAULT_IGNORE = frozenset({
-    ".git", ".hg", ".svn",
-    "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
-    "node_modules", "vendor", "bower_components",
-    ".venv", "venv", "env",
-    "dist", "build", "out", ".next", ".nuxt",
-    ".tox", ".eggs",
-})
+_DEFAULT_IGNORE = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        "node_modules",
+        "vendor",
+        "bower_components",
+        ".venv",
+        "venv",
+        "env",
+        "dist",
+        "build",
+        "out",
+        ".next",
+        ".nuxt",
+        ".tox",
+        ".eggs",
+    }
+)
 
 _LANGUAGE_EXTENSIONS: dict[str, frozenset[str]] = {
-    "python":     frozenset({".py", ".pyi"}),
+    "python": frozenset({".py", ".pyi"}),
     "javascript": frozenset({".js", ".jsx", ".mjs"}),
     "typescript": frozenset({".ts", ".tsx", ".mts"}),
-    "go":         frozenset({".go"}),
+    "go": frozenset({".go"}),
 }
 
 
@@ -118,7 +134,8 @@ class ProjectIndexer:
                     return None
 
         parse_results = [
-            r for r in await asyncio.gather(*[parse_one(fp) for fp in source_files])
+            r
+            for r in await asyncio.gather(*[parse_one(fp) for fp in source_files])
             if r is not None
         ]
 
@@ -127,7 +144,7 @@ class ProjectIndexer:
             await self._storage.upsert_file(pr.file)
 
         all_symbols = [sym for pr in parse_results for sym in pr.symbols]
-        all_edges   = [edge for pr in parse_results for edge in pr.edges]
+        all_edges = [edge for pr in parse_results for edge in pr.edges]
 
         if all_symbols:
             await self._storage.upsert_symbols_batch(all_symbols)
@@ -155,8 +172,10 @@ class ProjectIndexer:
             file_count=stats["file_count"],
             files_skipped=skipped,
             symbol_count=(
-                stats["function_count"] + stats["class_count"]
-                + stats["variable_count"] + stats["import_count"]
+                stats["function_count"]
+                + stats["class_count"]
+                + stats["variable_count"]
+                + stats["import_count"]
             ),
             edge_count=stats["edge_count"],
             duration_seconds=time.time() - start,
@@ -179,19 +198,22 @@ class ProjectIndexer:
         for ref in unresolved:
             target_id = name_to_id.get(ref.ref_name)
             if target_id and target_id != ref.from_id:
-                resolved.append(EdgeRecord.create(
-                    kind=ref.kind,
-                    from_id=ref.from_id,
-                    to_id=target_id,
-                    file_path=ref.file_path,
-                    line_number=ref.line_number,
-                ))
+                resolved.append(
+                    EdgeRecord.create(
+                        kind=ref.kind,
+                        from_id=ref.from_id,
+                        to_id=target_id,
+                        file_path=ref.file_path,
+                        line_number=ref.line_number,
+                    )
+                )
         return resolved
 
     # ── Embeddings builder ────────────────────────────────────────────────────
 
     async def _build_embeddings(self, project_path: str, symbols: list) -> None:
         from ..core.paths import get_chroma_path
+
         try:
             from ..embeddings.embedder import Embedder
             from ..embeddings.store import EmbeddingStore
@@ -211,8 +233,7 @@ class ProjectIndexer:
         id_to_path = {f.id: f.path for f in all_files}
 
         meaningful = [
-            s for s in symbols
-            if s.kind in {NodeKind.FUNCTION, NodeKind.CLASS, NodeKind.VARIABLE}
+            s for s in symbols if s.kind in {NodeKind.FUNCTION, NodeKind.CLASS, NodeKind.VARIABLE}
         ]
         if not meaningful:
             return
@@ -247,10 +268,9 @@ class ProjectIndexer:
         root = Path(project_path)
 
         # Which extensions to index (based on config.languages)
-        exts: frozenset[str] = frozenset().union(*(
-            _LANGUAGE_EXTENSIONS.get(lang, frozenset())
-            for lang in self._config.languages
-        )) or frozenset().union(*_LANGUAGE_EXTENSIONS.values())
+        exts: frozenset[str] = frozenset().union(
+            *(_LANGUAGE_EXTENSIONS.get(lang, frozenset()) for lang in self._config.languages)
+        ) or frozenset().union(*_LANGUAGE_EXTENSIONS.values())
 
         ignore_patterns = self._config.security.ignore_paths
         files: list[str] = []

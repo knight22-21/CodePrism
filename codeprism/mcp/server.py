@@ -58,8 +58,7 @@ def _get() -> QueryEngine:
 def _get_session() -> SessionManager:
     if _session_manager is None:
         raise RuntimeError(
-            "SessionManager is not initialized. "
-            "Run `codeprism serve <path>` to start the server."
+            "SessionManager is not initialized. Run `codeprism serve <path>` to start the server."
         )
     return _session_manager
 
@@ -88,10 +87,12 @@ async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
     try:
         from ..core.config import CodePrismConfig
         from ..core.paths import get_chroma_path, get_project_config_path
+
         cfg = CodePrismConfig.load(get_project_config_path(_project_path))
         if cfg.enable_embeddings:
             from ..embeddings.embedder import Embedder
             from ..embeddings.store import EmbeddingStore
+
             _embedder = Embedder(model_name=cfg.embeddings.model, device=cfg.embeddings.device)
             _embed_store = EmbeddingStore(str(get_chroma_path(_project_path)))
             if _embed_store.count() > 0:
@@ -142,8 +143,11 @@ async def index_project(
     from ..core.storage import StorageManager
     from ..indexer.project_indexer import ProjectIndexer
 
-    cfg = CodePrismConfig(languages=languages, enable_embeddings=embeddings) if languages \
+    cfg = (
+        CodePrismConfig(languages=languages, enable_embeddings=embeddings)
+        if languages
         else CodePrismConfig(enable_embeddings=embeddings)
+    )
     db_path = get_db_path(path)
     storage = StorageManager(db_path)
     await storage.initialize()
@@ -247,8 +251,7 @@ async def get_callers(file: str, function: str) -> dict[str, Any]:
         "function": function,
         "file": file,
         "callers": [
-            {"name": s.name, "file_id": s.file_id, "line_start": s.line_start}
-            for s in callers
+            {"name": s.name, "file_id": s.file_id, "line_start": s.line_start} for s in callers
         ],
         "count": len(callers),
     }
@@ -262,8 +265,7 @@ async def get_callees(file: str, function: str) -> dict[str, Any]:
         "function": function,
         "file": file,
         "callees": [
-            {"name": s.name, "file_id": s.file_id, "line_start": s.line_start}
-            for s in callees
+            {"name": s.name, "file_id": s.file_id, "line_start": s.line_start} for s in callees
         ],
         "count": len(callees),
     }
@@ -335,6 +337,7 @@ async def scan_file(file: str, content: str | None = None) -> dict[str, Any]:
     else:
         try:
             from pathlib import Path
+
             file_content = Path(file).read_text(encoding="utf-8")
             report = scanner.scan_content(file_content, file)
         except FileNotFoundError:

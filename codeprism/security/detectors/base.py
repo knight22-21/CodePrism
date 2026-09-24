@@ -10,8 +10,8 @@ from dataclasses import dataclass
 class DetectionResult:
     """A single security finding from one detector on one line."""
 
-    severity: str           # INFO | WARN | BLOCK
-    category: str           # detector family name
+    severity: str  # INFO | WARN | BLOCK
+    category: str  # detector family name
     line_number: int | None
     description: str
     fix_suggestion: str | None = None
@@ -34,8 +34,7 @@ class BaseDetector(ABC):
     name: str = "base"
 
     @abstractmethod
-    def scan(self, content: str, file_path: str = "") -> list[DetectionResult]:
-        ...
+    def scan(self, content: str, file_path: str = "") -> list[DetectionResult]: ...
 
     def _scan_lines(
         self,

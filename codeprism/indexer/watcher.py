@@ -11,12 +11,19 @@ from watchdog.observers import Observer
 
 from .incremental_updater import IncrementalUpdater, UpdateResult
 
-_WATCH_EXTENSIONS = frozenset({
-    ".py", ".pyi",
-    ".js", ".jsx", ".mjs",
-    ".ts", ".tsx", ".mts",
-    ".go",
-})
+_WATCH_EXTENSIONS = frozenset(
+    {
+        ".py",
+        ".pyi",
+        ".js",
+        ".jsx",
+        ".mjs",
+        ".ts",
+        ".tsx",
+        ".mts",
+        ".go",
+    }
+)
 
 UpdateCallback = Callable[[str, UpdateResult], None]
 

@@ -16,19 +16,21 @@ from ..core.models import (
 )
 from .base import BaseParser, ParseResult, UnresolvedRef
 
-_BRANCH_TYPES = frozenset({
-    "if_statement",
-    "elif_clause",
-    "for_statement",
-    "while_statement",
-    "try_statement",
-    "except_clause",
-    "with_statement",
-    "boolean_operator",
-    "conditional_expression",
-    "match_statement",
-    "case_clause",
-})
+_BRANCH_TYPES = frozenset(
+    {
+        "if_statement",
+        "elif_clause",
+        "for_statement",
+        "while_statement",
+        "try_statement",
+        "except_clause",
+        "with_statement",
+        "boolean_operator",
+        "conditional_expression",
+        "match_statement",
+        "case_clause",
+    }
+)
 
 
 class PythonParser(BaseParser):
@@ -39,6 +41,7 @@ class PythonParser(BaseParser):
             import tree_sitter_python as tsp
             from tree_sitter import Language
             from tree_sitter import Parser as TSParser
+
             self._language = Language(tsp.language())
             self._parser = TSParser(self._language)
         except Exception as exc:
@@ -104,7 +107,9 @@ class PythonParser(BaseParser):
         elif t == "expression_statement":
             for child in node.named_children:
                 if child.type == "assignment":
-                    self._extract_variable(child, file_path, file_id, source, result, name_to_id, class_sym)
+                    self._extract_variable(
+                        child, file_path, file_id, source, result, name_to_id, class_sym
+                    )
         elif t in ("type_alias_statement", "type_statement"):
             self._extract_type_alias(node, file_path, file_id, source, result, name_to_id)
 
@@ -117,10 +122,7 @@ class PythonParser(BaseParser):
         name = name_node.text.decode("utf-8")
 
         # async detection: first unnamed child is "async"
-        is_async = any(
-            not c.is_named and c.type == "async"
-            for c in node.children
-        )
+        is_async = any(not c.is_named and c.type == "async" for c in node.children)
 
         params_node = node.child_by_field_name("parameters")
         ret_node = node.child_by_field_name("return_type")
@@ -155,23 +157,27 @@ class PythonParser(BaseParser):
             name_to_id[f"{class_sym.name}.{name}"] = sym.id
 
         parent_id = class_sym.id if class_sym else file_id
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES,
-            from_id=parent_id,
-            to_id=sym.id,
-            file_path=file_path,
-            line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=parent_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
         if body_node:
             for callee_name, line in self._extract_call_names(body_node):
-                result.unresolved_refs.append(UnresolvedRef(
-                    from_id=sym.id,
-                    ref_name=callee_name,
-                    kind=EdgeKind.CALLS,
-                    file_path=file_path,
-                    line_number=line,
-                ))
+                result.unresolved_refs.append(
+                    UnresolvedRef(
+                        from_id=sym.id,
+                        ref_name=callee_name,
+                        kind=EdgeKind.CALLS,
+                        file_path=file_path,
+                        line_number=line,
+                    )
+                )
 
     # ── Class extraction ──────────────────────────────────────────────────────
 
@@ -207,26 +213,32 @@ class PythonParser(BaseParser):
         result.symbols.append(sym)
         name_to_id[name] = sym.id
 
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES,
-            from_id=file_id,
-            to_id=sym.id,
-            file_path=file_path,
-            line_number=node.start_point[0] + 1,
-        ))
-
-        for base in base_classes:
-            result.unresolved_refs.append(UnresolvedRef(
-                from_id=sym.id,
-                ref_name=base,
-                kind=EdgeKind.INHERITS,
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=file_id,
+                to_id=sym.id,
                 file_path=file_path,
                 line_number=node.start_point[0] + 1,
-            ))
+            )
+        )
+
+        for base in base_classes:
+            result.unresolved_refs.append(
+                UnresolvedRef(
+                    from_id=sym.id,
+                    ref_name=base,
+                    kind=EdgeKind.INHERITS,
+                    file_path=file_path,
+                    line_number=node.start_point[0] + 1,
+                )
+            )
 
         if body_node:
             for child in body_node.children:
-                self._process_stmt(child, file_path, file_id, source, result, name_to_id, class_sym=sym)
+                self._process_stmt(
+                    child, file_path, file_id, source, result, name_to_id, class_sym=sym
+                )
 
     # ── Import extraction ─────────────────────────────────────────────────────
 
@@ -238,19 +250,27 @@ class PythonParser(BaseParser):
                 if child.type == "dotted_name":
                     mod = child.text.decode("utf-8")
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=mod, kind=NodeKind.IMPORT,
-                        line_start=line, line_end=line,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=mod,
+                        kind=NodeKind.IMPORT,
+                        line_start=line,
+                        line_end=line,
                         # signature stores the source module so it survives the DB roundtrip
                         signature=mod,
                         extra={"is_from_import": False, "source_module": mod},
                     )
                     result.symbols.append(sym)
                     name_to_id[mod.split(".")[0]] = sym.id
-                    result.unresolved_refs.append(UnresolvedRef(
-                        from_id=file_id, ref_name=mod,
-                        kind=EdgeKind.IMPORTS, file_path=file_path, line_number=line,
-                    ))
+                    result.unresolved_refs.append(
+                        UnresolvedRef(
+                            from_id=file_id,
+                            ref_name=mod,
+                            kind=EdgeKind.IMPORTS,
+                            file_path=file_path,
+                            line_number=line,
+                        )
+                    )
                 elif child.type == "aliased_import":
                     name_node = child.child_by_field_name("name")
                     alias_node = child.child_by_field_name("alias")
@@ -259,9 +279,12 @@ class PythonParser(BaseParser):
                         alias = alias_node.text.decode("utf-8") if alias_node else None
                         key = alias or mod.split(".")[0]
                         sym = SymbolRecord.create(
-                            file_path=file_path, file_id=file_id,
-                            name=key, kind=NodeKind.IMPORT,
-                            line_start=line, line_end=line,
+                            file_path=file_path,
+                            file_id=file_id,
+                            name=key,
+                            kind=NodeKind.IMPORT,
+                            line_start=line,
+                            line_end=line,
                             # signature = real module name (not the alias)
                             signature=mod,
                             extra={"is_from_import": False, "source_module": mod, "alias": alias},
@@ -280,9 +303,12 @@ class PythonParser(BaseParser):
             for child in imported_nodes:
                 if child.type == "wildcard_import":
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=f"{source_module}.*", kind=NodeKind.IMPORT,
-                        line_start=line, line_end=line,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=f"{source_module}.*",
+                        kind=NodeKind.IMPORT,
+                        line_start=line,
+                        line_end=line,
                         signature=source_module,
                         extra={"is_from_import": True, "source_module": source_module},
                     )
@@ -290,9 +316,12 @@ class PythonParser(BaseParser):
                 elif child.type in ("dotted_name", "identifier"):
                     imported = child.text.decode("utf-8")
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=imported, kind=NodeKind.IMPORT,
-                        line_start=line, line_end=line,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=imported,
+                        kind=NodeKind.IMPORT,
+                        line_start=line,
+                        line_end=line,
                         # signature stores the source module for use in get_dependencies
                         signature=source_module,
                         extra={"is_from_import": True, "source_module": source_module},
@@ -306,11 +335,18 @@ class PythonParser(BaseParser):
                         imported = name_node.text.decode("utf-8")
                         alias = alias_node.text.decode("utf-8") if alias_node else imported
                         sym = SymbolRecord.create(
-                            file_path=file_path, file_id=file_id,
-                            name=alias, kind=NodeKind.IMPORT,
-                            line_start=line, line_end=line,
+                            file_path=file_path,
+                            file_id=file_id,
+                            name=alias,
+                            kind=NodeKind.IMPORT,
+                            line_start=line,
+                            line_end=line,
                             signature=source_module,
-                            extra={"is_from_import": True, "source_module": source_module, "original": imported},
+                            extra={
+                                "is_from_import": True,
+                                "source_module": source_module,
+                                "original": imported,
+                            },
                         )
                         result.symbols.append(sym)
                         name_to_id[alias] = sym.id
@@ -331,8 +367,10 @@ class PythonParser(BaseParser):
         scope = "class" if class_sym else "module"
 
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.VARIABLE,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.VARIABLE,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=type_annotation,
@@ -350,8 +388,10 @@ class PythonParser(BaseParser):
             return
         name = name_node.text.decode("utf-8")
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.TYPE,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.TYPE,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=node.text.decode("utf-8"),

@@ -42,12 +42,15 @@ class ParserRegistry:
         try:
             if lang == "python":
                 from .python_parser import PythonParser
+
                 return PythonParser()
             if lang == "javascript":
                 from .javascript_parser import JavaScriptParser
+
                 return JavaScriptParser()
             if lang == "go":
                 from .go_parser import GoParser
+
                 return GoParser()
         except ImportError:
             pass

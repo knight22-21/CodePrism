@@ -1,6 +1,5 @@
 """Tests for get_context(), get_impact(), and get_module_summary()."""
 
-
 from codeprism.core.models import NodeKind
 
 # ── get_context ───────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ class CVEResult:
     package: str
     version: str
     cve_ids: list[str] = field(default_factory=list)
-    severity: str = "UNKNOWN"   # LOW | MEDIUM | HIGH | CRITICAL | UNKNOWN
+    severity: str = "UNKNOWN"  # LOW | MEDIUM | HIGH | CRITICAL | UNKNOWN
     summary: str = ""
 
 
@@ -27,9 +27,7 @@ def check_package(package: str, version: str = "") -> CVEResult:
     Returns a CVEResult with severity CRITICAL/HIGH/MEDIUM/LOW/UNKNOWN.
     Falls back gracefully (returns UNKNOWN) if the network call fails.
     """
-    payload = json.dumps(
-        {"package": {"name": package, "ecosystem": "PyPI"}}
-    ).encode()
+    payload = json.dumps({"package": {"name": package, "ecosystem": "PyPI"}}).encode()
 
     req = urllib.request.Request(
         _OSV_QUERY_URL,

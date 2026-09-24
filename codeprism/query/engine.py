@@ -91,21 +91,13 @@ class QueryEngine:
     async def get_context(
         self, file_path: str, symbol_name: str, depth: int = 2
     ) -> ContextResult | None:
-        return await _ctx_mod.get_context(
-            self._graph, self._storage, file_path, symbol_name, depth
-        )
+        return await _ctx_mod.get_context(self._graph, self._storage, file_path, symbol_name, depth)
 
-    async def get_impact(
-        self, file_path: str, symbol_name: str
-    ) -> ImpactResult | None:
-        return await _imp_mod.get_impact(
-            self._graph, self._storage, file_path, symbol_name
-        )
+    async def get_impact(self, file_path: str, symbol_name: str) -> ImpactResult | None:
+        return await _imp_mod.get_impact(self._graph, self._storage, file_path, symbol_name)
 
     async def get_module_summary(self, file_path: str) -> ModuleSummary | None:
-        return await _sum_mod.get_module_summary(
-            self._graph, self._storage, file_path
-        )
+        return await _sum_mod.get_module_summary(self._graph, self._storage, file_path)
 
     # ── Symbol lookup ─────────────────────────────────────────────────────────
 
@@ -135,16 +127,12 @@ class QueryEngine:
 
     # ── Search ────────────────────────────────────────────────────────────────
 
-    async def search_symbols(
-        self, query: str, kind: str | None = None
-    ) -> list[SearchMatch]:
+    async def search_symbols(self, query: str, kind: str | None = None) -> list[SearchMatch]:
         if self._embedder is not None and self._embed_store is not None:
             return await self._semantic_search(query, kind)
         return await self._substring_search(query, kind)
 
-    async def _substring_search(
-        self, query: str, kind: str | None = None
-    ) -> list[SearchMatch]:
+    async def _substring_search(self, query: str, kind: str | None = None) -> list[SearchMatch]:
         raw = await self._storage.search_symbols(query, kind)
         all_files = await self._storage.get_all_files()
         id_to_path = {f.id: f.path for f in all_files}
@@ -158,10 +146,9 @@ class QueryEngine:
             for sym in raw
         ]
 
-    async def _semantic_search(
-        self, query: str, kind: str | None = None
-    ) -> list[SearchMatch]:
+    async def _semantic_search(self, query: str, kind: str | None = None) -> list[SearchMatch]:
         import asyncio as _asyncio
+
         vector = await _asyncio.to_thread(self._embedder.encode_one, query)
         results = self._embed_store.search(vector, top_k=20)
         if kind:
@@ -170,12 +157,14 @@ class QueryEngine:
         for r in results:
             sym = await self._storage.get_symbol_by_id(r.symbol_id)
             if sym:
-                matches.append(SearchMatch(
-                    symbol=sym,
-                    file_path=r.file_path,
-                    score=max(0.0, 1.0 - r.distance),
-                    docstring_excerpt=sym.docstring[:120] if sym.docstring else None,
-                ))
+                matches.append(
+                    SearchMatch(
+                        symbol=sym,
+                        file_path=r.file_path,
+                        score=max(0.0, 1.0 - r.distance),
+                        docstring_excerpt=sym.docstring[:120] if sym.docstring else None,
+                    )
+                )
         return matches
 
     # ── File map ──────────────────────────────────────────────────────────────
@@ -194,7 +183,7 @@ class QueryEngine:
         for f in sorted(all_files, key=lambda x: x.path):
             syms = file_syms[f.id]
             n_class = sum(1 for s in syms if s.kind == NodeKind.CLASS)
-            n_func  = sum(1 for s in syms if s.kind == NodeKind.FUNCTION)
+            n_func = sum(1 for s in syms if s.kind == NodeKind.FUNCTION)
             stem = Path(f.path).name
             role = f"{stem}: "
             parts = []
@@ -203,15 +192,17 @@ class QueryEngine:
             if n_func:
                 parts.append(f"{n_func} function{'s' if n_func > 1 else ''}")
             role += ", ".join(parts) if parts else "source file"
-            entries.append(FileMapEntry(
-                path=f.path,
-                language=f.language or "",
-                line_count=f.line_count or 0,
-                symbol_count=len(syms),
-                class_count=n_class,
-                function_count=n_func,
-                role_summary=role,
-            ))
+            entries.append(
+                FileMapEntry(
+                    path=f.path,
+                    language=f.language or "",
+                    line_count=f.line_count or 0,
+                    symbol_count=len(syms),
+                    class_count=n_class,
+                    function_count=n_func,
+                    role_summary=role,
+                )
+            )
 
         return FileMap(
             project_path=project_path,
@@ -237,6 +228,7 @@ class QueryEngine:
         # Group by source module (stored in signature since parser v0.1.7).
         # Falls back to symbol name for DBs indexed before the signature fix.
         from collections import defaultdict
+
         module_symbols: dict[str, list[str]] = defaultdict(list)
         for imp in import_syms:
             source_module = imp.signature or imp.name
@@ -287,9 +279,7 @@ class QueryEngine:
 
     # ── Data flow ─────────────────────────────────────────────────────────────
 
-    async def get_data_flow(
-        self, file_path: str, symbol_name: str
-    ) -> DataFlowResult | None:
+    async def get_data_flow(self, file_path: str, symbol_name: str) -> DataFlowResult | None:
         sym = await self.find_symbol(file_path, symbol_name)
         if not sym:
             return None

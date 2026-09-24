@@ -267,7 +267,7 @@ class GraphEngine:
 
     def to_graphviz(self) -> str:
         """Generate DOT format for graphviz rendering."""
-        lines = ['digraph CodePrism {', '  rankdir=LR;', '  node [shape=box];']
+        lines = ["digraph CodePrism {", "  rankdir=LR;", "  node [shape=box];"]
         for node_id, data in self._g.nodes(data=True):
             rec = data.get("record")
             if isinstance(rec, FileRecord):

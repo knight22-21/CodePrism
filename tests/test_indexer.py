@@ -112,9 +112,7 @@ async def test_cross_file_call_resolved(storage, graph, indexed):
     """run_payment() in main.py should have a CALLS edge to compute_checksum."""
     all_syms = await storage.get_all_symbols()
 
-    run_payment = next(
-        (s for s in all_syms if s.name == "run_payment"), None
-    )
+    run_payment = next((s for s in all_syms if s.name == "run_payment"), None)
     assert run_payment is not None, "run_payment not found in symbols"
 
     calls = graph.get_edges_from(run_payment.id, kind=EdgeKind.CALLS)

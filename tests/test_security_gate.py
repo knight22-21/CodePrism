@@ -104,7 +104,7 @@ def test_diff_preexisting_issue_not_reflagged():
 def test_diff_new_injection_is_flagged():
     scanner = SecurityScanner()
     original = _read("clean_example.py")
-    proposed = original + '\nresult = eval(user_input)\n'
+    proposed = original + "\nresult = eval(user_input)\n"
     report = scanner.scan_diff(original, proposed)
     assert len(report.issues) > 0
     assert any("eval" in i.description.lower() for i in report.issues)
@@ -120,7 +120,7 @@ def test_diff_adding_comment_no_issues():
 
 def test_diff_only_new_issues_reported():
     scanner = SecurityScanner()
-    original = 'import hashlib\nreturn hashlib.md5(x).hexdigest()\n'
+    original = "import hashlib\nreturn hashlib.md5(x).hexdigest()\n"
     proposed = original + 'password = "hunter2"\n'
     report = scanner.scan_diff(original, proposed)
     # md5 was in original → not re-reported; password is new → reported

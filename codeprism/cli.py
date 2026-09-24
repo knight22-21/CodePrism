@@ -52,16 +52,19 @@ def _parse_target(target: str) -> tuple[str, str]:
 def index(
     path: str = typer.Argument(..., help="Project directory to index"),
     languages: str | None = typer.Option(
-        None, "--languages", "-l",
-        help="Comma-separated language list (default: python,javascript,typescript,go)"
+        None,
+        "--languages",
+        "-l",
+        help="Comma-separated language list (default: python,javascript,typescript,go)",
     ),
     embeddings: bool = typer.Option(
-        False, "--embeddings", "-e",
-        help="Also build semantic vector index (requires codeprism[embeddings])"
+        False,
+        "--embeddings",
+        "-e",
+        help="Also build semantic vector index (requires codeprism[embeddings])",
     ),
     force: bool = typer.Option(
-        False, "--force", "-f",
-        help="Re-parse all files even if unchanged (skip incremental check)"
+        False, "--force", "-f", help="Re-parse all files even if unchanged (skip incremental check)"
     ),
 ) -> None:
     """Build the knowledge graph for a project directory.
@@ -85,8 +88,11 @@ async def _index(
     from .indexer.project_indexer import ProjectIndexer
 
     langs = [lang.strip() for lang in languages.split(",")] if languages else None
-    config = CodePrismConfig(languages=langs, enable_embeddings=embeddings) if langs \
+    config = (
+        CodePrismConfig(languages=langs, enable_embeddings=embeddings)
+        if langs
         else CodePrismConfig(enable_embeddings=embeddings)
+    )
 
     db_path = get_db_path(path)
     storage = StorageManager(db_path)
@@ -103,8 +109,7 @@ async def _index(
 
     if result.success:
         skipped_note = (
-            f" · [dim]{result.files_skipped} unchanged[/dim]"
-            if result.files_skipped else ""
+            f" · [dim]{result.files_skipped} unchanged[/dim]" if result.files_skipped else ""
         )
         console.print(
             f"[green]Done.[/green] "
@@ -146,12 +151,13 @@ async def _context(target: str, depth: int, project: str) -> None:
         raise typer.Exit(1)
 
     s = result.symbol
-    console.print(Panel(
-        f"[bold]{s.name}[/bold]  [{s.kind.value}]\n"
-        f"[dim]{s.signature or ''}[/dim]\n\n"
-        + (s.docstring or ""),
-        title=f"{file_path}  line {s.line_start}–{s.line_end}",
-    ))
+    console.print(
+        Panel(
+            f"[bold]{s.name}[/bold]  [{s.kind.value}]\n"
+            f"[dim]{s.signature or ''}[/dim]\n\n" + (s.docstring or ""),
+            title=f"{file_path}  line {s.line_start}–{s.line_end}",
+        )
+    )
 
     if result.direct_callers:
         console.print("\n[bold]Callers:[/bold]")
@@ -193,14 +199,16 @@ async def _impact(target: str, project: str) -> None:
     severity_colour = {"LOW": "green", "MEDIUM": "yellow", "HIGH": "red", "CRITICAL": "bright_red"}
     colour = severity_colour.get(result.severity, "white")
 
-    console.print(Panel(
-        f"Severity: [{colour}][bold]{result.severity}[/bold][/{colour}]\n"
-        f"Direct dependents: {len(result.direct_dependents)}\n"
-        f"Transitive dependents: {result.estimated_change_surface}\n"
-        f"Public API affected: {'yes' if result.public_api_affected else 'no'}\n"
-        f"Affected test files: {len(result.affected_test_files)}",
-        title=f"Impact: {sym_name}",
-    ))
+    console.print(
+        Panel(
+            f"Severity: [{colour}][bold]{result.severity}[/bold][/{colour}]\n"
+            f"Direct dependents: {len(result.direct_dependents)}\n"
+            f"Transitive dependents: {result.estimated_change_surface}\n"
+            f"Public API affected: {'yes' if result.public_api_affected else 'no'}\n"
+            f"Affected test files: {len(result.affected_test_files)}",
+            title=f"Impact: {sym_name}",
+        )
+    )
 
     if result.direct_dependents:
         console.print("\n[bold]Direct dependents:[/bold]")
@@ -349,29 +357,35 @@ async def _stats(project: str, verbose: bool, json_output: bool = False) -> None
         await storage.close()
 
     if json_output:
-        print(_json.dumps({
-            "file_count": data["file_count"],
-            "function_count": data["function_count"],
-            "class_count": data["class_count"],
-            "variable_count": data["variable_count"],
-            "import_count": data["import_count"],
-            "edge_count": data["edge_count"],
-            "languages": data["languages"] or [],
-            "last_indexed_at": data.get("last_indexed_at"),
-            "coverage_percent": data.get("coverage_percent", 0.0),
-        }))
+        print(
+            _json.dumps(
+                {
+                    "file_count": data["file_count"],
+                    "function_count": data["function_count"],
+                    "class_count": data["class_count"],
+                    "variable_count": data["variable_count"],
+                    "import_count": data["import_count"],
+                    "edge_count": data["edge_count"],
+                    "languages": data["languages"] or [],
+                    "last_indexed_at": data.get("last_indexed_at"),
+                    "coverage_percent": data.get("coverage_percent", 0.0),
+                }
+            )
+        )
         return
 
-    console.print(Panel(
-        f"Files:     {data['file_count']}\n"
-        f"Functions: {data['function_count']}\n"
-        f"Classes:   {data['class_count']}\n"
-        f"Variables: {data['variable_count']}\n"
-        f"Imports:   {data['import_count']}\n"
-        f"Edges:     {data['edge_count']}\n"
-        f"Languages: {', '.join(data['languages'] or ['-'])}",
-        title="CodePrism Graph Stats",
-    ))
+    console.print(
+        Panel(
+            f"Files:     {data['file_count']}\n"
+            f"Functions: {data['function_count']}\n"
+            f"Classes:   {data['class_count']}\n"
+            f"Variables: {data['variable_count']}\n"
+            f"Imports:   {data['import_count']}\n"
+            f"Edges:     {data['edge_count']}\n"
+            f"Languages: {', '.join(data['languages'] or ['-'])}",
+            title="CodePrism Graph Stats",
+        )
+    )
 
     if verbose and file_map:
         table = Table(title="Files")
@@ -395,6 +409,7 @@ def serve(
 ) -> None:
     """Start the MCP server (default: stdio transport for Claude Code etc.)."""
     from .mcp.server import configure, mcp
+
     configure(path)
     if transport == "sse":
         mcp.run(transport="sse", port=port)
@@ -583,12 +598,10 @@ def _write_claude_config(server_entry: dict, global_: bool) -> None:
 
     scope = "global" if global_ else "project"
     console.print(
-        f"[green]Done.[/green] CodePrism MCP server added to "
-        f"[bold]{config_file}[/bold] ({scope})."
+        f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )
     console.print(
-        f"[green]Done.[/green] Usage instructions written to "
-        f"[bold]{claude_md.resolve()}[/bold]."
+        f"[green]Done.[/green] Usage instructions written to [bold]{claude_md.resolve()}[/bold]."
     )
     console.print("[dim]Restart Claude Code to pick up the change.[/dim]")
 
@@ -621,12 +634,10 @@ def _write_cursor_config(server_entry: dict, global_: bool) -> None:
 
     scope = "global" if global_ else "project"
     console.print(
-        f"[green]Done.[/green] CodePrism MCP server added to "
-        f"[bold]{config_file}[/bold] ({scope})."
+        f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )
     console.print(
-        f"[green]Done.[/green] Usage instructions written to "
-        f"[bold]{cursorrules.resolve()}[/bold]."
+        f"[green]Done.[/green] Usage instructions written to [bold]{cursorrules.resolve()}[/bold]."
     )
     console.print("[dim]Restart Cursor to pick up the change.[/dim]")
 
@@ -641,6 +652,7 @@ def _upsert_agent_instructions(file: Path, block: str, marker: str) -> None:
     if marker in existing:
         # Replace the old block between opening and closing marker
         import re
+
         pattern = re.compile(
             re.escape(marker) + r".*?" + re.escape(marker.replace("<!--", "<!--/")),
             re.DOTALL,
@@ -686,13 +698,17 @@ async def _visualize(path: str, out: str) -> None:
     edges = raw["edges"]
 
     _KIND = {
-        "NodeKind.FILE": "file", "NodeKind.FUNCTION": "function",
-        "NodeKind.CLASS": "class", "NodeKind.VARIABLE": "variable",
+        "NodeKind.FILE": "file",
+        "NodeKind.FUNCTION": "function",
+        "NodeKind.CLASS": "class",
+        "NodeKind.VARIABLE": "variable",
         "NodeKind.IMPORT": "import",
     }
     _EKIND = {
-        "EdgeKind.CALLS": "calls", "EdgeKind.IMPORTS": "imports",
-        "EdgeKind.INHERITS": "inherits", "EdgeKind.CONTAINS": "contains",
+        "EdgeKind.CALLS": "calls",
+        "EdgeKind.IMPORTS": "imports",
+        "EdgeKind.INHERITS": "inherits",
+        "EdgeKind.CONTAINS": "contains",
     }
 
     node_list = []
@@ -700,36 +716,40 @@ async def _visualize(path: str, out: str) -> None:
         nd = dict(n)
         kind = _KIND.get(nd.get("kind", ""), nd.get("kind", ""))
         label = Path(nd["name"]).name if kind == "file" else nd.get("name", "")
-        node_list.append({
-            "id": nd["id"],
-            "name": nd.get("name", ""),
-            "label": label,
-            "kind": kind,
-            "file": nd.get("file", ""),
-            "line": nd.get("line", 0),
-        })
+        node_list.append(
+            {
+                "id": nd["id"],
+                "name": nd.get("name", ""),
+                "label": label,
+                "kind": kind,
+                "file": nd.get("file", ""),
+                "line": nd.get("line", 0),
+            }
+        )
 
     link_list = []
     for e in edges:
         ed = dict(e)
         kind = _EKIND.get(ed.get("kind", ""), ed.get("kind", ""))
-        link_list.append({
-            "source": ed.get("source", ""),
-            "target": ed.get("target", ""),
-            "kind": kind,
-        })
+        link_list.append(
+            {
+                "source": ed.get("source", ""),
+                "target": ed.get("target", ""),
+                "kind": kind,
+            }
+        )
 
     graph_data = {"nodes": node_list, "links": link_list}
     data_json = _json.dumps(graph_data, separators=(",", ":")).replace("</", "<\\/")
 
-    html = _VIZ_HTML_TEMPLATE.replace("__DATA__", data_json).replace(
-        "__TITLE__", Path(path).name
-    )
+    html = _VIZ_HTML_TEMPLATE.replace("__DATA__", data_json).replace("__TITLE__", Path(path).name)
     out_path = Path(out)
     out_path.write_text(html, encoding="utf-8")
 
     console.print(f"[green]Visualization saved:[/green] [bold]{out_path.resolve()}[/bold]")
-    console.print(f"[dim]{len(node_list)} nodes, {len(link_list)} edges. Open in any browser.[/dim]")
+    console.print(
+        f"[dim]{len(node_list)} nodes, {len(link_list)} edges. Open in any browser.[/dim]"
+    )
     if len(node_list) > 2000:
         console.print(
             "[yellow]Large graph (>2000 nodes) — 'Files' or 'Symbols' view recommended.[/yellow]"
@@ -1101,7 +1121,8 @@ def scan(
     target: str = typer.Argument(..., help="File path to scan"),
     all_: bool = typer.Option(False, "--all", "-a", help="Scan all indexed files"),
     diff: str | None = typer.Option(
-        None, "--diff",
+        None,
+        "--diff",
         help="Git diff range to scan, e.g. HEAD~1..HEAD or main..feature",
     ),
     project: str = typer.Option(".", "--project", "-p", help="Project path (for --all)"),
@@ -1183,7 +1204,9 @@ async def _scan_git_diff(diff_range: str, scanner) -> None:
         console.print(f"[dim]No changed files in {diff_range}[/dim]")
         return
 
-    console.print(f"Scanning [bold]{len(changed_files)}[/bold] changed file(s) in [bold]{diff_range}[/bold]")
+    console.print(
+        f"Scanning [bold]{len(changed_files)}[/bold] changed file(s) in [bold]{diff_range}[/bold]"
+    )
 
     total_issues = 0
     blocked = False

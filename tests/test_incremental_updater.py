@@ -1,7 +1,5 @@
 """Tests for IncrementalUpdater — checksum gating, graph surgery, persistence."""
 
-
-
 from codeprism.core.config import CodePrismConfig
 from codeprism.core.models import NodeKind
 from codeprism.indexer.incremental_updater import IncrementalUpdater

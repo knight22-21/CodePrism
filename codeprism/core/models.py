@@ -45,6 +45,7 @@ class SessionEventKind(str, Enum):
 
 # ─── ID helpers ───────────────────────────────────────────────────────────────
 
+
 def make_file_id(path: str) -> str:
     return hashlib.sha256(f"file:{path}".encode()).hexdigest()
 
@@ -58,6 +59,7 @@ def make_edge_id(from_id: str, to_id: str, kind: str, line: int | None = None) -
 
 
 # ─── Storage-mapped models ────────────────────────────────────────────────────
+
 
 class FileRecord(BaseModel):
     """Maps to the `files` table. One record per indexed source file."""
@@ -118,7 +120,7 @@ class EdgeRecord(BaseModel):
     id: str
     kind: EdgeKind
     from_id: str  # references files.id or symbols.id
-    to_id: str    # same
+    to_id: str  # same
     file_path: str
     line_number: int | None = None
     weight: float = 1.0
@@ -177,6 +179,7 @@ class SessionEvent(BaseModel):
 
 
 # ─── Query result models ──────────────────────────────────────────────────────
+
 
 class GraphStats(BaseModel):
     file_count: int = 0

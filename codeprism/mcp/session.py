@@ -22,7 +22,7 @@ class SessionContext:
     read_count: int = 0
     write_count: int = 0
     undo_count: int = 0
-    files_read: list[str] = field(default_factory=list)   # "path::symbol"
+    files_read: list[str] = field(default_factory=list)  # "path::symbol"
     files_written: list[str] = field(default_factory=list)
     summary: str = ""
 
@@ -123,8 +123,7 @@ class SessionManager:
         undos = [e for e in events if e.event_type == SessionEventKind.UNDO]
 
         files_read = [
-            f"{e.file_path}::{e.symbol_name}" if e.symbol_name else str(e.file_path)
-            for e in reads
+            f"{e.file_path}::{e.symbol_name}" if e.symbol_name else str(e.file_path) for e in reads
         ]
         files_written = list({e.file_path for e in writes if e.file_path})
         unique_read_files = len({e.file_path for e in reads if e.file_path})
@@ -155,10 +154,7 @@ class SessionManager:
         Skips entries with missing content_before (e.g., initial creates).
         """
         events = await self._storage.get_session_events(session_id)
-        write_events = [
-            e for e in reversed(events)
-            if e.event_type == SessionEventKind.WRITE
-        ]
+        write_events = [e for e in reversed(events) if e.event_type == SessionEventKind.WRITE]
         to_undo = write_events[:steps]
 
         files_restored: list[str] = []
@@ -198,9 +194,7 @@ class Session:
     async def record_read(self, file: str, symbol: str) -> None:
         await self._manager.record_read(self.session_id, file, symbol)
 
-    async def record_write(
-        self, file: str, content_before: str, content_after: str
-    ) -> dict:
+    async def record_write(self, file: str, content_before: str, content_after: str) -> dict:
         return await self._manager.record_write(
             self.session_id, file, content_before, content_after
         )

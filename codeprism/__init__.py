@@ -78,6 +78,7 @@ class CodePrism:
 
     async def initialize(self) -> None:
         from .core.paths import get_db_path
+
         db_path = get_db_path(self.project_path)
         self._storage = StorageManager(db_path)
         await self._storage.initialize()
@@ -96,6 +97,7 @@ class CodePrism:
     async def index(self):
         """Build or rebuild the full knowledge graph."""
         from .indexer.project_indexer import ProjectIndexer
+
         assert self._graph and self._storage
         indexer = ProjectIndexer(self._graph, self._storage, self.config)
         return await indexer.index(self.project_path)
@@ -108,14 +110,10 @@ class CodePrism:
             raise RuntimeError("CodePrism not initialized — use `async with CodePrism(...)`")
         return self._engine
 
-    async def get_context(
-        self, file: str, symbol: str, depth: int = 2
-    ) -> ContextResult | None:
+    async def get_context(self, file: str, symbol: str, depth: int = 2) -> ContextResult | None:
         return await self.engine.get_context(file, symbol, depth)
 
-    async def get_impact(
-        self, file: str, symbol: str
-    ) -> ImpactResult | None:
+    async def get_impact(self, file: str, symbol: str) -> ImpactResult | None:
         return await self.engine.get_impact(file, symbol)
 
     async def get_module_summary(self, file: str) -> ModuleSummary | None:
@@ -135,6 +133,7 @@ class CodePrism:
             await s.undo(steps=1)
         """
         from .indexer.incremental_updater import IncrementalUpdater
+
         assert self._graph is not None and self._storage is not None, (
             "CodePrism not initialized — use `async with CodePrism(...)`"
         )

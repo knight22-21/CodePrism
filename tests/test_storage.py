@@ -5,6 +5,7 @@ from tests.conftest import make_edge, make_file, make_symbol
 
 # ── File CRUD ─────────────────────────────────────────────────────────────────
 
+
 async def test_upsert_and_get_file_by_path(storage):
     f = make_file("/project/main.py")
     await storage.upsert_file(f)
@@ -45,6 +46,7 @@ async def test_delete_file(storage):
 
 
 # ── Symbol CRUD ───────────────────────────────────────────────────────────────
+
 
 async def test_upsert_and_get_symbol(storage):
     f = make_file()
@@ -114,6 +116,7 @@ async def test_get_symbol_by_id(storage):
 
 # ── Edge CRUD ─────────────────────────────────────────────────────────────────
 
+
 async def test_upsert_and_get_edges(storage):
     f = make_file()
     await storage.upsert_file(f)
@@ -176,6 +179,7 @@ async def test_delete_edges_for_file(storage):
 
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
+
 
 async def test_stats(storage):
     f = make_file("/project/main.py", language="python")

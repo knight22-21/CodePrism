@@ -17,18 +17,20 @@ from ..core.models import (
 )
 from .base import BaseParser, ParseResult, UnresolvedRef
 
-_JS_BRANCH_TYPES = frozenset({
-    "if_statement",
-    "for_statement",
-    "for_in_statement",
-    "while_statement",
-    "do_statement",
-    "try_statement",
-    "catch_clause",
-    "switch_case",
-    "switch_default",
-    "ternary_expression",
-})
+_JS_BRANCH_TYPES = frozenset(
+    {
+        "if_statement",
+        "for_statement",
+        "for_in_statement",
+        "while_statement",
+        "do_statement",
+        "try_statement",
+        "catch_clause",
+        "switch_case",
+        "switch_default",
+        "ternary_expression",
+    }
+)
 
 
 class JavaScriptParser(BaseParser):
@@ -90,16 +92,19 @@ class JavaScriptParser(BaseParser):
         if ext in (".ts", ".mts"):
             if self._ts_parser is None:
                 import tree_sitter_typescript as tst
+
                 self._ts_parser = TSParser(Language(tst.language_typescript()))
             return self._ts_parser
         elif ext == ".tsx":
             if self._tsx_parser is None:
                 import tree_sitter_typescript as tst
+
                 self._tsx_parser = TSParser(Language(tst.language_tsx()))
             return self._tsx_parser
         else:
             if self._js_parser is None:
                 import tree_sitter_javascript as tsj
+
                 self._js_parser = TSParser(Language(tsj.language()))
             return self._js_parser
 
@@ -125,11 +130,19 @@ class JavaScriptParser(BaseParser):
             else:
                 # export default function() {} or export default class {}
                 for child in node.named_children:
-                    if child.type in ("function_declaration", "class_declaration",
-                                      "function", "class"):
-                        self._process_stmt(child, file_path, file_id, source, result, name_to_id, class_sym)
+                    if child.type in (
+                        "function_declaration",
+                        "class_declaration",
+                        "function",
+                        "class",
+                    ):
+                        self._process_stmt(
+                            child, file_path, file_id, source, result, name_to_id, class_sym
+                        )
         elif t in ("lexical_declaration", "variable_declaration"):
-            self._extract_variable_decl(node, file_path, file_id, source, result, name_to_id, class_sym)
+            self._extract_variable_decl(
+                node, file_path, file_id, source, result, name_to_id, class_sym
+            )
         # TypeScript-specific
         elif t == "interface_declaration":
             self._extract_interface(node, file_path, file_id, source, result, name_to_id)
@@ -152,8 +165,10 @@ class JavaScriptParser(BaseParser):
         docstring = self._get_jsdoc(node, source)
 
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.FUNCTION,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.FUNCTION,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=sig,
@@ -165,17 +180,27 @@ class JavaScriptParser(BaseParser):
         name_to_id[name] = sym.id
 
         parent_id = class_sym.id if class_sym else file_id
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=parent_id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=parent_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
         if body_node:
             for callee, line in self._extract_call_names(body_node):
-                result.unresolved_refs.append(UnresolvedRef(
-                    from_id=sym.id, ref_name=callee,
-                    kind=EdgeKind.CALLS, file_path=file_path, line_number=line,
-                ))
+                result.unresolved_refs.append(
+                    UnresolvedRef(
+                        from_id=sym.id,
+                        ref_name=callee,
+                        kind=EdgeKind.CALLS,
+                        file_path=file_path,
+                        line_number=line,
+                    )
+                )
 
     def _extract_method(self, node, file_path, file_id, source, result, name_to_id, class_sym):
         name_node = node.child_by_field_name("name")
@@ -191,8 +216,10 @@ class JavaScriptParser(BaseParser):
         complexity = self._complexity(body_node)
 
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.FUNCTION,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.FUNCTION,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=sig,
@@ -206,17 +233,27 @@ class JavaScriptParser(BaseParser):
             name_to_id[f"{class_sym.name}.{name}"] = sym.id
 
         parent_id = class_sym.id if class_sym else file_id
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=parent_id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=parent_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
         if body_node:
             for callee, line in self._extract_call_names(body_node):
-                result.unresolved_refs.append(UnresolvedRef(
-                    from_id=sym.id, ref_name=callee,
-                    kind=EdgeKind.CALLS, file_path=file_path, line_number=line,
-                ))
+                result.unresolved_refs.append(
+                    UnresolvedRef(
+                        from_id=sym.id,
+                        ref_name=callee,
+                        kind=EdgeKind.CALLS,
+                        file_path=file_path,
+                        line_number=line,
+                    )
+                )
 
     # ── Class extraction ──────────────────────────────────────────────────────
 
@@ -227,9 +264,7 @@ class JavaScriptParser(BaseParser):
         name = name_node.text.decode("utf-8")
 
         # Heritage: `extends BaseClass`
-        heritage_node = next(
-            (c for c in node.named_children if c.type == "class_heritage"), None
-        )
+        heritage_node = next((c for c in node.named_children if c.type == "class_heritage"), None)
         base_classes: list[str] = []
         if heritage_node:
             for child in heritage_node.named_children:
@@ -239,8 +274,10 @@ class JavaScriptParser(BaseParser):
         docstring = self._get_jsdoc(node, source)
 
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.CLASS,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.CLASS,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             docstring=docstring,
@@ -250,29 +287,38 @@ class JavaScriptParser(BaseParser):
         result.symbols.append(sym)
         name_to_id[name] = sym.id
 
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=file_id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=file_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
         for base in base_classes:
-            result.unresolved_refs.append(UnresolvedRef(
-                from_id=sym.id, ref_name=base,
-                kind=EdgeKind.INHERITS, file_path=file_path,
-                line_number=node.start_point[0] + 1,
-            ))
+            result.unresolved_refs.append(
+                UnresolvedRef(
+                    from_id=sym.id,
+                    ref_name=base,
+                    kind=EdgeKind.INHERITS,
+                    file_path=file_path,
+                    line_number=node.start_point[0] + 1,
+                )
+            )
 
         # Process class body
-        body_node = next(
-            (c for c in node.named_children if c.type == "class_body"), None
-        )
+        body_node = next((c for c in node.named_children if c.type == "class_body"), None)
         if body_node:
             for child in body_node.named_children:
                 if child.type == "method_definition":
                     self._extract_method(child, file_path, file_id, source, result, name_to_id, sym)
                 elif child.type in ("public_field_definition", "field_definition"):
                     # Class field / property
-                    self._extract_class_field(child, file_path, file_id, source, result, name_to_id, sym)
+                    self._extract_class_field(
+                        child, file_path, file_id, source, result, name_to_id, sym
+                    )
 
     def _extract_class_field(self, node, file_path, file_id, source, result, name_to_id, class_sym):
         name_node = node.child_by_field_name("name")
@@ -280,17 +326,24 @@ class JavaScriptParser(BaseParser):
             return
         name = name_node.text.decode("utf-8")
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.VARIABLE,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.VARIABLE,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             is_public=not name.startswith("_"),
         )
         result.symbols.append(sym)
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=class_sym.id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=class_sym.id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
     # ── Import extraction ─────────────────────────────────────────────────────
 
@@ -298,9 +351,7 @@ class JavaScriptParser(BaseParser):
         line = node.start_point[0] + 1
 
         # Source module: string literal child (last named child usually)
-        source_node = next(
-            (c for c in reversed(node.named_children) if c.type == "string"), None
-        )
+        source_node = next((c for c in reversed(node.named_children) if c.type == "string"), None)
         source_module = ""
         if source_node:
             for c in source_node.named_children:
@@ -308,9 +359,7 @@ class JavaScriptParser(BaseParser):
                     source_module = c.text.decode("utf-8")
 
         # Import clause: named_imports or namespace_import
-        clause = next(
-            (c for c in node.named_children if c.type == "import_clause"), None
-        )
+        clause = next((c for c in node.named_children if c.type == "import_clause"), None)
         if not clause:
             return
 
@@ -326,21 +375,33 @@ class JavaScriptParser(BaseParser):
                             original = name_node.text.decode("utf-8")
                             alias = alias_node.text.decode("utf-8") if alias_node else original
                             sym = SymbolRecord.create(
-                                file_path=file_path, file_id=file_id,
-                                name=alias, kind=NodeKind.IMPORT,
-                                line_start=line, line_end=line,
-                                extra={"is_from_import": True, "source_module": source_module, "original": original},
+                                file_path=file_path,
+                                file_id=file_id,
+                                name=alias,
+                                kind=NodeKind.IMPORT,
+                                line_start=line,
+                                line_end=line,
+                                extra={
+                                    "is_from_import": True,
+                                    "source_module": source_module,
+                                    "original": original,
+                                },
                             )
                             result.symbols.append(sym)
                             name_to_id[alias] = sym.id
             elif child.type in ("identifier", "namespace_import"):
                 # import Foo from '...' or import * as Foo from '...'
-                name_text = child.text.decode("utf-8").removeprefix("*").removeprefix(" as ").strip()
+                name_text = (
+                    child.text.decode("utf-8").removeprefix("*").removeprefix(" as ").strip()
+                )
                 if name_text:
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=name_text, kind=NodeKind.IMPORT,
-                        line_start=line, line_end=line,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=name_text,
+                        kind=NodeKind.IMPORT,
+                        line_start=line,
+                        line_end=line,
                         extra={"is_from_import": False, "source_module": source_module},
                     )
                     result.symbols.append(sym)
@@ -348,50 +409,72 @@ class JavaScriptParser(BaseParser):
 
     # ── Variable declaration extraction ───────────────────────────────────────
 
-    def _extract_variable_decl(self, node, file_path, file_id, source, result, name_to_id, class_sym):
+    def _extract_variable_decl(
+        self, node, file_path, file_id, source, result, name_to_id, class_sym
+    ):
         for child in node.named_children:
             if child.type == "variable_declarator":
                 name_node = child.child_by_field_name("name")
                 val_node = child.child_by_field_name("value")
-                if not name_node or name_node.type not in ("identifier", "shorthand_property_identifier_pattern"):
+                if not name_node or name_node.type not in (
+                    "identifier",
+                    "shorthand_property_identifier_pattern",
+                ):
                     continue
                 name = name_node.text.decode("utf-8")
 
                 # Arrow function → treat as function
                 if val_node and val_node.type in ("arrow_function", "function"):
                     is_async = any(not c.is_named and c.type == "async" for c in val_node.children)
-                    params = val_node.child_by_field_name("parameters") or val_node.child_by_field_name("parameter")
+                    params = val_node.child_by_field_name(
+                        "parameters"
+                    ) or val_node.child_by_field_name("parameter")
                     sig = name + (params.text.decode("utf-8") if params else "()")
                     body_node = val_node.child_by_field_name("body")
                     complexity = self._complexity(body_node)
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=name, kind=NodeKind.FUNCTION,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=name,
+                        kind=NodeKind.FUNCTION,
                         line_start=node.start_point[0] + 1,
                         line_end=node.end_point[0] + 1,
-                        signature=sig, is_async=is_async,
+                        signature=sig,
+                        is_async=is_async,
                         is_public=not name.startswith("_"),
                         complexity_score=complexity,
                     )
                     result.symbols.append(sym)
                     name_to_id[name] = sym.id
                     parent_id = class_sym.id if class_sym else file_id
-                    result.edges.append(EdgeRecord.create(
-                        kind=EdgeKind.DEFINES, from_id=parent_id, to_id=sym.id,
-                        file_path=file_path, line_number=node.start_point[0] + 1,
-                    ))
+                    result.edges.append(
+                        EdgeRecord.create(
+                            kind=EdgeKind.DEFINES,
+                            from_id=parent_id,
+                            to_id=sym.id,
+                            file_path=file_path,
+                            line_number=node.start_point[0] + 1,
+                        )
+                    )
                     if body_node:
                         for callee, line in self._extract_call_names(body_node):
-                            result.unresolved_refs.append(UnresolvedRef(
-                                from_id=sym.id, ref_name=callee,
-                                kind=EdgeKind.CALLS, file_path=file_path, line_number=line,
-                            ))
+                            result.unresolved_refs.append(
+                                UnresolvedRef(
+                                    from_id=sym.id,
+                                    ref_name=callee,
+                                    kind=EdgeKind.CALLS,
+                                    file_path=file_path,
+                                    line_number=line,
+                                )
+                            )
                 else:
                     # Regular variable/constant
                     is_const = any(not c.is_named and c.type == "const" for c in node.children)
                     sym = SymbolRecord.create(
-                        file_path=file_path, file_id=file_id,
-                        name=name, kind=NodeKind.VARIABLE,
+                        file_path=file_path,
+                        file_id=file_id,
+                        name=name,
+                        kind=NodeKind.VARIABLE,
                         line_start=node.start_point[0] + 1,
                         line_end=node.end_point[0] + 1,
                         is_public=not name.startswith("_"),
@@ -408,8 +491,10 @@ class JavaScriptParser(BaseParser):
             return
         name = name_node.text.decode("utf-8")
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.TYPE,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.TYPE,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=f"interface {name}",
@@ -417,10 +502,15 @@ class JavaScriptParser(BaseParser):
         )
         result.symbols.append(sym)
         name_to_id[name] = sym.id
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=file_id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=file_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
     def _extract_type_alias(self, node, file_path, file_id, source, result, name_to_id):
         name_node = node.child_by_field_name("name")
@@ -428,8 +518,10 @@ class JavaScriptParser(BaseParser):
             return
         name = name_node.text.decode("utf-8")
         sym = SymbolRecord.create(
-            file_path=file_path, file_id=file_id,
-            name=name, kind=NodeKind.TYPE,
+            file_path=file_path,
+            file_id=file_id,
+            name=name,
+            kind=NodeKind.TYPE,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
             signature=node.text.decode("utf-8"),
@@ -437,10 +529,15 @@ class JavaScriptParser(BaseParser):
         )
         result.symbols.append(sym)
         name_to_id[name] = sym.id
-        result.edges.append(EdgeRecord.create(
-            kind=EdgeKind.DEFINES, from_id=file_id, to_id=sym.id,
-            file_path=file_path, line_number=node.start_point[0] + 1,
-        ))
+        result.edges.append(
+            EdgeRecord.create(
+                kind=EdgeKind.DEFINES,
+                from_id=file_id,
+                to_id=sym.id,
+                file_path=file_path,
+                line_number=node.start_point[0] + 1,
+            )
+        )
 
     # ── Intra-file resolution ─────────────────────────────────────────────────
 
@@ -460,8 +557,7 @@ class JavaScriptParser(BaseParser):
             if block_start >= 0:
                 doc = preceding[block_start:].decode("utf-8", errors="replace")
                 lines = [
-                    line.strip().lstrip("/*").lstrip("* ").rstrip()
-                    for line in doc.splitlines()
+                    line.strip().lstrip("/*").lstrip("* ").rstrip() for line in doc.splitlines()
                 ]
                 return " ".join(ln for ln in lines if ln)
         return None

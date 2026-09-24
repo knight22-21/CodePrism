@@ -80,9 +80,7 @@ class SecurityScanner:
             file=file_path,
         )
 
-    def scan_diff(
-        self, original: str, proposed: str, file_path: str = ""
-    ) -> SecurityReport:
+    def scan_diff(self, original: str, proposed: str, file_path: str = "") -> SecurityReport:
         """
         Return only findings that are *new* in proposed (not present in original).
 

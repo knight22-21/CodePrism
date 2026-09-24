@@ -13,10 +13,11 @@ from .context import _pick
 @dataclass
 class ImpactResult:
     """Transitive impact of changing a single symbol."""
+
     symbol: SymbolRecord
     direct_dependents: list[SymbolRecord] = field(default_factory=list)
     transitive_dependents: list[SymbolRecord] = field(default_factory=list)
-    severity: str = "LOW"          # LOW | MEDIUM | HIGH | CRITICAL
+    severity: str = "LOW"  # LOW | MEDIUM | HIGH | CRITICAL
     affected_test_files: list[str] = field(default_factory=list)
     public_api_affected: bool = False
     estimated_change_surface: int = 0

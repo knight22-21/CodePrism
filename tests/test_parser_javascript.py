@@ -69,6 +69,7 @@ def parser() -> JavaScriptParser:
 
 # ── File record ────────────────────────────────────────────────────────────────
 
+
 def test_js_file_language(parser):
     result = parser.parse("/project/service.js", JS_SRC)
     assert result.file.language == "javascript"
@@ -86,6 +87,7 @@ def test_file_line_count(parser):
 
 # ── Imports ────────────────────────────────────────────────────────────────────
 
+
 def test_extracts_named_imports(parser):
     result = parser.parse("/project/service.js", JS_SRC)
     imports = {s.name for s in result.symbols if s.kind == NodeKind.IMPORT}
@@ -94,6 +96,7 @@ def test_extracts_named_imports(parser):
 
 
 # ── Classes ────────────────────────────────────────────────────────────────────
+
 
 def test_extracts_class(parser):
     result = parser.parse("/project/service.js", JS_SRC)
@@ -108,6 +111,7 @@ def test_class_line_numbers(parser):
 
 
 # ── Methods ────────────────────────────────────────────────────────────────────
+
 
 def test_extracts_methods(parser):
     result = parser.parse("/project/service.js", JS_SRC)
@@ -131,6 +135,7 @@ def test_sync_method_flag(parser):
 
 # ── Functions ──────────────────────────────────────────────────────────────────
 
+
 def test_extracts_function_declaration(parser):
     result = parser.parse("/project/service.js", JS_SRC)
     funcs = {s.name for s in result.symbols if s.kind == NodeKind.FUNCTION}
@@ -145,6 +150,7 @@ def test_extracts_arrow_function(parser):
 
 # ── Variables ──────────────────────────────────────────────────────────────────
 
+
 def test_extracts_const_variable(parser):
     result = parser.parse("/project/service.js", JS_SRC)
     vars_ = {s.name for s in result.symbols if s.kind == NodeKind.VARIABLE}
@@ -152,6 +158,7 @@ def test_extracts_const_variable(parser):
 
 
 # ── Edges — defines ────────────────────────────────────────────────────────────
+
 
 def test_defines_edge_file_to_class(parser):
     result = parser.parse("/project/service.js", JS_SRC)
@@ -171,6 +178,7 @@ def test_defines_edge_class_to_method(parser):
 
 # ── Edges — inherits ───────────────────────────────────────────────────────────
 
+
 def test_inherits_stays_unresolved_for_cross_file_base(parser):
     result = parser.parse("/project/service.js", JS_SRC)
     inherits_edges = [e for e in result.edges if e.kind == EdgeKind.INHERITS]
@@ -180,6 +188,7 @@ def test_inherits_stays_unresolved_for_cross_file_base(parser):
 
 
 # ── Edges — calls ──────────────────────────────────────────────────────────────
+
 
 def test_intrafile_call_not_resolved_for_external(parser):
     result = parser.parse("/project/service.js", JS_SRC)
@@ -193,6 +202,7 @@ def test_intrafile_call_not_resolved_for_external(parser):
 
 
 # ── TypeScript ─────────────────────────────────────────────────────────────────
+
 
 def test_ts_extracts_interface(parser):
     result = parser.parse("/project/utils.ts", TS_SRC)
@@ -222,6 +232,7 @@ def test_ts_defines_edges_for_exported_functions(parser):
 
 
 # ── Fixture files ──────────────────────────────────────────────────────────────
+
 
 def test_parse_js_fixture(parser):
     fixture = FIXTURE_DIR / "service.js"

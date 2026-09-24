@@ -30,7 +30,9 @@ def test_secrets_detects_api_key():
     det = SecretsDetector()
     results = det.scan(_read("secrets_example.py"))
     descriptions = [r.description for r in results]
-    assert any("key" in d.lower() or "token" in d.lower() or "secret" in d.lower() for d in descriptions)
+    assert any(
+        "key" in d.lower() or "token" in d.lower() or "secret" in d.lower() for d in descriptions
+    )
 
 
 def test_secrets_all_are_block_severity():
@@ -108,7 +110,7 @@ def test_injection_block_severity_for_sql():
 
 def test_injection_warn_for_shell_true():
     det = InjectionDetector()
-    results = det.scan('subprocess.run(cmd, shell=True)')
+    results = det.scan("subprocess.run(cmd, shell=True)")
     severities = [r.severity for r in results]
     assert "WARN" in severities
 
@@ -256,13 +258,17 @@ def test_git_safety_except_pass_inline_warn():
     det = GitSafetyDetector()
     results = det.scan("except Exception: pass")
     assert len(results) >= 1
-    assert any("swallow" in r.description.lower() or "suppress" in r.description.lower() for r in results)
+    assert any(
+        "swallow" in r.description.lower() or "suppress" in r.description.lower() for r in results
+    )
 
 
 def test_git_safety_pdb_warn():
     det = GitSafetyDetector()
     results = det.scan("import pdb\npdb.set_trace()\n")
-    assert any("pdb" in r.description.lower() or "breakpoint" in r.description.lower() for r in results)
+    assert any(
+        "pdb" in r.description.lower() or "breakpoint" in r.description.lower() for r in results
+    )
 
 
 def test_git_safety_breakpoint_warn():

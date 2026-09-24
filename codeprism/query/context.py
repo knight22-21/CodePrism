@@ -12,6 +12,7 @@ from ..core.storage import StorageManager
 @dataclass
 class ContextResult:
     """Structured context packet for a single symbol."""
+
     symbol: SymbolRecord
     file: FileRecord
     direct_callers: list[SymbolRecord] = field(default_factory=list)
@@ -52,7 +53,7 @@ async def get_context(
     neighbor_syms = [s for s in neighbor_syms if s is not None]
 
     related_types = [s for s in neighbor_syms if s.kind == NodeKind.TYPE]
-    relevant_vars  = [s for s in neighbor_syms if s.kind == NodeKind.VARIABLE]
+    relevant_vars = [s for s in neighbor_syms if s.kind == NodeKind.VARIABLE]
 
     # Rough token estimate: ~200 base + ~50 per returned symbol
     unique_count = 1 + len({s.id for s in callers + callees})
