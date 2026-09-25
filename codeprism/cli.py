@@ -59,7 +59,7 @@ def index(
         None,
         "--languages",
         "-l",
-        help="Comma-separated language list (default: python,javascript,typescript,go,rust)",
+        help="Comma-separated language list (default: python,javascript,typescript,go,rust,java)",
     ),
     embeddings: bool = typer.Option(
         False,
