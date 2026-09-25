@@ -40,6 +40,10 @@ class ParserRegistry:
             return self._try_build("rust", ext)
         if ext == ".java":
             return self._try_build("java", ext)
+        if ext in (".c", ".h"):
+            return self._try_build("c", ext)
+        if ext in (".cpp", ".cc", ".cxx", ".hpp", ".hh"):
+            return self._try_build("cpp", ext)
         return self._generic
 
     def _try_build(self, lang: str, ext: str) -> BaseParser:
@@ -64,6 +68,14 @@ class ParserRegistry:
                 from .java_parser import JavaParser
 
                 return JavaParser()
+            if lang == "c":
+                from .c_parser import CParser
+
+                return CParser()
+            if lang == "cpp":
+                from .c_parser import CppParser
+
+                return CppParser()
         except ImportError:
             pass
         return self._generic
@@ -74,7 +86,26 @@ class ParserRegistry:
 
     def supported_extensions(self) -> list[str]:
         """All extensions with a non-generic parser (discovered lazily)."""
-        known = [".py", ".pyi", ".js", ".jsx", ".mjs", ".ts", ".tsx", ".mts", ".go", ".rs", ".java"]
+        known = [
+            ".py",
+            ".pyi",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".go",
+            ".rs",
+            ".java",
+            ".c",
+            ".h",
+            ".cpp",
+            ".cc",
+            ".cxx",
+            ".hpp",
+            ".hh",
+        ]
         return [e for e in known if not isinstance(self.get(f"file{e}"), GenericParser)]
 
 
