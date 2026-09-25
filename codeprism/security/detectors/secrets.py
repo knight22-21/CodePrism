@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import math
 import re
 
 from .base import BaseDetector, DetectionResult
+
+# Strings shorter than this are never flagged by entropy analysis (too many false positives).
+_ENTROPY_MIN_LEN = 20
+# Shannon entropy threshold in bits-per-character. Random 62-char strings score ~5.9;
+# typical passwords/tokens score 4.0–5.5. We flag at 4.5 to catch real secrets with
+# some headroom above common English words (which score < 3.5).
+_ENTROPY_THRESHOLD = 4.5
+# Matches quoted string literals that look like they could be secret values.
+_ENTROPY_STRING_RE = re.compile(r"""(?:["'])([A-Za-z0-9+/=_\-]{20,})(?:["'])""")
 
 # Patterns without strict \b word boundaries so compound names like
 # DATABASE_PASSWORD, MY_API_KEY, etc. are also caught.
@@ -85,8 +95,39 @@ _PATTERNS = [
 ]
 
 
+def _shannon_entropy(s: str) -> float:
+    """Return Shannon entropy in bits per character."""
+    if not s:
+        return 0.0
+    freq = {c: s.count(c) / len(s) for c in set(s)}
+    return -sum(p * math.log2(p) for p in freq.values())
+
+
 class SecretsDetector(BaseDetector):
     name = "secrets"
 
     def scan(self, content: str, file_path: str = "") -> list[DetectionResult]:
-        return self._scan_lines(content, _PATTERNS)
+        results = self._scan_lines(content, _PATTERNS)
+        already_flagged = {r.line_number for r in results}
+
+        # Entropy pass: flag high-entropy quoted strings not already caught by patterns.
+        for lineno, line in enumerate(content.splitlines(), start=1):
+            if lineno in already_flagged:
+                continue
+            for match in _ENTROPY_STRING_RE.finditer(line):
+                candidate = match.group(1)
+                if len(candidate) >= _ENTROPY_MIN_LEN and _shannon_entropy(candidate) >= _ENTROPY_THRESHOLD:
+                    results.append(
+                        DetectionResult(
+                            severity="WARN",
+                            category=self.name,
+                            line_number=lineno,
+                            description=(
+                                f"High-entropy string (entropy={_shannon_entropy(candidate):.2f}) "
+                                "— possible hardcoded secret"
+                            ),
+                            fix_suggestion="Load from environment variable or secrets manager",
+                            detector="secrets-entropy",
+                        )
+                    )
+        return results
