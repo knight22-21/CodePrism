@@ -90,6 +90,7 @@ class SessionManager:
         file_path: str,
         content_before: str,
         content_after: str,
+        block_on_warn: bool = False,
     ) -> dict:
         """
         Log a file write, run the security scanner, flush to disk, and sync the graph.
@@ -97,6 +98,8 @@ class SessionManager:
         Returns a dict with status (PASS/WARN/BLOCK), issues[], and graph_update.
         A BLOCK status means the write contains a critical security issue — the
         caller should surface this to the user before proceeding.
+
+        block_on_warn: if True, treat WARN findings the same as BLOCK (write is skipped).
         """
         from ..security.scanner import SecurityScanner
 
@@ -116,8 +119,9 @@ class SessionManager:
             )
         )
 
-        if report.status != "BLOCK":
-            # Only flush to disk when the security gate passes or warns.
+        gated = report.status == "BLOCK" or (block_on_warn and report.status == "WARN")
+        if not gated:
+            # Only flush to disk when the security gate passes.
             self._validate_path(file_path).write_text(content_after, encoding="utf-8")
             update = await self._updater.update_file(file_path)
             graph_update = {
@@ -217,9 +221,15 @@ class Session:
     async def record_read(self, file: str, symbol: str) -> None:
         await self._manager.record_read(self.session_id, file, symbol)
 
-    async def record_write(self, file: str, content_before: str, content_after: str) -> dict:
+    async def record_write(
+        self,
+        file: str,
+        content_before: str,
+        content_after: str,
+        block_on_warn: bool = False,
+    ) -> dict:
         return await self._manager.record_write(
-            self.session_id, file, content_before, content_after
+            self.session_id, file, content_before, content_after, block_on_warn=block_on_warn
         )
 
     async def get_context(self) -> SessionContext:
