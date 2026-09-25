@@ -36,7 +36,7 @@ def inject_engine(indexed_engine):
     engine, db, proj = indexed_engine
     _srv.init_engine(engine)
     updater = IncrementalUpdater(engine._graph, engine._storage)
-    _srv.init_session_manager(SessionManager(engine._storage, updater))
+    _srv.init_session_manager(SessionManager(engine._storage, updater, project_root=str(proj)))
     yield
     _srv._engine = None
     _srv._session_manager = None

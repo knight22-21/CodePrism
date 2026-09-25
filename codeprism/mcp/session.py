@@ -44,9 +44,25 @@ class SessionManager:
     - Expose a compact SessionContext for token-efficient context-window inclusion
     """
 
-    def __init__(self, storage: StorageManager, updater: IncrementalUpdater) -> None:
+    def __init__(
+        self,
+        storage: StorageManager,
+        updater: IncrementalUpdater,
+        project_root: str = ".",
+    ) -> None:
         self._storage = storage
         self._updater = updater
+        self._project_root = Path(project_root).resolve()
+
+    def _validate_path(self, file_path: str) -> Path:
+        """Resolve path and assert it is under the project root."""
+        resolved = Path(file_path).resolve()
+        if not str(resolved).startswith(str(self._project_root)):
+            raise ValueError(
+                f"Path traversal denied: '{file_path}' is outside the project root "
+                f"'{self._project_root}'"
+            )
+        return resolved
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -102,7 +118,7 @@ class SessionManager:
 
         if report.status != "BLOCK":
             # Only flush to disk when the security gate passes or warns.
-            Path(file_path).write_text(content_after, encoding="utf-8")
+            self._validate_path(file_path).write_text(content_after, encoding="utf-8")
             update = await self._updater.update_file(file_path)
             graph_update = {
                 "nodes_added": update.nodes_added,
@@ -157,11 +173,18 @@ class SessionManager:
         write_events = [e for e in reversed(events) if e.event_type == SessionEventKind.WRITE]
         to_undo = write_events[:steps]
 
+        from ..security.scanner import SecurityScanner
+
         files_restored: list[str] = []
         for event in to_undo:
             if event.file_path is None or event.content_before is None:
                 continue
-            Path(event.file_path).write_text(event.content_before, encoding="utf-8")
+            target = self._validate_path(event.file_path)
+            # Re-scan before restoring — the prior content may itself be dangerous.
+            restore_report = SecurityScanner().scan_content(event.content_before, event.file_path)
+            if restore_report.status == "BLOCK":
+                continue
+            target.write_text(event.content_before, encoding="utf-8")
             await self._updater.update_file(event.file_path)
             files_restored.append(event.file_path)
 

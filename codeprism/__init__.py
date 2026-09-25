@@ -138,7 +138,7 @@ class CodePrism:
             "CodePrism not initialized — use `async with CodePrism(...)`"
         )
         updater = IncrementalUpdater(self._graph, self._storage)
-        manager = SessionManager(self._storage, updater)
+        manager = SessionManager(self._storage, updater, project_root=self.project_path)
         return Session(session_id, manager)
 
 

@@ -53,10 +53,11 @@ def check_package(package: str, version: str = "") -> CVEResult:
         for alias in vuln.get("aliases", []):
             if alias.startswith("CVE-"):
                 cve_ids.append(alias)
-        for sev in vuln.get("severity", []):
-            lvl = sev.get("score", "").upper()
-            if _order.get(lvl, 0) > _order.get(worst, 0):
-                worst = lvl
+        # database_specific.severity holds a plain word (CRITICAL/HIGH/MEDIUM/LOW).
+        # severity[].score is a CVSS vector string — not usable for severity ranking.
+        db_sev = vuln.get("database_specific", {}).get("severity", "").upper()
+        if db_sev in _order and _order[db_sev] > _order.get(worst, 0):
+            worst = db_sev
 
     summary = f"{len(vulns)} known vulnerabilities for {package}"
     return CVEResult(
