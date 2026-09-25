@@ -6,13 +6,13 @@ import asyncio
 import re
 from pathlib import Path
 
-# Allowlist for git ref characters — prevents argument injection via diff_range
-_SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
-
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+# Allowlist for git ref characters — prevents argument injection via diff_range
+_SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
 
 app = typer.Typer(
     name="codeprism",
