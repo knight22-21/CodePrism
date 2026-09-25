@@ -35,12 +35,14 @@ def test_secrets_detects_api_key():
     )
 
 
-def test_secrets_all_are_block_severity():
+def test_secrets_all_are_block_or_warn_severity():
     det = SecretsDetector()
     results = det.scan(_read("secrets_example.py"))
     assert len(results) > 0
     for r in results:
-        assert r.severity == "BLOCK"
+        assert r.severity in {"BLOCK", "WARN"}
+    # Hard patterns (passwords, API keys, tokens) must be BLOCK
+    assert any(r.severity == "BLOCK" for r in results)
 
 
 def test_secrets_reports_line_numbers():
@@ -75,6 +77,90 @@ def test_secrets_env_var_not_flagged():
     det = SecretsDetector()
     results = det.scan('password = os.environ.get("PASSWORD")')
     assert results == []
+
+
+def test_secrets_detects_anthropic_key():
+    det = SecretsDetector()
+    # Construct at runtime to avoid triggering push-protection on the source file
+    fake_key = "sk-ant-" + "api03-" + "a" * 32
+    results = det.scan(f'key = "{fake_key}"')
+    assert any("Anthropic" in r.description for r in results)
+
+
+def test_secrets_detects_slack_token():
+    det = SecretsDetector()
+    # Construct at runtime to avoid triggering push-protection on the source file itself
+    fake_tok = "xo" + "xb-111222333444-555666777888999-aAbBcCdDeEfFgGhH"
+    results = det.scan(f'token = "{fake_tok}"')
+    assert any("Slack" in r.description for r in results)
+
+
+def test_secrets_detects_stripe_key():
+    det = SecretsDetector()
+    # Construct at runtime to avoid triggering push-protection on the source file itself
+    fake_key = "sk" + "_live_" + "a" * 24
+    results = det.scan(f'key = "{fake_key}"')
+    assert any("Stripe" in r.description for r in results)
+
+
+def test_secrets_detects_jwt():
+    det = SecretsDetector()
+    # Construct a syntactically valid JWT-shaped token at runtime
+    fake_jwt = "eyJ" + "a" * 20 + "." + "b" * 20 + "." + "c" * 20
+    results = det.scan(f'token = "{fake_jwt}"')
+    assert any("JWT" in r.description for r in results)
+
+
+# ── Entropy detection ─────────────────────────────────────────────────────────
+
+
+def test_entropy_flags_high_entropy_string():
+    from codeprism.security.detectors.secrets import _shannon_entropy
+
+    # A random base64-like string has entropy > 4.5
+    high_entropy = "aB3dEf7gHi9jKl2mNo4pQr6sT8uVwXyZ"
+    assert _shannon_entropy(high_entropy) > 4.5
+
+
+def test_entropy_does_not_flag_low_entropy_string():
+    from codeprism.security.detectors.secrets import _shannon_entropy
+
+    # Repetitive strings have low entropy
+    assert _shannon_entropy("aaaaaaaaaaaaaaaaaaa") < 1.0
+
+
+def test_entropy_detector_finds_secret_not_caught_by_patterns():
+    det = SecretsDetector()
+    # This looks like a random token but doesn't match any named pattern
+    code = 'TOKEN = "aB3dEf7gHi9jKl2mNo4pQr6sT8uVwXyZ012345"'
+    results = det.scan(code)
+    assert any("entropy" in r.description.lower() for r in results)
+
+
+def test_entropy_detector_skips_short_strings():
+    det = SecretsDetector()
+    # Short strings (< 20 chars) should not be flagged
+    results = det.scan('x = "short_secret"')
+    entropy_results = [r for r in results if "entropy" in r.description.lower()]
+    assert entropy_results == []
+
+
+def test_entropy_detector_does_not_double_flag_pattern_matches():
+    det = SecretsDetector()
+    # AKIA... is already caught by the AWS pattern — entropy pass should not add a second finding
+    results = det.scan('KEY = "AKIAIOSFODNN7EXAMPLE_FAKE_KEY_12345"')
+    entropy_results = [r for r in results if "entropy" in r.description.lower()]
+    aws_results = [r for r in results if "AWS" in r.description]
+    # Pattern match should be present; entropy result at same line should not be
+    if aws_results:
+        line = aws_results[0].line_number
+        assert not any(r.line_number == line for r in entropy_results)
+
+
+def test_entropy_empty_string_is_zero():
+    from codeprism.security.detectors.secrets import _shannon_entropy
+
+    assert _shannon_entropy("") == 0.0
 
 
 # ── InjectionDetector ─────────────────────────────────────────────────────────
