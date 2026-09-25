@@ -98,9 +98,7 @@ def test_private_method_not_public(result):
 
 
 def test_public_method_is_public(result):
-    process = next(
-        s for s in result.symbols if s.name == "process" and s.kind == NodeKind.FUNCTION
-    )
+    process = next(s for s in result.symbols if s.name == "process" and s.kind == NodeKind.FUNCTION)
     assert process.is_public is True
 
 
@@ -114,9 +112,7 @@ def test_class_signature_contains_name(result):
 
 
 def test_method_signature_has_params(result):
-    process = next(
-        s for s in result.symbols if s.name == "process" and s.kind == NodeKind.FUNCTION
-    )
+    process = next(s for s in result.symbols if s.name == "process" and s.kind == NodeKind.FUNCTION)
     assert "(" in process.signature
 
 
@@ -124,9 +120,7 @@ def test_method_signature_has_params(result):
 
 
 def test_process_complexity_greater_than_one(result):
-    process = next(
-        s for s in result.symbols if s.name == "process" and s.kind == NodeKind.FUNCTION
-    )
+    process = next(s for s in result.symbols if s.name == "process" and s.kind == NodeKind.FUNCTION)
     assert process.complexity_score > 1.0
 
 
