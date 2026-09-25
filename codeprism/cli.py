@@ -762,22 +762,25 @@ def _upsert_agent_instructions(file: Path, block: str, marker: str) -> None:
         file.write_text(block + "\n", encoding="utf-8")
         return
 
+    import re
+
     existing = file.read_text(encoding="utf-8")
     if marker in existing:
-        # Replace the old block between opening and closing marker
-        import re
-
+        # Derive closing tag: "<!-- foo -->" → "<!-- /foo -->" (space before slash)
+        closing = marker.replace("<!-- ", "<!-- /", 1)
         pattern = re.compile(
-            re.escape(marker) + r".*?" + re.escape(marker.replace("<!--", "<!--/")),
+            re.escape(marker) + r".*?" + re.escape(closing),
             re.DOTALL,
         )
-        updated = pattern.sub(block, existing)
-        if updated == existing:
-            # Marker present but closing tag differs — just append updated block
+        if pattern.search(existing):
+            # Block with open+close markers found — replace it in place.
+            updated = pattern.sub(block, existing, count=1)
+        else:
+            # Opening marker present but closing tag missing — append updated block.
             updated = existing.rstrip() + "\n\n" + block + "\n"
         file.write_text(updated, encoding="utf-8")
     else:
-        # Append to the end of whatever is already there
+        # No marker at all — append to the end.
         file.write_text(existing.rstrip() + "\n\n" + block + "\n", encoding="utf-8")
 
 
