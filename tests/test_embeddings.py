@@ -12,12 +12,17 @@ import pytest
 
 def _make_embedder(dim: int = 3):
     """Return an Embedder with a mocked sentence-transformers model."""
-    import numpy as np
-
     from codeprism.embeddings.embedder import Embedder
 
+    class _FakeArray:
+        def __init__(self, data):
+            self._data = data
+
+        def tolist(self):
+            return self._data
+
     mock_model = MagicMock()
-    mock_model.encode.side_effect = lambda texts, **_: np.zeros((len(texts), dim))
+    mock_model.encode.side_effect = lambda texts, **_: _FakeArray([[0.0] * dim for _ in texts])
 
     embedder = Embedder.__new__(Embedder)
     embedder._model = mock_model
