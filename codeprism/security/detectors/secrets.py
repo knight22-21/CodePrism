@@ -116,7 +116,10 @@ class SecretsDetector(BaseDetector):
                 continue
             for match in _ENTROPY_STRING_RE.finditer(line):
                 candidate = match.group(1)
-                if len(candidate) >= _ENTROPY_MIN_LEN and _shannon_entropy(candidate) >= _ENTROPY_THRESHOLD:
+                if (
+                    len(candidate) >= _ENTROPY_MIN_LEN
+                    and _shannon_entropy(candidate) >= _ENTROPY_THRESHOLD
+                ):
                     results.append(
                         DetectionResult(
                             severity="WARN",
