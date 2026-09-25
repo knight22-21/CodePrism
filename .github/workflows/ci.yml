@@ -38,6 +38,7 @@ jobs:
             --cov=codeprism \
             --cov-report=term-missing \
             --cov-report=xml \
+            --cov-fail-under=80 \
             --tb=short
 
       - name: Upload coverage report

@@ -63,7 +63,8 @@ def test_scan_secrets_only():
     report = scanner.scan_secrets_only(_read("secrets_example.py"))
     assert report.status == "BLOCK"
     detectors_used = {i.detector for i in report.issues}
-    assert detectors_used == {"secrets"}
+    # Both pattern-based ("secrets") and entropy-based ("secrets-entropy") findings are valid
+    assert detectors_used.issubset({"secrets", "secrets-entropy"})
 
 
 def test_scan_secrets_only_clean():
