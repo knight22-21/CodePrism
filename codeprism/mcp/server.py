@@ -81,7 +81,7 @@ async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
     await graph.load_from_storage(storage)
     _engine = QueryEngine(graph, storage)
     updater = IncrementalUpdater(graph, storage)
-    _session_manager = SessionManager(storage, updater)
+    _session_manager = SessionManager(storage, updater, project_root=_project_path)
 
     # Wire semantic search if embeddings index exists and is configured
     try:
@@ -338,7 +338,16 @@ async def scan_file(file: str, content: str | None = None) -> dict[str, Any]:
         try:
             from pathlib import Path
 
-            file_content = Path(file).read_text(encoding="utf-8")
+            resolved = Path(file).resolve()
+            project_resolved = Path(_project_path).resolve()
+            if not str(resolved).startswith(str(project_resolved)):
+                return {
+                    "error": (
+                        f"File '{file}' is outside the indexed project directory. "
+                        "Pass content= to scan arbitrary text."
+                    )
+                }
+            file_content = resolved.read_text(encoding="utf-8")
             report = scanner.scan_content(file_content, file)
         except FileNotFoundError:
             return {"error": f"File '{file}' not found"}
