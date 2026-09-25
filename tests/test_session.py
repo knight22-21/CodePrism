@@ -31,7 +31,7 @@ async def session_env(tmp_path: Path):
     await ProjectIndexer(graph, storage, config).index(str(proj))
 
     updater = IncrementalUpdater(graph, storage)
-    manager = SessionManager(storage, updater)
+    manager = SessionManager(storage, updater, project_root=str(proj))
     yield manager, proj, storage
     await storage.close()
 

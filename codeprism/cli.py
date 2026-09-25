@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+# Allowlist for git ref characters — prevents argument injection via diff_range
+_SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
 
 app = typer.Typer(
     name="codeprism",
@@ -412,6 +416,10 @@ def serve(
 
     configure(path)
     if transport == "sse":
+        console.print(
+            "[yellow]Warning:[/yellow] SSE transport has no built-in authentication. "
+            "Add a reverse-proxy auth layer (nginx/Caddy) before exposing to a network."
+        )
         mcp.run(transport="sse", port=port)
     else:
         mcp.run()
@@ -850,6 +858,9 @@ async def _visualize(path: str, out: str) -> None:
 
     html = _VIZ_HTML_TEMPLATE.replace("__DATA__", data_json).replace("__TITLE__", Path(path).name)
     out_path = Path(out)
+    if out_path.suffix.lower() != ".html":
+        console.print("[red]--out must have a .html extension[/red]")
+        raise typer.Exit(1)
     out_path.write_text(html, encoding="utf-8")
 
     console.print(f"[green]Visualization saved:[/green] [bold]{out_path.resolve()}[/bold]")
@@ -1293,6 +1304,13 @@ async def _scan(target: str, all_: bool, diff: str | None, project: str) -> None
 async def _scan_git_diff(diff_range: str, scanner) -> None:
     """Scan only the files changed in a git diff range (e.g. HEAD~1..HEAD)."""
     import subprocess
+
+    if not _SAFE_GIT_REF_RE.match(diff_range):
+        console.print(
+            f"[red]Invalid diff range:[/red] {diff_range!r} — "
+            "only alphanumeric and standard git ref characters are allowed."
+        )
+        raise typer.Exit(1)
 
     try:
         proc = subprocess.run(

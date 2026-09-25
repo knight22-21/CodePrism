@@ -58,6 +58,30 @@ _PATTERNS = [
         "GitHub personal access token",
         "Revoke at github.com/settings/tokens immediately",
     ),
+    (
+        re.compile(r"\bsk-ant-[a-zA-Z0-9_-]{32,}"),
+        "BLOCK",
+        "Anthropic API key",
+        "Revoke at console.anthropic.com and load from environment",
+    ),
+    (
+        re.compile(r"\bxox[baprs]-[0-9A-Za-z-]+"),
+        "BLOCK",
+        "Slack token",
+        "Revoke at api.slack.com/apps and load from environment",
+    ),
+    (
+        re.compile(r"\bsk_live_[a-zA-Z0-9]{24,}"),
+        "BLOCK",
+        "Stripe live secret key",
+        "Revoke at dashboard.stripe.com/apikeys and load from environment",
+    ),
+    (
+        re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
+        "WARN",
+        "Possible JWT token",
+        "JWTs contain encoded claims — avoid hardcoding in source files",
+    ),
 ]
 
 

@@ -20,7 +20,7 @@ from .models import (
 
 _SCHEMA = """
 PRAGMA journal_mode=WAL;
-PRAGMA foreign_keys=OFF;
+PRAGMA foreign_keys=ON;
 
 CREATE TABLE IF NOT EXISTS files (
     id            TEXT PRIMARY KEY,

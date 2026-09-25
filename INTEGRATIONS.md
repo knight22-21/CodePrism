@@ -271,9 +271,28 @@ After reloading, Cody can call CodePrism tools during its agentic editing sessio
 
 ## Aider
 
-Aider is a CLI coding agent. Use CodePrism via the Python library to pre-load context before an Aider session, or run the MCP server alongside Aider for any MCP-capable orchestrator wrapping it.
+### Integration overview
 
-**Option A — Python pre-context script:**
+Aider and CodePrism are complementary, not competing:
+
+| Tool | Role |
+|---|---|
+| **Aider** | Applies code changes — tracks edited files, manages git commits, runs tests |
+| **CodePrism** | Answers structural questions — callers, callees, impact blast radius, security scan |
+
+Aider does not build a knowledge graph; it reads files on demand, which costs tokens for every context fetch. CodePrism builds the graph once at index time; every subsequent query is a sub-100-token lookup. Together they eliminate the "cold-start" token burn that happens when Aider first encounters an unfamiliar symbol.
+
+**Typical workflow:**
+1. Run `codeprism index` once (or on CI push)
+2. Query the graph before starting an Aider session — get callers, impact severity, and the symbol signature in ~200 tokens
+3. Hand the compact summary to Aider so it starts informed
+4. After Aider writes a file, run `codeprism scan_file` (or `scan_diff`) to security-gate the output before committing
+
+---
+
+### Option A — Python pre-context script (zero extra infrastructure)
+
+Run this before `aider` to load precise context into your shell or a `--message` flag:
 
 ```python
 # query_context.py  — run before aider to understand the function
@@ -283,23 +302,102 @@ from codeprism import CodePrism
 async def main():
     async with CodePrism("/path/to/project") as prism:
         ctx = await prism.get_context("payments/processor.py", "charge_card")
-        print(ctx.symbol.signature)
+        print("Signature:", ctx.symbol.signature)
         print("Callers:", [c.name for c in ctx.direct_callers])
         impact = await prism.get_impact("payments/processor.py", "charge_card")
-        print("Severity:", impact.severity)
+        print("Impact severity:", impact.severity)
+        print("Dependents:", [d.name for d in impact.direct_dependents])
 
 asyncio.run(main())
 ```
 
-**Option B — SSE server alongside Aider** (for MCP-aware orchestrators):
+```bash
+# Feed the summary directly into Aider as a message
+python query_context.py | aider --message "$(cat -)" payments/processor.py
+```
+
+**When to use Option A:** You want zero extra processes. Suitable for one-off sessions or scripted CI pipelines.
+
+---
+
+### Option B — SSE server alongside Aider (persistent graph, live queries)
+
+Run CodePrism as a persistent MCP server; any MCP-aware orchestrator wrapping Aider can call it live:
 
 ```bash
-# Terminal 1
+# Terminal 1 — knowledge graph server (stays running)
 codeprism serve /path/to/project --transport sse --port 8765
 
-# Terminal 2
+# Terminal 2 — Aider session
 aider --model claude-sonnet-4-6 payments/processor.py
 ```
+
+Connect any MCP client to `http://localhost:8765/sse` and call tools:
+
+```python
+# In your orchestration layer (e.g. a LangGraph wrapper around Aider)
+impact = mcp_client.call("get_impact", {"file": "payments/processor.py", "symbol": "charge_card"})
+# → {"severity": "HIGH", "direct_dependents": [...], "all_dependents_count": 14}
+
+scan = mcp_client.call("scan_diff", {"original": old_code, "proposed": new_code, "file": "payments/processor.py"})
+# → {"status": "PASS", "new_issues": []}
+```
+
+**When to use Option B:** Long-running sessions, multi-agent pipelines, or when your orchestrator already speaks MCP.
+
+---
+
+### Option C — Post-write security gate (recommended for any setup)
+
+After Aider writes files, gate the output through CodePrism before committing:
+
+```bash
+#!/usr/bin/env bash
+# post-edit-gate.sh — run after aider session
+set -euo pipefail
+
+for file in $(git diff --name-only); do
+    result=$(codeprism scan-file "$file" 2>&1)
+    status=$(echo "$result" | python -c "import sys,json; d=json.load(sys.stdin); print(d['status'])")
+    if [ "$status" = "BLOCK" ]; then
+        echo "BLOCKED: $file has critical security issues — aborting commit"
+        echo "$result"
+        exit 1
+    fi
+done
+echo "Security gate: PASS"
+```
+
+Or inline via Python:
+
+```python
+import asyncio, subprocess, json
+from codeprism import CodePrism
+
+async def gate(project: str):
+    changed = subprocess.check_output(["git", "diff", "--name-only"]).decode().splitlines()
+    async with CodePrism(project) as prism:
+        for f in changed:
+            report = await prism.scan_file(f)
+            if report["status"] == "BLOCK":
+                raise SystemExit(f"BLOCKED: {f} — {[i['description'] for i in report['issues']]}")
+    print(f"Security gate: PASS ({len(changed)} files checked)")
+
+asyncio.run(gate("/path/to/project"))
+```
+
+---
+
+### Why CodePrism + Aider beats either tool alone
+
+| Capability | Aider alone | CodePrism alone | Together |
+|---|---|---|---|
+| Apply code changes, manage commits | Yes | No | Yes (Aider) |
+| Know callers of a function without reading the file | No | Yes | Yes (CodePrism graph) |
+| Blast-radius / impact analysis before editing | No | Yes | Yes |
+| Security gate on generated code | No | Yes | Yes |
+| Token cost per context fetch | High (reads whole files) | Low (< 400 tokens per query) | Low |
+| Works offline / no API | Yes | Yes | Yes |
 
 ---
 
