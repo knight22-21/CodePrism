@@ -86,8 +86,26 @@ class ParserRegistry:
 
     def supported_extensions(self) -> list[str]:
         """All extensions with a non-generic parser (discovered lazily)."""
-        known = [".py", ".pyi", ".js", ".jsx", ".mjs", ".ts", ".tsx", ".mts", ".go", ".rs",
-                 ".java", ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh"]
+        known = [
+            ".py",
+            ".pyi",
+            ".js",
+            ".jsx",
+            ".mjs",
+            ".ts",
+            ".tsx",
+            ".mts",
+            ".go",
+            ".rs",
+            ".java",
+            ".c",
+            ".h",
+            ".cpp",
+            ".cc",
+            ".cxx",
+            ".hpp",
+            ".hh",
+        ]
         return [e for e in known if not isinstance(self.get(f"file{e}"), GenericParser)]
 
 
