@@ -30,7 +30,7 @@ CodePrism builds a persistent knowledge graph of your project — every function
 
 ## What CodePrism Does
 
-- **Indexes** your codebase using tree-sitter AST parsing (Python, JavaScript, TypeScript, Go)
+- **Indexes** your codebase using tree-sitter AST parsing (Python, JavaScript, TypeScript, Go, Rust, Java, C, C++, Ruby, PHP)
 - **Maintains** a live knowledge graph — updated incrementally when files change
 - **Answers** precise structural questions: callers, callees, impact, dependencies, data flow
 - **Guards** every write with a security scanner — secrets, injection, weak crypto, and more
@@ -289,8 +289,12 @@ Agent: get_session_context("sess_abc123")
 | JavaScript | Full | Functions, classes, ES modules, CommonJS require |
 | TypeScript | Full | + interfaces, type aliases, generics |
 | Go | Full | Functions, structs, interfaces, packages |
-| Rust | Planned (v1.2) | — |
-| Java | Planned (v2.0) | — |
+| Rust | Full | Functions, structs, traits, impl blocks |
+| Java | Full | Classes, interfaces, methods, annotations, generics |
+| C | Full | Functions, structs, typedefs, includes |
+| C++ | Full | Classes, methods, inheritance, templates, namespaces |
+| Ruby | Full | Modules, classes, instance/singleton methods, visibility |
+| PHP | Full | Namespaces, classes, traits, interfaces, methods |
 
 ---
 

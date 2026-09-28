@@ -626,6 +626,27 @@ chmod +x .git/hooks/pre-commit
 
 ---
 
+## Supported Languages
+
+CodePrism parses ten languages out of the box. No extra config — the registry picks the right parser from the file extension automatically.
+
+| Language | Extensions | Features |
+|---|---|---|
+| Python | `.py`, `.pyi` | Functions, classes, imports, type hints, async, decorators |
+| JavaScript | `.js`, `.jsx`, `.mjs` | Functions, classes, ES modules, CommonJS require |
+| TypeScript | `.ts`, `.tsx`, `.mts` | + interfaces, type aliases, generics |
+| Go | `.go` | Functions, structs, interfaces, packages |
+| Rust | `.rs` | Functions, structs, traits, impl blocks |
+| Java | `.java` | Classes, interfaces, methods, annotations, generics |
+| C | `.c`, `.h` | Functions, structs, typedefs, includes |
+| C++ | `.cpp`, `.cc`, `.cxx`, `.hpp`, `.hh` | Classes, methods, inheritance, templates, namespaces |
+| Ruby | `.rb`, `.rake`, `.gemspec` | Modules, classes, instance/singleton methods, visibility |
+| PHP | `.php`, `.php5`, `.phtml` | Namespaces, classes, traits, interfaces, methods |
+
+Unknown extensions fall back to a line-count generic parser.
+
+---
+
 ## Quick reference
 
 | Agent / Tool | Transport | Config location | Auto-setup |

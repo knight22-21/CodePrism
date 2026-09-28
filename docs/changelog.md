@@ -5,6 +5,24 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v0.1.8] — 2026-09-28
+
+### Added
+- **PHP parser (L4)** — `codeprism/parser/php_parser.py`: namespaces, `use` imports (short alias),
+  classes, interfaces, traits, methods (visibility + static), properties, constants, top-level
+  functions. 27 tests in `tests/test_parser_php.py`.
+- **Ruby parser (L3)** — `codeprism/parser/ruby_parser.py`: modules, classes with inheritance,
+  instance methods, singleton/class methods (`def self.x`), `require`/`require_relative` imports,
+  constants, visibility tracking (`public`/`protected`/`private`). 24 tests in
+  `tests/test_parser_ruby.py`.
+- **C / C++ parser (L2)** — `codeprism/parser/c_parser.py`: two parsers (`CParser` + `CppParser`),
+  covering functions, structs, typedefs, `#include` imports, C++ classes with inheritance,
+  namespaces, templates. 37 tests in `tests/test_parser_c.py`.
+- **Java parser (L1)** — `codeprism/parser/java_parser.py`: classes, interfaces, enums, methods,
+  annotations, generics, import statements. 35 tests in `tests/test_parser_java.py`.
+
+---
+
 ## [v0.1.7] — 2026-09-18
 
 ### Added
