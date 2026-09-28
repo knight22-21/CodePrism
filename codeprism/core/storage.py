@@ -252,9 +252,10 @@ class StorageManager:
         return _row_to_symbol(row) if row else None
 
     async def find_symbols(self, name: str, kind: str | None = None) -> list[SymbolRecord]:
-        if kind:
+        kind_param = kind.lower() if kind else None
+        if kind_param:
             async with self.db.execute(
-                "SELECT * FROM symbols WHERE name = ? AND kind = ?", (name, kind)
+                "SELECT * FROM symbols WHERE name = ? AND kind = ?", (name, kind_param)
             ) as cur:
                 rows = await cur.fetchall()
         else:
@@ -264,10 +265,11 @@ class StorageManager:
 
     async def search_symbols(self, query: str, kind: str | None = None) -> list[SymbolRecord]:
         pattern = f"%{query}%"
-        if kind:
+        kind_param = kind.lower() if kind else None
+        if kind_param:
             async with self.db.execute(
                 "SELECT * FROM symbols WHERE name LIKE ? AND kind = ? LIMIT 50",
-                (pattern, kind),
+                (pattern, kind_param),
             ) as cur:
                 rows = await cur.fetchall()
         else:
