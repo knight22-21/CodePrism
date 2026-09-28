@@ -44,6 +44,8 @@ class ParserRegistry:
             return self._try_build("c", ext)
         if ext in (".cpp", ".cc", ".cxx", ".hpp", ".hh"):
             return self._try_build("cpp", ext)
+        if ext in (".rb", ".rake", ".gemspec"):
+            return self._try_build("ruby", ext)
         return self._generic
 
     def _try_build(self, lang: str, ext: str) -> BaseParser:
@@ -76,6 +78,10 @@ class ParserRegistry:
                 from .c_parser import CppParser
 
                 return CppParser()
+            if lang == "ruby":
+                from .ruby_parser import RubyParser
+
+                return RubyParser()
         except ImportError:
             pass
         return self._generic
@@ -105,6 +111,9 @@ class ParserRegistry:
             ".cxx",
             ".hpp",
             ".hh",
+            ".rb",
+            ".rake",
+            ".gemspec",
         ]
         return [e for e in known if not isinstance(self.get(f"file{e}"), GenericParser)]
 
