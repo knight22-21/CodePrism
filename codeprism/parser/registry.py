@@ -44,6 +44,8 @@ class ParserRegistry:
             return self._try_build("c", ext)
         if ext in (".cpp", ".cc", ".cxx", ".hpp", ".hh"):
             return self._try_build("cpp", ext)
+        if ext in (".rb", ".rake", ".gemspec"):
+            return self._try_build("ruby", ext)
         if ext in (".php", ".php5", ".phtml"):
             return self._try_build("php", ext)
         return self._generic
@@ -78,6 +80,10 @@ class ParserRegistry:
                 from .c_parser import CppParser
 
                 return CppParser()
+            if lang == "ruby":
+                from .ruby_parser import RubyParser
+
+                return RubyParser()
             if lang == "php":
                 from .php_parser import PhpParser
 
@@ -111,6 +117,9 @@ class ParserRegistry:
             ".cxx",
             ".hpp",
             ".hh",
+            ".rb",
+            ".rake",
+            ".gemspec",
             ".php",
             ".php5",
             ".phtml",

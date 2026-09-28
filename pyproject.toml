@@ -49,6 +49,7 @@ dependencies = [
     "tree-sitter-java",
     "tree-sitter-c",
     "tree-sitter-cpp",
+    "tree-sitter-ruby",
     "tree-sitter-php",
     "networkx>=3.3",
     "aiosqlite>=0.20",
