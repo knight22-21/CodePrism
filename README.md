@@ -333,24 +333,9 @@ CodePrism is benchmarked on token reduction and answer accuracy across real-worl
 | pallets/flask 3.0.3 | 9,558 tokens | 828 tokens | **91.3%** |
 | encode/httpx 0.27.2 | 12,685 tokens | 894 tokens | **93.0%** |
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'xyChart': {'plotColorPalette': '#6366f1'}}}}%%
-xychart-beta
-    title "Token Reduction vs Raw File Reading"
-    x-axis ["Fixture", "psf/requests", "pallets/flask", "encode/httpx"]
-    y-axis "Reduction %" 0 --> 100
-    bar [27, 89, 91, 93]
-```
+![Token reduction by corpus](docs/images/token_reduction_by_corpus.png)
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'xyChart': {'plotColorPalette': '#6366f1,#a5b4fc'}}}}%%
-xychart-beta
-    title "Answer Accuracy — CodePrism (bars) vs Baseline (line) | LLM-as-judge, 0–1"
-    x-axis ["psf/requests", "pallets/flask", "encode/httpx"]
-    y-axis "Score" 0 --> 1
-    bar [0.87, 0.64, 0.70]
-    line [0.86, 0.77, 0.68]
-```
+![Accuracy: CodePrism vs baseline](docs/images/accuracy_comparison.png)
 
 The fixture numbers are low because on tiny files (135–380 tokens), JSON response overhead can
 exceed the raw file size. On real-world files (5k–17k token baselines) the savings are always
