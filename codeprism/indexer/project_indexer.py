@@ -86,23 +86,27 @@ class ProjectIndexer:
 
         source_files = self._find_source_files(project_path)
 
-        # Load existing checksums for incremental skipping (empty when force=True)
-        existing: dict[str, str] = {}  # path → stored checksum
-        if not force:
-            for rec in await self._storage.get_all_files():
-                existing[rec.path] = rec.checksum or ""
+        # Everything currently stored, keyed by path. Needed even with force=True
+        # so deleted files are purged and re-parsed files replace their old rows.
+        stored = {rec.path: rec for rec in await self._storage.get_all_files()}
+        # Checksums for incremental skipping (empty when force=True)
+        existing: dict[str, str] = (
+            {} if force else {path: rec.checksum or "" for path, rec in stored.items()}
+        )
 
         # Remove records for files that were deleted since last index
         on_disk = set(source_files)
-        for path in list(existing):
+        removed_any = False
+        for path, rec in stored.items():
             if path not in on_disk:
-                rec = await self._storage.get_file_by_path(path)
-                if rec:
-                    await self._storage.delete_edges_for_file(path)
-                    await self._storage.delete_symbols_for_file(rec.id)
-                    await self._storage.delete_file(rec.id)
+                await self._storage.delete_edges_for_file(path)
+                await self._storage.delete_symbols_for_file(rec.id)
+                await self._storage.delete_file(rec.id)
+                removed_any = True
 
         if not source_files:
+            if removed_any:
+                await self._storage.delete_dangling_edges()
             await self._graph.load_from_storage(self._storage)
             return IndexResult(duration_seconds=time.time() - start)
 
@@ -133,6 +137,12 @@ class ProjectIndexer:
             if r is not None
         ]
 
+        # Drop the previous symbols/edges of every re-parsed file first; upserting
+        # alone would leave renamed symbols and line-shifted edges behind.
+        await self._storage.clear_files_contents(
+            [stored[pr.file.path] for pr in parse_results if pr.file.path in stored]
+        )
+
         # Batch persist: files → symbols → edges (intra-file)
         for pr in parse_results:
             await self._storage.upsert_file(pr.file)
@@ -153,6 +163,11 @@ class ProjectIndexer:
             resolved = await self._resolve_cross_file(all_unresolved)
             if resolved:
                 await self._storage.upsert_edges_batch(resolved)
+
+        # Edges from unchanged files may still point at symbols that were just
+        # renamed or deleted; drop them rather than loading ghost nodes.
+        if removed_any or any(pr.file.path in stored for pr in parse_results):
+            await self._storage.delete_dangling_edges()
 
         # Populate in-memory graph from the now-complete storage
         await self._graph.load_from_storage(self._storage)
