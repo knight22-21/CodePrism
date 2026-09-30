@@ -33,6 +33,11 @@ class CodePrismConfig(BaseModel):
     enable_embeddings: bool = False
     enable_security_gate: bool = True
     watch_debounce_ms: int = 500
+    # Processes used to parse large indexes: 1 = in-process (library default),
+    # 0 = one per CPU core, N = N processes. The CLI and MCP server use 0.
+    # Worker processes re-import the caller's __main__ on Windows/macOS, so
+    # scripts that opt in need an `if __name__ == "__main__":` guard.
+    parse_workers: int = 1
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     embeddings: EmbeddingsConfig = Field(default_factory=EmbeddingsConfig)
     mcp: MCPConfig = Field(default_factory=MCPConfig)
