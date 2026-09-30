@@ -25,6 +25,11 @@ class GraphEngine:
 
     def __init__(self) -> None:
         self._g: nx.MultiDiGraph = nx.MultiDiGraph()
+        # file_path -> {(from_id, to_id, edge_id)}; lets per-file edge removal
+        # skip a scan of every edge in the graph. Entries can go stale when a
+        # node removal drops edges implicitly, so readers re-check has_edge().
+        self._edges_by_file: dict[str, set[tuple[str, str, str]]] = {}
+        self._edge_ends: dict[str, tuple[str, str]] = {}
 
     # ── Population ────────────────────────────────────────────────────────────
 
@@ -58,19 +63,15 @@ class GraphEngine:
             self._g.remove_node(symbol_id)
 
     def remove_edge_by_id(self, edge_id: str) -> None:
-        for u, v, key in list(self._g.edges(keys=True)):
-            if key == edge_id:
-                self._g.remove_edge(u, v, key=key)
-                return
+        ends = self._edge_ends.pop(edge_id, None)
+        if ends and self._g.has_edge(ends[0], ends[1], key=edge_id):
+            self._g.remove_edge(ends[0], ends[1], key=edge_id)
 
     def remove_edges_for_file(self, file_path: str) -> None:
-        to_remove = [
-            (u, v, key)
-            for u, v, key, data in self._g.edges(keys=True, data=True)
-            if data.get("record") and data["record"].file_path == file_path
-        ]
-        for u, v, key in to_remove:
-            self._g.remove_edge(u, v, key=key)
+        for u, v, key in self._edges_by_file.pop(file_path, ()):
+            self._edge_ends.pop(key, None)
+            if self._g.has_edge(u, v, key=key):
+                self._g.remove_edge(u, v, key=key)
 
     # ── Node lookup ───────────────────────────────────────────────────────────
 
@@ -303,3 +304,7 @@ class GraphEngine:
             kind=edge.kind,
             record=edge,
         )
+        self._edges_by_file.setdefault(edge.file_path, set()).add(
+            (edge.from_id, edge.to_id, edge.id)
+        )
+        self._edge_ends[edge.id] = (edge.from_id, edge.to_id)

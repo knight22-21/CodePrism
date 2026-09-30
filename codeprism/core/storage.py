@@ -92,6 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_symbols_name ON symbols(name);
 CREATE INDEX IF NOT EXISTS idx_edges_from   ON edges(from_id);
 CREATE INDEX IF NOT EXISTS idx_edges_to     ON edges(to_id);
 CREATE INDEX IF NOT EXISTS idx_edges_kind   ON edges(kind);
+CREATE INDEX IF NOT EXISTS idx_edges_file   ON edges(file_path);
 CREATE INDEX IF NOT EXISTS idx_session_session ON session_events(session_id);
 """
 
@@ -281,6 +282,29 @@ class StorageManager:
         async with self.db.execute("SELECT * FROM symbols") as cur:
             rows = await cur.fetchall()
         return [_row_to_symbol(r) for r in rows]
+
+    async def resolve_symbol_names(self, names: set[str]) -> dict[str, str]:
+        """Map each of *names* to a symbol id, looking up only those names.
+
+        Same tie-break as scanning every symbol in rowid order: a non-import
+        symbol beats an import stub, and among equals the later row wins.
+        Uses ``idx_symbols_name`` instead of loading the whole symbols table.
+        """
+        name_to_id: dict[str, str] = {}
+        pending = sorted(names)
+        chunk = 900  # stay under SQLite's bound-parameter limit
+        rows: list[tuple[int, str, str, str]] = []
+        for i in range(0, len(pending), chunk):
+            part = pending[i : i + chunk]
+            marks = ",".join("?" * len(part))
+            async with self.db.execute(
+                f"SELECT rowid, id, name, kind FROM symbols WHERE name IN ({marks})", part
+            ) as cur:
+                rows.extend(tuple(r) for r in await cur.fetchall())
+        for _rowid, sym_id, name, kind in sorted(rows):
+            if name not in name_to_id or kind != NodeKind.IMPORT.value:
+                name_to_id[name] = sym_id
+        return name_to_id
 
     async def get_non_import_symbol_names(self, exclude_file_id: str) -> set[str]:
         """Return names of all non-import symbols not in the given file.
