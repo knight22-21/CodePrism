@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import fnmatch
 import hashlib
+import os
 import time
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -16,6 +18,7 @@ from ..core.models import EdgeRecord, NodeKind
 from ..core.storage import StorageManager
 from ..parser.base import UnresolvedRef
 from ..parser.registry import ParserRegistry
+from . import _parse_worker
 
 _DEFAULT_IGNORE = frozenset(
     {
@@ -41,6 +44,12 @@ _DEFAULT_IGNORE = frozenset(
         ".eggs",
     }
 )
+
+# Below this many candidate files, process start-up costs more than it saves
+_POOL_MIN_FILES = 200
+_POOL_BATCH = 64
+# ProcessPoolExecutor on Windows allows at most 61 workers
+_MAX_WORKERS = 61
 
 
 @dataclass
@@ -70,6 +79,9 @@ class ProjectIndexer:
         self._graph = graph
         self._storage = storage
         self._config = config or CodePrismConfig()
+        # Worker processes build their own default registry, so a caller-supplied
+        # one (custom parsers) forces the in-process path.
+        self._custom_registry = registry is not None
         self._registry = registry or ParserRegistry()
 
     # ── Public entry ─────────────────────────────────────────────────────────
@@ -110,32 +122,20 @@ class ProjectIndexer:
             await self._graph.load_from_storage(self._storage)
             return IndexResult(duration_seconds=time.time() - start)
 
-        # Parse changed / new files concurrently; unchanged ones are skipped
-        sem = asyncio.Semaphore(8)
-        skipped = 0
-
-        async def parse_one(fp: str):
-            nonlocal skipped
-            async with sem:
-                try:
-                    content = await asyncio.to_thread(
-                        Path(fp).read_text, encoding="utf-8", errors="replace"
-                    )
-                    new_checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
-                    if not force and existing.get(fp) == new_checksum:
-                        skipped += 1
-                        return None
-                    parser = self._registry.get(fp)
-                    return await asyncio.to_thread(parser.parse, fp, content)
-                except Exception as exc:
-                    errors.append(f"{fp}: {exc}")
-                    return None
-
-        parse_results = [
-            r
-            for r in await asyncio.gather(*[parse_one(fp) for fp in source_files])
-            if r is not None
-        ]
+        # Parse changed / new files; unchanged ones are skipped by checksum
+        parse_results, skipped = None, 0
+        if self._use_process_pool(len(source_files)):
+            try:
+                parse_results, skipped = await self._parse_in_processes(
+                    source_files, existing, force, errors
+                )
+            except Exception:  # broken pool / spawn not permitted: fall back
+                parse_results, skipped = None, 0
+                errors.clear()
+        if parse_results is None:
+            parse_results, skipped = await self._parse_in_threads(
+                source_files, existing, force, errors
+            )
 
         # Drop the previous symbols/edges of every re-parsed file first; upserting
         # alone would leave renamed symbols and line-shifted edges behind.
@@ -144,8 +144,7 @@ class ProjectIndexer:
         )
 
         # Batch persist: files → symbols → edges (intra-file)
-        for pr in parse_results:
-            await self._storage.upsert_file(pr.file)
+        await self._storage.upsert_files_batch([pr.file for pr in parse_results])
 
         all_symbols = [sym for pr in parse_results for sym in pr.symbols]
         all_edges = [edge for pr in parse_results for edge in pr.edges]
@@ -190,6 +189,67 @@ class ProjectIndexer:
             duration_seconds=time.time() - start,
             errors=errors,
         )
+
+    # ── Parsing ───────────────────────────────────────────────────────────────
+
+    def _worker_count(self) -> int:
+        n = self._config.parse_workers or (os.cpu_count() or 1)
+        return max(1, min(n, _MAX_WORKERS))
+
+    def _use_process_pool(self, candidate_files: int) -> bool:
+        return (
+            not self._custom_registry
+            and candidate_files >= _POOL_MIN_FILES
+            and self._worker_count() > 1
+        )
+
+    async def _parse_in_processes(self, source_files, existing, force, errors):
+        """CPU-bound parsing across worker processes (sidesteps the GIL)."""
+        jobs = [(fp, existing.get(fp), force) for fp in source_files]
+        batches = [jobs[i : i + _POOL_BATCH] for i in range(0, len(jobs), _POOL_BATCH)]
+        loop = asyncio.get_running_loop()
+        with ProcessPoolExecutor(max_workers=self._worker_count()) as pool:
+            outcomes = await asyncio.gather(
+                *[loop.run_in_executor(pool, _parse_worker.parse_batch, b) for b in batches]
+            )
+        results, skipped = [], 0
+        for batch in outcomes:
+            for status, _fp, payload in batch:
+                if status == "ok":
+                    results.append(payload)
+                elif status == "skip":
+                    skipped += 1
+                else:
+                    errors.append(payload)
+        return results, skipped
+
+    async def _parse_in_threads(self, source_files, existing, force, errors):
+        sem = asyncio.Semaphore(8)
+        skipped = 0
+
+        async def parse_one(fp: str):
+            nonlocal skipped
+            async with sem:
+                try:
+                    content = await asyncio.to_thread(
+                        Path(fp).read_text, encoding="utf-8", errors="replace"
+                    )
+                    new_checksum = hashlib.sha256(content.encode("utf-8")).hexdigest()
+                    if not force and existing.get(fp) == new_checksum:
+                        skipped += 1
+                        return None
+                    parser = self._registry.get(fp)
+                    return await asyncio.to_thread(parser.parse, fp, content)
+                except Exception as exc:
+                    errors.append(f"{fp}: {exc}")
+                    return None
+
+        results = [
+            r
+            for r in await asyncio.gather(*[parse_one(fp) for fp in source_files])
+            if r is not None
+        ]
+        return results, skipped
 
     # ── Cross-file resolution ─────────────────────────────────────────────────
 

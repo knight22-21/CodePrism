@@ -70,13 +70,16 @@ def index(
     force: bool = typer.Option(
         False, "--force", "-f", help="Re-parse all files even if unchanged (skip incremental check)"
     ),
+    workers: int = typer.Option(
+        0, "--workers", "-j", help="Parser processes (0 = one per CPU core, 1 = in-process)"
+    ),
 ) -> None:
     """Build the knowledge graph for a project directory.
 
     Re-runs are incremental by default: only changed or new files are parsed.
     Use --force to re-parse everything from scratch.
     """
-    asyncio.run(_index(path, languages, embeddings, force))
+    asyncio.run(_index(path, languages, embeddings, force, workers))
 
 
 async def _index(
@@ -84,6 +87,7 @@ async def _index(
     languages: str | None,
     embeddings: bool = False,
     force: bool = False,
+    workers: int = 0,
 ) -> None:
     from .core.config import CodePrismConfig
     from .core.graph import GraphEngine
@@ -93,9 +97,9 @@ async def _index(
 
     langs = [lang.strip() for lang in languages.split(",")] if languages else None
     config = (
-        CodePrismConfig(languages=langs, enable_embeddings=embeddings)
+        CodePrismConfig(languages=langs, enable_embeddings=embeddings, parse_workers=workers)
         if langs
-        else CodePrismConfig(enable_embeddings=embeddings)
+        else CodePrismConfig(enable_embeddings=embeddings, parse_workers=workers)
     )
 
     db_path = get_db_path(path)

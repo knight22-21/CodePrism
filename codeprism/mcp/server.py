@@ -143,10 +143,11 @@ async def index_project(
     from ..core.storage import StorageManager
     from ..indexer.project_indexer import ProjectIndexer
 
+    # parse_workers=0: one parser process per core (the server entry point is guarded)
     cfg = (
-        CodePrismConfig(languages=languages, enable_embeddings=embeddings)
+        CodePrismConfig(languages=languages, enable_embeddings=embeddings, parse_workers=0)
         if languages
-        else CodePrismConfig(enable_embeddings=embeddings)
+        else CodePrismConfig(enable_embeddings=embeddings, parse_workers=0)
     )
     db_path = get_db_path(path)
     storage = StorageManager(db_path)

@@ -21,6 +21,13 @@ from .models import (
 _SCHEMA = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
+-- Per-connection tuning for bulk index writes. Symbol/edge ids are random hashes,
+-- so with the ~2MB default page cache large indexes thrash the B-trees.
+-- synchronous=NORMAL is crash-safe in WAL mode (a power cut can lose only the
+-- last transaction of a rebuildable index).
+PRAGMA synchronous=NORMAL;
+PRAGMA cache_size=-65536;
+PRAGMA temp_store=MEMORY;
 
 CREATE TABLE IF NOT EXISTS files (
     id            TEXT PRIMARY KEY,
@@ -122,30 +129,40 @@ class StorageManager:
 
     # ── Files ─────────────────────────────────────────────────────────────────
 
-    async def upsert_file(self, file: FileRecord) -> None:
-        await self.db.execute(
-            """
-            INSERT INTO files (id, path, language, size_bytes, checksum, last_modified, line_count, indexed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                language      = excluded.language,
-                size_bytes    = excluded.size_bytes,
-                checksum      = excluded.checksum,
-                last_modified = excluded.last_modified,
-                line_count    = excluded.line_count,
-                indexed_at    = excluded.indexed_at
-            """,
-            (
-                file.id,
-                file.path,
-                file.language,
-                file.size_bytes,
-                file.checksum,
-                file.last_modified,
-                file.line_count,
-                file.indexed_at,
-            ),
+    _UPSERT_FILE_SQL = """
+        INSERT INTO files (id, path, language, size_bytes, checksum, last_modified, line_count, indexed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            language      = excluded.language,
+            size_bytes    = excluded.size_bytes,
+            checksum      = excluded.checksum,
+            last_modified = excluded.last_modified,
+            line_count    = excluded.line_count,
+            indexed_at    = excluded.indexed_at
+        """
+
+    @staticmethod
+    def _file_row(file: FileRecord) -> tuple:
+        return (
+            file.id,
+            file.path,
+            file.language,
+            file.size_bytes,
+            file.checksum,
+            file.last_modified,
+            file.line_count,
+            file.indexed_at,
         )
+
+    async def upsert_file(self, file: FileRecord) -> None:
+        await self.db.execute(self._UPSERT_FILE_SQL, self._file_row(file))
+        await self.db.commit()
+
+    async def upsert_files_batch(self, files: list[FileRecord]) -> None:
+        """Upsert many file records in one transaction (one commit, not one per file)."""
+        if not files:
+            return
+        await self.db.executemany(self._UPSERT_FILE_SQL, [self._file_row(f) for f in files])
         await self.db.commit()
 
     async def get_file_by_path(self, path: str) -> FileRecord | None:
