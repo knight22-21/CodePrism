@@ -188,29 +188,35 @@ class StorageManager:
         await self.db.executemany(self._UPSERT_FILE_SQL, [self._file_row(f) for f in files])
         await self.db.commit()
 
-    async def get_file_by_path(self, path: str) -> FileRecord | None:
-        """Look up an indexed file; exact match first, then a relative-path match.
+    async def find_files_by_path(self, path: str) -> list[FileRecord]:
+        """Every indexed file *path* could refer to: the exact match, or else all
+        files whose trailing path segments equal it.
 
         Files are stored with absolute paths, but agents usually pass paths
         relative to the project (``src/app.py``), with ``./`` or forward slashes
-        on Windows. Those resolve when exactly one indexed file ends with the
-        same path segments; an ambiguous name (two ``utils.py``) returns None
-        rather than guessing.
+        on Windows (where matching is case-insensitive).
         """
         async with self.db.execute("SELECT * FROM files WHERE path = ?", (path,)) as cur:
             row = await cur.fetchone()
         if row:
-            return FileRecord(**dict(row))
+            return [FileRecord(**dict(row))]
         wanted = _path_parts(path)
         if not wanted:
-            return None
+            return []
         like = "%" + wanted[-1].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         async with self.db.execute(
             "SELECT * FROM files WHERE path LIKE ? ESCAPE '\\'", (like,)
         ) as cur:
             rows = await cur.fetchall()
-        matches = [r for r in rows if _path_parts(r["path"])[-len(wanted) :] == wanted]
-        return FileRecord(**dict(matches[0])) if len(matches) == 1 else None
+        return [
+            FileRecord(**dict(r)) for r in rows if _path_parts(r["path"])[-len(wanted) :] == wanted
+        ]
+
+    async def get_file_by_path(self, path: str) -> FileRecord | None:
+        """The indexed file *path* refers to, or None if none or several match
+        (an ambiguous name like ``utils.py`` is never guessed)."""
+        matches = await self.find_files_by_path(path)
+        return matches[0] if len(matches) == 1 else None
 
     async def get_file_by_id(self, file_id: str) -> FileRecord | None:
         async with self.db.execute("SELECT * FROM files WHERE id = ?", (file_id,)) as cur:

@@ -82,13 +82,34 @@ def _abs(path: str) -> str:
     return str((p if p.is_absolute() else Path(_project_path) / p).resolve())
 
 
-async def _file_error(file: str) -> dict[str, Any] | None:
-    if await _get().get_file(_abs(file)) is None:
-        return {
-            "error": f"File '{file}' not indexed",
-            "project_path": str(Path(_project_path).resolve()),
-        }
-    return None
+async def _resolve_file(file: str) -> tuple[str | None, dict[str, Any] | None]:
+    """Map a tool's file argument to the indexed path, or explain why it can't.
+
+    Tries the path under the project root first, then as a relative suffix
+    ("utils.py", "api/utils.py") matched against every indexed file.
+    """
+    storage = _get()._storage
+    matches = await storage.find_files_by_path(_abs(file))
+    if not matches:
+        matches = await storage.find_files_by_path(file)
+    if len(matches) == 1:
+        return matches[0].path, None
+    root = Path(_project_path).resolve()
+    if not matches:
+        return None, {"error": f"File '{file}' not indexed", "project_path": str(root)}
+
+    def rel(p: str) -> str:
+        try:
+            return Path(p).relative_to(root).as_posix()
+        except ValueError:
+            return p
+
+    candidates = sorted(rel(m.path) for m in matches)
+    return None, {
+        "error": f"Path '{file}' is ambiguous: {len(candidates)} indexed files match",
+        "candidates": candidates[:20],
+        "hint": f"Pass a longer path, e.g. '{candidates[0]}'",
+    }
 
 
 async def _symbol_refs(symbols) -> list[dict[str, Any]]:
@@ -298,7 +319,10 @@ async def get_context(file: str, symbol: str, depth: int = 2) -> dict[str, Any]:
     depth=2: + their neighbours (recommended)
     depth=3: full transitive neighbourhood
     """
-    result = await _get().get_context(_abs(file), symbol, depth)
+    path, err = await _resolve_file(file)
+    if err:
+        return err
+    result = await _get().get_context(path, symbol, depth)
     if result is None:
         return {"error": f"Symbol '{symbol}' not found in {file}"}
     return context_to_dict(result)
@@ -307,7 +331,10 @@ async def get_context(file: str, symbol: str, depth: int = 2) -> dict[str, Any]:
 @mcp.tool()
 async def get_module_summary(file: str) -> dict[str, Any]:
     """Return a high-level narrative summary of a source file."""
-    result = await _get().get_module_summary(_abs(file))
+    path, err = await _resolve_file(file)
+    if err:
+        return err
+    result = await _get().get_module_summary(path)
     if result is None:
         return {"error": f"File '{file}' not indexed"}
     return summary_to_dict(result)
@@ -326,7 +353,10 @@ async def get_file_map(project_path: str = "") -> dict[str, Any]:
 @mcp.tool()
 async def get_impact(file: str, symbol: str) -> dict[str, Any]:
     """Transitive impact analysis: what breaks if this symbol changes?"""
-    result = await _get().get_impact(_abs(file), symbol)
+    path, err = await _resolve_file(file)
+    if err:
+        return err
+    result = await _get().get_impact(path, symbol)
     if result is None:
         return {"error": f"Symbol '{symbol}' not found in {file}"}
     return impact_to_dict(result)
@@ -338,11 +368,12 @@ async def get_callers(file: str, function: str) -> dict[str, Any]:
 
     file: path relative to the project root, or absolute.
     """
-    if err := await _file_error(file):
+    path, err = await _resolve_file(file)
+    if err:
         return err
-    if await _get().find_symbol(_abs(file), function) is None:
+    if await _get().find_symbol(path, function) is None:
         return {"error": f"Symbol '{function}' not found in '{file}'"}
-    callers = await _get().get_callers(_abs(file), function)
+    callers = await _get().get_callers(path, function)
     return {
         "function": function,
         "file": file,
@@ -357,11 +388,12 @@ async def get_callees(file: str, function: str) -> dict[str, Any]:
 
     file: path relative to the project root, or absolute.
     """
-    if err := await _file_error(file):
+    path, err = await _resolve_file(file)
+    if err:
         return err
-    if await _get().find_symbol(_abs(file), function) is None:
+    if await _get().find_symbol(path, function) is None:
         return {"error": f"Symbol '{function}' not found in '{file}'"}
-    callees = await _get().get_callees(_abs(file), function)
+    callees = await _get().get_callees(path, function)
     return {
         "function": function,
         "file": file,
@@ -373,7 +405,10 @@ async def get_callees(file: str, function: str) -> dict[str, Any]:
 @mcp.tool()
 async def get_data_flow(file: str, symbol: str) -> dict[str, Any]:
     """Trace where data from this symbol flows (sources, sinks, paths)."""
-    result = await _get().get_data_flow(_abs(file), symbol)
+    path, err = await _resolve_file(file)
+    if err:
+        return err
+    result = await _get().get_data_flow(path, symbol)
     if result is None:
         return {"error": f"Symbol '{symbol}' not found in {file}"}
     return data_flow_to_dict(result)
@@ -403,7 +438,10 @@ async def search_symbol(
 @mcp.tool()
 async def get_dependencies(file: str) -> dict[str, Any]:
     """All modules/packages this file depends on (internal vs external)."""
-    result = await _get().get_dependencies(_abs(file))
+    path, err = await _resolve_file(file)
+    if err:
+        return err
+    result = await _get().get_dependencies(path)
     if result is None:
         return {"error": f"File '{file}' not indexed"}
     return deps_to_dict(result)
@@ -412,7 +450,10 @@ async def get_dependencies(file: str) -> dict[str, Any]:
 @mcp.tool()
 async def get_dependents(file: str) -> dict[str, Any]:
     """All files that transitively depend on this file."""
-    result = await _get().get_dependents(_abs(file))
+    path, err = await _resolve_file(file)
+    if err:
+        return err
+    result = await _get().get_dependents(path)
     if result is None:
         return {"error": f"File '{file}' not indexed"}
     return dependents_to_dict(result)
