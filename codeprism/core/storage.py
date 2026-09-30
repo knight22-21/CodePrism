@@ -384,6 +384,32 @@ class StorageManager:
         await self.db.execute("DELETE FROM edges WHERE file_path = ?", (file_path,))
         await self.db.commit()
 
+    async def clear_files_contents(self, files: list[FileRecord]) -> None:
+        """Delete the symbols and outgoing edges of *files* in one transaction.
+
+        Used before re-persisting re-parsed files so renamed symbols and
+        line-shifted edges never linger alongside the fresh records.
+        """
+        if not files:
+            return
+        await self.db.executemany(
+            "DELETE FROM edges WHERE file_path = ?", [(f.path,) for f in files]
+        )
+        await self.db.executemany("DELETE FROM symbols WHERE file_id = ?", [(f.id,) for f in files])
+        await self.db.commit()
+
+    async def delete_dangling_edges(self) -> int:
+        """Remove edges whose endpoint is neither a symbol nor a file. Returns count."""
+        cur = await self.db.execute(
+            """
+            DELETE FROM edges
+            WHERE (from_id NOT IN (SELECT id FROM symbols) AND from_id NOT IN (SELECT id FROM files))
+               OR (to_id   NOT IN (SELECT id FROM symbols) AND to_id   NOT IN (SELECT id FROM files))
+            """
+        )
+        await self.db.commit()
+        return cur.rowcount
+
     # ── Security issues ───────────────────────────────────────────────────────
 
     async def insert_security_issue(self, issue: SecurityIssue) -> None:

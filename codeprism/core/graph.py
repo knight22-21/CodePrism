@@ -29,7 +29,8 @@ class GraphEngine:
     # ── Population ────────────────────────────────────────────────────────────
 
     async def load_from_storage(self, storage: StorageManager) -> None:
-        """Populate the in-memory graph from persistent storage."""
+        """Replace the in-memory graph with the contents of persistent storage."""
+        self._g.clear()
         for file in await storage.get_all_files():
             self._add_file_node(file)
         for symbol in await storage.get_all_symbols():
