@@ -229,3 +229,5 @@ benchmarks/results/
 benchmarks/repos/
 # Launch video, music and artwork (local only)
 launch-assets/
+# Agent instructions written by `codeprism setup` (local only, like CLAUDE.md)
+AGENTS.md
