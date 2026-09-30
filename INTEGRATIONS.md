@@ -9,18 +9,33 @@ CodePrism speaks [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
 ## Table of Contents
 
 1. [Claude Code](#claude-code)
-2. [Cursor](#cursor)
-3. [Windsurf (Codeium)](#windsurf-codeium)
-4. [Continue.dev](#continuedev)
-5. [Zed](#zed)
-6. [VS Code with GitHub Copilot](#vs-code-with-github-copilot)
-7. [Cody (Sourcegraph)](#cody-sourcegraph)
-8. [Aider](#aider)
-9. [Remote / SSE (any network agent)](#remote--sse-any-network-agent)
-10. [Python library (embed directly)](#python-library-embed-directly)
-11. [OpenAI Agents SDK](#openai-agents-sdk)
-12. [CI/CD (GitHub Actions)](#cicd-github-actions)
-13. [Pre-commit hook](#pre-commit-hook)
+2. [Codex (OpenAI)](#codex-openai)
+3. [Cursor](#cursor)
+4. [Windsurf (Codeium)](#windsurf-codeium)
+5. [Continue.dev](#continuedev)
+6. [Zed](#zed)
+7. [VS Code with GitHub Copilot](#vs-code-with-github-copilot)
+8. [Cody (Sourcegraph)](#cody-sourcegraph)
+9. [Aider](#aider)
+10. [Remote / SSE (any network agent)](#remote--sse-any-network-agent)
+11. [Python library (embed directly)](#python-library-embed-directly)
+12. [OpenAI Agents SDK](#openai-agents-sdk)
+13. [CI/CD (GitHub Actions)](#cicd-github-actions)
+14. [Pre-commit hook](#pre-commit-hook)
+
+---
+
+## Agent instructions: AGENTS.md first
+
+Every `codeprism setup <agent>` writes the CodePrism usage guide to **`AGENTS.md`** in the
+project root. [AGENTS.md](https://agents.md/) is the cross-tool standard, read natively by
+Codex, Cursor, Windsurf, Zed, GitHub Copilot and many others, so the guide lives in one place.
+Setup only adds or updates the block between `<!-- codeprism-instructions -->` markers; the
+rest of your file is left alone.
+
+- **Claude Code** also gets a thin `CLAUDE.md` containing `@AGENTS.md`. Claude Code reads
+  `AGENTS.md` by itself only when no `CLAUDE.md` exists, so the import keeps both working.
+- **Continue.dev** doesn't read `AGENTS.md` yet, so it gets `.continue/rules/codeprism.md`.
 
 ---
 
@@ -40,7 +55,8 @@ codeprism setup claude --project /path/to/project
 
 - **`.mcp.json`**: the project-scoped MCP server entry. Commit it so teammates get CodePrism too.
 - **`.claude/settings.local.json`**: pre-approves the `codeprism` server for you (`enabledMcpjsonServers`), so Claude Code doesn't prompt. This file is personal; don't commit it.
-- **`CLAUDE.md`**: usage guide loaded into every Claude Code session.
+- **`AGENTS.md`**: the CodePrism usage guide, shared by every coding agent.
+- **`CLAUDE.md`**: a thin file that imports `@AGENTS.md`, so Claude Code loads the same guide.
 
 > Claude Code reads MCP servers from `.mcp.json` (project scope) or `~/.claude.json` (user scope), **not** from `.claude/settings.json`. Older CodePrism versions wrote to `settings.json`; re-running setup moves the entry.
 
@@ -80,6 +96,38 @@ search_symbol("handle payment", kind="function")
 
 ---
 
+## Codex (OpenAI)
+
+```bash
+codeprism index /path/to/project
+codeprism setup codex --project /path/to/project
+```
+
+`codeprism setup codex` writes:
+
+- **`.codex/config.toml`** in the project: a `[mcp_servers.codeprism]` table. Codex only loads
+  project config in **trusted** projects, so accept the trust prompt the first time you run
+  Codex there. Other settings and comments in the file are preserved.
+- **`AGENTS.md`**: the CodePrism usage guide, which Codex reads at the start of every session.
+
+Use `--global` to write `~/.codex/config.toml` instead (every project, no trust prompt needed).
+
+**Manual config:**
+
+```toml
+# ~/.codex/config.toml  or  <project>/.codex/config.toml
+[mcp_servers.codeprism]
+command = "codeprism"
+args = ["serve", "/absolute/path/to/project"]
+```
+
+Or run `codex mcp add codeprism -- codeprism serve /absolute/path/to/project`.
+
+Start a new Codex session and run `/mcp` (or `codex mcp list`) to check that `codeprism` is listed.
+The same config is shared by the Codex CLI, IDE extension and desktop app.
+
+---
+
 ## Cursor
 
 ```bash
@@ -87,6 +135,8 @@ codeprism index /path/to/project
 codeprism setup cursor --project /path/to/project
 # Restart Cursor
 ```
+
+Setup writes `.cursor/mcp.json` and the shared `AGENTS.md` guide, which Cursor reads natively.
 
 **Manual config:**
 
@@ -658,6 +708,7 @@ Unknown extensions fall back to a line-count generic parser.
 | Agent / Tool | Transport | Config location | Auto-setup |
 |---|---|---|---|
 | Claude Code | stdio | `.mcp.json` (project) / `~/.claude.json` (user) | `codeprism setup claude` |
+| Codex | stdio | `.codex/config.toml` (project) / `~/.codex/config.toml` (user) | `codeprism setup codex` |
 | Cursor | stdio | `.cursor/mcp.json` | `codeprism setup cursor` |
 | Windsurf | stdio | `~/.codeium/windsurf/mcp_config.json` | manual |
 | Continue.dev | stdio | `~/.continue/config.json` | manual |
