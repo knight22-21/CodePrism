@@ -60,6 +60,8 @@ class IndexResult:
     edge_count: int = 0
     duration_seconds: float = 0.0
     errors: list[str] = field(default_factory=list)
+    # True when the stored index predated the current format and was rebuilt
+    format_upgraded: bool = False
 
     @property
     def success(self) -> bool:
@@ -96,6 +98,12 @@ class ProjectIndexer:
         start = time.time()
         errors: list[str] = []
 
+        # An index written by an older format can't be trusted file-by-file:
+        # checksums match but the stored rows are stale. Re-parse everything.
+        format_upgraded = not force and await self._storage.index_is_outdated()
+        if format_upgraded:
+            force = True
+
         source_files = self._find_source_files(project_path)
 
         # Everything currently stored, keyed by path. Needed even with force=True
@@ -119,8 +127,11 @@ class ProjectIndexer:
         if not source_files:
             if removed_any:
                 await self._storage.delete_dangling_edges()
+            await self._storage.set_index_format_version()
             await self._graph.load_from_storage(self._storage)
-            return IndexResult(duration_seconds=time.time() - start)
+            return IndexResult(
+                duration_seconds=time.time() - start, format_upgraded=format_upgraded
+            )
 
         # Parse changed / new files; unchanged ones are skipped by checksum
         parse_results, skipped = None, 0
@@ -175,6 +186,8 @@ class ProjectIndexer:
         if self._config.enable_embeddings:
             await self._build_embeddings(project_path, all_symbols)
 
+        await self._storage.set_index_format_version()
+
         stats = await self._storage.get_stats()
         return IndexResult(
             file_count=stats["file_count"],
@@ -188,6 +201,7 @@ class ProjectIndexer:
             edge_count=stats["edge_count"],
             duration_seconds=time.time() - start,
             errors=errors,
+            format_upgraded=format_upgraded,
         )
 
     # ── Parsing ───────────────────────────────────────────────────────────────
