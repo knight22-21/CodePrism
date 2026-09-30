@@ -384,6 +384,12 @@ class StorageManager:
         await self.db.execute("DELETE FROM edges WHERE file_path = ?", (file_path,))
         await self.db.commit()
 
+    async def delete_edges_by_ids(self, edge_ids: list[str]) -> None:
+        if not edge_ids:
+            return
+        await self.db.executemany("DELETE FROM edges WHERE id = ?", [(i,) for i in edge_ids])
+        await self.db.commit()
+
     # ── Security issues ───────────────────────────────────────────────────────
 
     async def insert_security_issue(self, issue: SecurityIssue) -> None:
