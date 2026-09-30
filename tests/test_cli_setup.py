@@ -161,13 +161,13 @@ def test_cursor_writes_mcp_json(tmp_path, monkeypatch):
     assert "codeprism" in cfg["mcpServers"]
 
 
-def test_cursor_writes_cursorrules(tmp_path, monkeypatch):
+def test_cursor_writes_agents_md(tmp_path, monkeypatch):
+    # Cursor reads AGENTS.md natively; the legacy .cursorrules is no longer created
     monkeypatch.chdir(tmp_path)
     _write_cursor_config(_server(tmp_path), global_=False)
 
-    cursorrules = tmp_path / ".cursorrules"
-    assert cursorrules.exists()
-    assert "CodePrism" in cursorrules.read_text()
+    assert "CodePrism" in (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
+    assert not (tmp_path / ".cursorrules").exists()
 
 
 def test_cursor_preserves_existing_servers(tmp_path, monkeypatch):

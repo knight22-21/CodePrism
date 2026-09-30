@@ -481,7 +481,7 @@ async def _watch(path: str) -> None:
 def setup(
     agent: str = typer.Argument(
         "claude",
-        help="Target agent: claude | cursor | windsurf | continue | zed",
+        help="Target agent: claude | codex | cursor | windsurf | continue | zed",
     ),
     project: str = typer.Option(".", "--project", "-p", help="Project path to serve"),
     global_: bool = typer.Option(
@@ -495,6 +495,7 @@ def setup(
 
     Examples:
         codeprism setup claude --project /path/to/repo
+        codeprism setup codex --project /path/to/repo
         codeprism setup cursor --project /path/to/repo --global
         codeprism setup windsurf --project /path/to/repo
         codeprism setup continue --project /path/to/repo
@@ -516,6 +517,8 @@ def _setup(agent: str, project: str, global_: bool) -> None:
     agent = agent.lower()
     if agent == "claude":
         _write_claude_config(server_entry, global_, project_dir)
+    elif agent == "codex":
+        _write_codex_config(server_entry, global_, project_dir)
     elif agent == "cursor":
         _write_cursor_config(server_entry, global_, project_dir)
     elif agent == "windsurf":
@@ -527,19 +530,20 @@ def _setup(agent: str, project: str, global_: bool) -> None:
     else:
         console.print(
             f"[red]Unknown agent:[/red] {agent!r}. "
-            "Supported: claude, cursor, windsurf, continue, zed"
+            "Supported: claude, codex, cursor, windsurf, continue, zed"
         )
         raise typer.Exit(1)
 
 
 _CODEPRISM_MARKER = "<!-- codeprism-instructions -->"
 
-_CLAUDE_MD_BLOCK = """\
+_AGENTS_MD_BLOCK = """\
 <!-- codeprism-instructions -->
-## CodePrism — Knowledge Graph (auto-injected by `codeprism setup`)
+## CodePrism — Knowledge Graph (added by `codeprism setup`)
 
 This project is indexed with [CodePrism](https://github.com/knight22-21/CodePrism).
-A live knowledge graph of every file, symbol, and relationship is available via MCP.
+A live knowledge graph of every file, symbol, and relationship is available to any
+coding agent through the `codeprism` MCP server.
 
 ### Use CodePrism FIRST — before reading any source file
 
@@ -584,27 +588,24 @@ undo_write(session_id, steps=1)         → roll back agent-authored writes
    re-fetch context you already have.
 <!-- /codeprism-instructions -->"""
 
-_CURSORRULES_BLOCK = """\
-# CodePrism — Knowledge Graph (auto-injected by `codeprism setup`)
+# CLAUDE.md stays thin: Claude Code imports the shared AGENTS.md guide. It reads
+# AGENTS.md on its own only when no CLAUDE.md exists, so the import keeps both
+# working together (https://code.claude.com/docs/en/memory#agents-md).
+_CLAUDE_MD_BLOCK = """\
+<!-- codeprism-instructions -->
+## CodePrism
 
-This project is indexed with CodePrism. A live knowledge graph is available via MCP.
+CodePrism usage instructions for every coding agent live in AGENTS.md:
 
-## Use CodePrism FIRST — before reading any source file
+@AGENTS.md
+<!-- /codeprism-instructions -->"""
 
-- `get_context(file, symbol, depth=2)` — signature, callers, callees in < 400 tokens
-- `get_module_summary(file)` — understand a file's purpose without reading it
-- `get_impact(file, symbol)` — blast radius of a change (severity + affected tests)
-- `get_callers(file, function)` — every call site with line numbers
-- `search_symbol(query)` — find symbols by name
-- `scan_diff(original, proposed, file)` — security gate before every write
-- `record_write(session_id, file, before, after)` — log + security scan + graph sync
-- `get_session_context(session_id)` — what you've already read/written this session
+_CLAUDE_MD_BLOCK_NO_IMPORT = """\
+<!-- codeprism-instructions -->
+## CodePrism
 
-## Rules
-1. Query the graph before reading files. Graph = 10-100x fewer tokens for same info.
-2. Only use file reads when you need the exact implementation body.
-3. Always call `scan_diff` before writing. BLOCK status = do not write.
-4. Use `record_read`/`record_write` to avoid redundant re-fetches."""
+CodePrism usage instructions are in AGENTS.md (already imported above).
+<!-- /codeprism-instructions -->"""
 
 
 def _read_json_config(path: Path) -> dict:
@@ -691,17 +692,102 @@ def _write_claude_config(
         scope = "project scope"
 
     # Instructions always live in the project directory
-    claude_md = project_dir / "CLAUDE.md"
-    _upsert_agent_instructions(claude_md, _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    agents_md = _write_agents_md(project_dir)
+    claude_md = _write_claude_md(project_dir)
 
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )
-    console.print(
-        f"[green]Done.[/green] Usage instructions written to [bold]{claude_md.resolve()}[/bold]."
-    )
+    _print_instructions_written(agents_md, claude_md)
     console.print(
         "[dim]Restart Claude Code, then run /mcp to confirm codeprism is connected.[/dim]"
+    )
+
+
+def _toml_str(value: str) -> str:
+    import json
+
+    return json.dumps(value)  # a JSON string is a valid TOML basic string
+
+
+def _upsert_codex_server(text: str, server_entry: dict) -> str:
+    """Replace or add ``[mcp_servers.codeprism]`` in a Codex config.toml.
+
+    Line-based so comments and formatting elsewhere survive. The result is
+    re-parsed and must equal the original with only our table changed.
+    """
+    import re
+    import tomllib
+
+    original = tomllib.loads(text) if text.strip() else {}
+    header = re.compile(r"^\s*\[\s*([^\[\]]+?)\s*\]\s*(#.*)?$")
+    kept, skipping = [], False
+    for line in text.splitlines():
+        m = header.match(line)
+        if m:
+            name = re.sub(r"\s*\.\s*", ".", m.group(1)).replace('"', "").replace("'", "")
+            skipping = name == "mcp_servers.codeprism" or name.startswith("mcp_servers.codeprism.")
+        if not skipping:
+            kept.append(line)
+    args = ", ".join(_toml_str(a) for a in server_entry["args"])
+    table = (
+        "[mcp_servers.codeprism]\n"
+        f"command = {_toml_str(server_entry['command'])}\n"
+        f"args = [{args}]\n"
+    )
+    body = "\n".join(kept).rstrip()
+    updated = (body + "\n\n" if body else "") + table
+
+    parsed = tomllib.loads(updated)
+    expected = dict(original)
+    expected["mcp_servers"] = {
+        **original.get("mcp_servers", {}),
+        "codeprism": {"command": server_entry["command"], "args": list(server_entry["args"])},
+    }
+    if parsed != expected:
+        raise ValueError("could not update config.toml without changing other settings")
+    return updated
+
+
+def _write_codex_config(server_entry: dict, global_: bool, project_dir: Path | None = None) -> None:
+    """Codex: [mcp_servers.codeprism] in config.toml + AGENTS.md instructions."""
+    import os
+    import tomllib
+
+    project_dir = project_dir or Path.cwd()
+    config_file = (
+        (Path.home() / ".codex" / "config.toml")
+        if global_
+        else (project_dir / ".codex" / "config.toml")
+    )
+    text = config_file.read_text(encoding="utf-8") if config_file.exists() else ""
+    try:
+        updated = _upsert_codex_server(text, server_entry)
+    except (tomllib.TOMLDecodeError, ValueError) as exc:
+        args = " ".join(server_entry["args"])
+        console.print(f"[red]Error:[/red] could not update {config_file}: {exc}")
+        console.print(
+            f"Add it manually: [bold]codex mcp add codeprism -- {server_entry['command']} {args}[/bold]"
+        )
+        raise typer.Exit(1) from None
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    tmp = config_file.with_name(config_file.name + ".codeprism-tmp")
+    tmp.write_text(updated, encoding="utf-8")
+    os.replace(tmp, config_file)
+
+    agents_md = _write_agents_md(project_dir)
+    scope = "user config" if global_ else "project config"
+    console.print(
+        f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
+    )
+    _print_instructions_written(agents_md)
+    if not global_:
+        console.print(
+            "[dim]Codex only loads .codex/config.toml in trusted projects — accept the trust "
+            "prompt, or use --global to write ~/.codex/config.toml.[/dim]"
+        )
+    console.print(
+        "[dim]Start a new Codex session, then run /mcp to confirm codeprism is listed.[/dim]"
     )
 
 
@@ -730,17 +816,14 @@ def _write_cursor_config(
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    # Write .cursorrules into the project directory
-    cursorrules = project_dir / ".cursorrules"
-    _upsert_agent_instructions(cursorrules, _CURSORRULES_BLOCK, "# CodePrism")
+    # Cursor reads AGENTS.md natively; .cursorrules is the legacy format
+    agents_md = _write_agents_md(project_dir)
 
     scope = "global" if global_ else "project"
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )
-    console.print(
-        f"[green]Done.[/green] Usage instructions written to [bold]{cursorrules.resolve()}[/bold]."
-    )
+    _print_instructions_written(agents_md)
     console.print("[dim]Restart Cursor to pick up the change.[/dim]")
 
 
@@ -769,13 +852,25 @@ def _write_windsurf_config(
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    _upsert_agent_instructions(project_dir / "CLAUDE.md", _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    _print_instructions_written(_write_agents_md(project_dir))
 
     scope = "global (~/.codeium/windsurf/)" if global_ else "project (.windsurf/)"
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )
     console.print("[dim]Restart Windsurf / Cascade to pick up the change.[/dim]")
+
+
+def _write_continue_rule(project_dir: Path) -> Path:
+    """Continue.dev reads .continue/rules/*.md, not AGENTS.md (yet)."""
+    rule = project_dir / ".continue" / "rules" / "codeprism.md"
+    rule.parent.mkdir(parents=True, exist_ok=True)
+    body = _AGENTS_MD_BLOCK.split("\n", 1)[1].rsplit("\n", 1)[0]  # drop HTML markers
+    rule.write_text(
+        "---\nname: CodePrism knowledge graph\nalwaysApply: true\n---\n\n" + body + "\n",
+        encoding="utf-8",
+    )
+    return rule
 
 
 def _write_continue_config(
@@ -799,7 +894,7 @@ def _write_continue_config(
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    _upsert_agent_instructions(project_dir / "CLAUDE.md", _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    _print_instructions_written(_write_continue_rule(project_dir))
 
     console.print(f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold].")
     console.print("[dim]Reload the Continue extension to pick up the change.[/dim]")
@@ -833,13 +928,43 @@ def _write_zed_config(server_entry: dict, global_: bool, project_dir: Path | Non
     }
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    _upsert_agent_instructions(project_dir / "CLAUDE.md", _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    _print_instructions_written(_write_agents_md(project_dir))
 
     scope = "global (~/.config/zed/)" if global_ else "project (.zed/)"
     console.print(
         f"[green]Done.[/green] CodePrism context server added to [bold]{config_file}[/bold] ({scope})."
     )
     console.print("[dim]Restart Zed to pick up the change.[/dim]")
+
+
+def _write_agents_md(project_dir: Path) -> Path:
+    """Write the shared CodePrism guide to AGENTS.md (read by most agents)."""
+    agents_md = project_dir / "AGENTS.md"
+    _upsert_agent_instructions(agents_md, _AGENTS_MD_BLOCK, _CODEPRISM_MARKER)
+    return agents_md
+
+
+def _write_claude_md(project_dir: Path) -> Path:
+    """Thin CLAUDE.md that imports AGENTS.md (skip the import if one already exists)."""
+    import re
+
+    claude_md = project_dir / "CLAUDE.md"
+    existing = claude_md.read_text(encoding="utf-8") if claude_md.exists() else ""
+    closing = _CODEPRISM_MARKER.replace("<!-- ", "<!-- /", 1)
+    outside_block = re.sub(
+        re.escape(_CODEPRISM_MARKER) + r".*?" + re.escape(closing), "", existing, flags=re.DOTALL
+    )
+    already_imports = re.search(r"(?m)^\s*@AGENTS\.md\s*$", outside_block) is not None
+    block = _CLAUDE_MD_BLOCK_NO_IMPORT if already_imports else _CLAUDE_MD_BLOCK
+    _upsert_agent_instructions(claude_md, block, _CODEPRISM_MARKER)
+    return claude_md
+
+
+def _print_instructions_written(*files: Path) -> None:
+    for f in files:
+        console.print(
+            f"[green]Done.[/green] Usage instructions written to [bold]{f.resolve()}[/bold]."
+        )
 
 
 def _upsert_agent_instructions(file: Path, block: str, marker: str) -> None:

@@ -74,11 +74,20 @@ codeprism setup claude --project /path/to/your/project
 ```
 Then restart Claude Code. CodePrism appears automatically as an MCP server.
 
+**Codex**
+```bash
+codeprism setup codex --project /path/to/your/project
+```
+Then start a new Codex session (accept the trust prompt for the project).
+
 **Cursor**
 ```bash
 codeprism setup cursor --project /path/to/your/project
 ```
 Then restart Cursor.
+
+Every setup also writes the CodePrism usage guide to `AGENTS.md`, the shared instructions file
+most coding agents read. Claude Code gets a thin `CLAUDE.md` that imports it.
 
 **Any MCP-compatible agent (manual)**
 ```bash
@@ -99,6 +108,7 @@ CodePrism works with every major AI editor and agent framework via the [Model Co
 | Agent / Tool | Auto-setup | Transport |
 |---|---|---|
 | Claude Code | `codeprism setup claude` | stdio |
+| Codex | `codeprism setup codex` | stdio |
 | Cursor | `codeprism setup cursor` | stdio |
 | Windsurf | manual config | stdio |
 | Continue.dev | manual config | stdio |
@@ -114,7 +124,7 @@ CodePrism works with every major AI editor and agent framework via the [Model Co
 
 ```bash
 codeprism index /path/to/project
-codeprism setup claude --project /path/to/project   # or: setup cursor
+codeprism setup claude --project /path/to/project   # or: setup codex / setup cursor
 # Restart your editor
 ```
 
