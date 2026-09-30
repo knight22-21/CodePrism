@@ -33,6 +33,8 @@ class CodePrismConfig(BaseModel):
     enable_embeddings: bool = False
     enable_security_gate: bool = True
     watch_debounce_ms: int = 500
+    # `codeprism serve` builds / refreshes the index in the background at startup
+    auto_index: bool = True
     # Processes used to parse large indexes: 1 = in-process (library default),
     # 0 = one per CPU core, N = N processes. The CLI and MCP server use 0.
     # Worker processes re-import the caller's __main__ on Windows/macOS, so

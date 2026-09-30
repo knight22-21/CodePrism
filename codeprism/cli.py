@@ -416,14 +416,28 @@ async def _stats(project: str, verbose: bool, json_output: bool = False) -> None
 
 @app.command()
 def serve(
-    path: str = typer.Argument(".", help="Indexed project directory"),
+    path: str | None = typer.Argument(
+        None,
+        help="Project directory. Default: the project (nearest .git / .codeprism.toml) "
+        "containing the current directory — so one user-level config serves every project.",
+    ),
     transport: str = typer.Option("stdio", "--transport", "-t", help="stdio | sse"),
     port: int = typer.Option(8765, "--port", help="Port for SSE transport"),
+    no_auto_index: bool = typer.Option(
+        False, "--no-auto-index", help="Don't build/refresh the index in the background"
+    ),
 ) -> None:
     """Start the MCP server (default: stdio transport for Claude Code etc.)."""
+    from .core.paths import find_project_root
     from .mcp.server import configure, mcp
 
-    configure(path)
+    if path is None:
+        root = find_project_root(Path.cwd())
+        # Outside any project (e.g. launched from ~): serve the cwd, never auto-index it
+        project, auto = (str(root), True) if root else (str(Path.cwd()), False)
+    else:
+        project, auto = path, True
+    configure(project, auto_index=auto and not no_auto_index)
     if transport == "sse":
         console.print(
             "[yellow]Warning:[/yellow] SSE transport has no built-in authentication. "
@@ -515,6 +529,11 @@ def _setup(agent: str, project: str, global_: bool) -> None:
     # Project-scoped files go in the --project directory, not the current one
     project_dir = Path(abs_project)
     agent = agent.lower()
+    if global_ and agent in ("claude", "codex"):
+        # A user-level entry must work in every project: these agents launch MCP
+        # servers in the directory the session starts in, and a path-less
+        # `codeprism serve` serves the project containing that directory.
+        server_entry = {"command": "codeprism", "args": ["serve"]}
     if agent == "claude":
         _write_claude_config(server_entry, global_, project_dir)
     elif agent == "codex":
@@ -776,7 +795,7 @@ def _write_codex_config(server_entry: dict, global_: bool, project_dir: Path | N
     os.replace(tmp, config_file)
 
     agents_md = _write_agents_md(project_dir)
-    scope = "user config" if global_ else "project config"
+    scope = "user config, all projects" if global_ else "project config"
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )

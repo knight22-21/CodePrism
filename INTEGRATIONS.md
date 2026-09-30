@@ -79,11 +79,22 @@ Or run `claude mcp add --scope project codeprism -- codeprism serve /absolute/pa
 
 Restart Claude Code after any config change, then run `/mcp` to check that `codeprism` shows as connected.
 
-**User scope** (available in every project on your machine; written to `~/.claude.json`):
+**User scope, all projects** (written to `~/.claude.json`):
 
 ```bash
 codeprism setup claude --project /path/to/project --global
 ```
+
+The user-scope entry is a path-less `codeprism serve`. Claude Code starts MCP servers in the
+directory you launch it from, and `codeprism serve` without a path serves the project
+containing that directory (the nearest `.git` or `.codeprism.toml`). So one entry covers every
+repo. The first time you open a project, the server builds its index in the background, and
+refreshes it incrementally on later sessions. `get_graph_stats` reports `index_status`
+(`indexing` / `ready`). Outside a project (for example from your home folder) nothing is
+indexed. Pass `--no-auto-index` to `serve` to turn background indexing off, or set
+`auto_index = false` in `.codeprism.toml`.
+
+`--project` still matters with `--global`: it's where `AGENTS.md` / `CLAUDE.md` are written.
 
 **What Claude can now do** — without reading any files:
 
@@ -110,7 +121,9 @@ codeprism setup codex --project /path/to/project
   Codex there. Other settings and comments in the file are preserved.
 - **`AGENTS.md`**: the CodePrism usage guide, which Codex reads at the start of every session.
 
-Use `--global` to write `~/.codex/config.toml` instead (every project, no trust prompt needed).
+Use `--global` to write `~/.codex/config.toml` instead: a path-less `codeprism serve` that
+serves whichever project Codex is started in, with no trust prompt needed (see the Claude Code
+section above for how project detection and background indexing work).
 
 **Manual config:**
 

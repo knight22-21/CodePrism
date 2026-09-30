@@ -29,6 +29,26 @@ def get_default_config_path() -> Path:
     return get_config_dir() / "config.toml"
 
 
+_PROJECT_MARKERS = (".git", ".codeprism.toml")
+
+
+def find_project_root(start: str | Path) -> Path | None:
+    """Nearest directory at or above *start* that looks like a project.
+
+    A project has a ``.git`` (directory or worktree file) or ``.codeprism.toml``.
+    The home directory and filesystem roots are never treated as projects, so a
+    server launched from ``~`` doesn't index the whole disk.
+    """
+    current = Path(start).resolve()
+    home = Path.home().resolve()
+    for candidate in (current, *current.parents):
+        if candidate == home or candidate.parent == candidate:
+            return None
+        if any((candidate / marker).exists() for marker in _PROJECT_MARKERS):
+            return candidate
+    return None
+
+
 def get_project_config_path(project_path: str | Path) -> Path:
     return Path(project_path) / ".codeprism.toml"
 
