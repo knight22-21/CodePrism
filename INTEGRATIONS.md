@@ -36,18 +36,22 @@ codeprism index /path/to/project
 codeprism setup claude --project /path/to/project
 ```
 
-`codeprism setup claude` writes two things:
+`codeprism setup claude` writes, inside the `--project` directory:
 
-- **MCP server entry** to `~/.claude.json` (or `.claude/settings.json` for project-local config)
-- **`CLAUDE.md`** in the project root with a usage guide injected into every Claude Code session
+- **`.mcp.json`**: the project-scoped MCP server entry. Commit it so teammates get CodePrism too.
+- **`.claude/settings.local.json`**: pre-approves the `codeprism` server for you (`enabledMcpjsonServers`), so Claude Code doesn't prompt. This file is personal; don't commit it.
+- **`CLAUDE.md`**: usage guide loaded into every Claude Code session.
+
+> Claude Code reads MCP servers from `.mcp.json` (project scope) or `~/.claude.json` (user scope), **not** from `.claude/settings.json`. Older CodePrism versions wrote to `settings.json`; re-running setup moves the entry.
 
 **Manual config** (if you prefer to edit directly):
 
 ```json
-// ~/.claude.json  or  .claude/settings.json
+// <project>/.mcp.json
 {
   "mcpServers": {
     "codeprism": {
+      "type": "stdio",
       "command": "codeprism",
       "args": ["serve", "/absolute/path/to/project"]
     }
@@ -55,9 +59,11 @@ codeprism setup claude --project /path/to/project
 }
 ```
 
-Restart Claude Code after any config change. The `codeprism` server appears under **MCP servers** in the session header.
+Or run `claude mcp add --scope project codeprism -- codeprism serve /absolute/path/to/project`.
 
-**Global config** (applies to every project):
+Restart Claude Code after any config change, then run `/mcp` to check that `codeprism` shows as connected.
+
+**User scope** (available in every project on your machine; written to `~/.claude.json`):
 
 ```bash
 codeprism setup claude --project /path/to/project --global
@@ -651,7 +657,7 @@ Unknown extensions fall back to a line-count generic parser.
 
 | Agent / Tool | Transport | Config location | Auto-setup |
 |---|---|---|---|
-| Claude Code | stdio | `~/.claude.json` | `codeprism setup claude` |
+| Claude Code | stdio | `.mcp.json` (project) / `~/.claude.json` (user) | `codeprism setup claude` |
 | Cursor | stdio | `.cursor/mcp.json` | `codeprism setup cursor` |
 | Windsurf | stdio | `~/.codeium/windsurf/mcp_config.json` | manual |
 | Continue.dev | stdio | `~/.continue/config.json` | manual |

@@ -485,7 +485,10 @@ def setup(
     ),
     project: str = typer.Option(".", "--project", "-p", help="Project path to serve"),
     global_: bool = typer.Option(
-        False, "--global", "-g", help="Write to global config (~/.claude/settings.json)"
+        False,
+        "--global",
+        "-g",
+        help="Write to the agent's user-level config instead of the project",
     ),
 ) -> None:
     """Configure an AI coding agent to use CodePrism as an MCP server.
@@ -508,17 +511,19 @@ def _setup(agent: str, project: str, global_: bool) -> None:
         "args": ["serve", abs_project],
     }
 
+    # Project-scoped files go in the --project directory, not the current one
+    project_dir = Path(abs_project)
     agent = agent.lower()
     if agent == "claude":
-        _write_claude_config(server_entry, global_)
+        _write_claude_config(server_entry, global_, project_dir)
     elif agent == "cursor":
-        _write_cursor_config(server_entry, global_)
+        _write_cursor_config(server_entry, global_, project_dir)
     elif agent == "windsurf":
-        _write_windsurf_config(server_entry, global_)
+        _write_windsurf_config(server_entry, global_, project_dir)
     elif agent in ("continue", "continue.dev"):
-        _write_continue_config(server_entry, global_)
+        _write_continue_config(server_entry, global_, project_dir)
     elif agent == "zed":
-        _write_zed_config(server_entry, global_)
+        _write_zed_config(server_entry, global_, project_dir)
     else:
         console.print(
             f"[red]Unknown agent:[/red] {agent!r}. "
@@ -602,49 +607,114 @@ This project is indexed with CodePrism. A live knowledge graph is available via 
 4. Use `record_read`/`record_write` to avoid redundant re-fetches."""
 
 
-def _write_claude_config(server_entry: dict, global_: bool) -> None:
+def _read_json_config(path: Path) -> dict:
+    """Load a JSON config, refusing to clobber a file we can't parse."""
     import json
 
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8") or "{}")
+    except ValueError:
+        console.print(
+            f"[red]Error:[/red] {path} is not valid JSON — fix or remove it, then re-run setup."
+        )
+        raise typer.Exit(1) from None
+    if not isinstance(data, dict):
+        console.print(f"[red]Error:[/red] {path} does not contain a JSON object.")
+        raise typer.Exit(1)
+    return data
+
+
+def _write_json_config(path: Path, data: dict) -> None:
+    """Write JSON atomically (temp file + replace) so a crash never truncates it."""
+    import json
+    import os
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".codeprism-tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _drop_stale_claude_settings_entry(settings_file: Path) -> None:
+    """Remove the `mcpServers.codeprism` key older setups wrote to settings.json.
+
+    Claude Code never read MCP servers from settings.json, so the entry was dead
+    weight that made it look configured when it wasn't.
+    """
+    if not settings_file.exists():
+        return
+    data = _read_json_config(settings_file)
+    servers = data.get("mcpServers")
+    if isinstance(servers, dict) and "codeprism" in servers:
+        del servers["codeprism"]
+        if not servers:
+            del data["mcpServers"]
+        _write_json_config(settings_file, data)
+
+
+def _write_claude_config(
+    server_entry: dict, global_: bool, project_dir: Path | None = None
+) -> None:
+    """Register CodePrism where Claude Code actually reads MCP servers.
+
+    Project scope: ``<project>/.mcp.json`` (shared, commit it), pre-approved for
+    you via ``enabledMcpjsonServers`` in ``.claude/settings.local.json``.
+    User scope (``--global``): top-level ``mcpServers`` in ``~/.claude.json``.
+    """
+    project_dir = project_dir or Path.cwd()
+    entry = {"type": "stdio", **server_entry}
+
     if global_:
-        config_dir = Path.home() / ".claude"
+        config_file = Path.home() / ".claude.json"
+        data = _read_json_config(config_file)
+        data.setdefault("mcpServers", {})["codeprism"] = entry
+        _write_json_config(config_file, data)
+        _drop_stale_claude_settings_entry(Path.home() / ".claude" / "settings.json")
+        scope = "user scope, all projects"
     else:
-        config_dir = Path(".claude")
+        config_file = project_dir / ".mcp.json"
+        data = _read_json_config(config_file)
+        data.setdefault("mcpServers", {})["codeprism"] = entry
+        _write_json_config(config_file, data)
 
-    config_dir.mkdir(parents=True, exist_ok=True)
-    config_file = config_dir / "settings.json"
+        # Project .mcp.json servers need a one-time approval; pre-approve it for
+        # the person running setup without committing that choice for teammates.
+        local_settings = project_dir / ".claude" / "settings.local.json"
+        local = _read_json_config(local_settings)
+        approved = local.setdefault("enabledMcpjsonServers", [])
+        if "codeprism" not in approved:
+            approved.append("codeprism")
+            _write_json_config(local_settings, local)
+        _drop_stale_claude_settings_entry(project_dir / ".claude" / "settings.json")
+        scope = "project scope"
 
-    existing: dict = {}
-    if config_file.exists():
-        try:
-            existing = json.loads(config_file.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-
-    servers = existing.setdefault("mcpServers", {})
-    servers["codeprism"] = server_entry
-    config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
-
-    # Write CLAUDE.md into the project directory (always local — not global)
-    claude_md = Path("CLAUDE.md")
+    # Instructions always live in the project directory
+    claude_md = project_dir / "CLAUDE.md"
     _upsert_agent_instructions(claude_md, _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
 
-    scope = "global" if global_ else "project"
     console.print(
         f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold] ({scope})."
     )
     console.print(
         f"[green]Done.[/green] Usage instructions written to [bold]{claude_md.resolve()}[/bold]."
     )
-    console.print("[dim]Restart Claude Code to pick up the change.[/dim]")
+    console.print(
+        "[dim]Restart Claude Code, then run /mcp to confirm codeprism is connected.[/dim]"
+    )
 
 
-def _write_cursor_config(server_entry: dict, global_: bool) -> None:
+def _write_cursor_config(
+    server_entry: dict, global_: bool, project_dir: Path | None = None
+) -> None:
     import json
 
+    project_dir = project_dir or Path.cwd()
     if global_:
         config_dir = Path.home() / ".cursor"
     else:
-        config_dir = Path(".cursor")
+        config_dir = project_dir / ".cursor"
 
     config_dir.mkdir(parents=True, exist_ok=True)
     config_file = config_dir / "mcp.json"
@@ -661,7 +731,7 @@ def _write_cursor_config(server_entry: dict, global_: bool) -> None:
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
     # Write .cursorrules into the project directory
-    cursorrules = Path(".cursorrules")
+    cursorrules = project_dir / ".cursorrules"
     _upsert_agent_instructions(cursorrules, _CURSORRULES_BLOCK, "# CodePrism")
 
     scope = "global" if global_ else "project"
@@ -674,13 +744,16 @@ def _write_cursor_config(server_entry: dict, global_: bool) -> None:
     console.print("[dim]Restart Cursor to pick up the change.[/dim]")
 
 
-def _write_windsurf_config(server_entry: dict, global_: bool) -> None:
+def _write_windsurf_config(
+    server_entry: dict, global_: bool, project_dir: Path | None = None
+) -> None:
     import json
 
+    project_dir = project_dir or Path.cwd()
     if global_:
         config_dir = Path.home() / ".codeium" / "windsurf"
     else:
-        config_dir = Path(".windsurf")
+        config_dir = project_dir / ".windsurf"
 
     config_dir.mkdir(parents=True, exist_ok=True)
     config_file = config_dir / "mcp_config.json"
@@ -696,7 +769,7 @@ def _write_windsurf_config(server_entry: dict, global_: bool) -> None:
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    _upsert_agent_instructions(Path("CLAUDE.md"), _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    _upsert_agent_instructions(project_dir / "CLAUDE.md", _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
 
     scope = "global (~/.codeium/windsurf/)" if global_ else "project (.windsurf/)"
     console.print(
@@ -705,9 +778,12 @@ def _write_windsurf_config(server_entry: dict, global_: bool) -> None:
     console.print("[dim]Restart Windsurf / Cascade to pick up the change.[/dim]")
 
 
-def _write_continue_config(server_entry: dict, global_: bool) -> None:
+def _write_continue_config(
+    server_entry: dict, global_: bool, project_dir: Path | None = None
+) -> None:
     import json
 
+    project_dir = project_dir or Path.cwd()
     # Continue.dev only has a global config; warn if --global not passed
     config_file = Path.home() / ".continue" / "config.json"
     config_file.parent.mkdir(parents=True, exist_ok=True)
@@ -723,19 +799,20 @@ def _write_continue_config(server_entry: dict, global_: bool) -> None:
     servers["codeprism"] = server_entry
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    _upsert_agent_instructions(Path("CLAUDE.md"), _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    _upsert_agent_instructions(project_dir / "CLAUDE.md", _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
 
     console.print(f"[green]Done.[/green] CodePrism MCP server added to [bold]{config_file}[/bold].")
     console.print("[dim]Reload the Continue extension to pick up the change.[/dim]")
 
 
-def _write_zed_config(server_entry: dict, global_: bool) -> None:
+def _write_zed_config(server_entry: dict, global_: bool, project_dir: Path | None = None) -> None:
     import json
 
+    project_dir = project_dir or Path.cwd()
     if global_:
         config_file = Path.home() / ".config" / "zed" / "settings.json"
     else:
-        config_file = Path(".zed") / "settings.json"
+        config_file = project_dir / ".zed" / "settings.json"
 
     config_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -756,7 +833,7 @@ def _write_zed_config(server_entry: dict, global_: bool) -> None:
     }
     config_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
-    _upsert_agent_instructions(Path("CLAUDE.md"), _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
+    _upsert_agent_instructions(project_dir / "CLAUDE.md", _CLAUDE_MD_BLOCK, _CODEPRISM_MARKER)
 
     scope = "global (~/.config/zed/)" if global_ else "project (.zed/)"
     console.print(
