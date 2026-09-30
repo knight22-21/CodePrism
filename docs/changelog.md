@@ -5,6 +5,48 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v0.1.9] — 2026-09-30
+
+Graph sync and scale fixes, a working Claude Code setup, Codex support, and
+AGENTS.md as the shared agent guide.
+
+> **Upgrading:** existing indexes are rebuilt automatically on the next `codeprism index`
+> or server start (new index format version), which also clears stale rows left by the
+> re-index bugs fixed below. Re-run `codeprism setup <agent>` to move to the new config
+> locations and get `AGENTS.md`.
+
+### Added
+- **`codeprism setup codex`**: registers `[mcp_servers.codeprism]` in `.codex/config.toml`
+  (or `~/.codex/config.toml` with `--global`). Comments and other settings are preserved.
+- **`AGENTS.md` is the shared guide.** Every setup writes the CodePrism usage guide to
+  `AGENTS.md` (read by Codex, Cursor, Windsurf, Zed, Copilot, ...). `CLAUDE.md` becomes a thin
+  `@AGENTS.md` import. Continue.dev gets `.continue/rules/codeprism.md`. (#27)
+- **One user-level config for every project.** `codeprism serve` without a path serves the
+  project containing the current directory (nearest `.git` / `.codeprism.toml`) and builds or
+  refreshes its index in the background at startup. `setup claude|codex --global` use it.
+  `get_graph_stats` reports `index_status`. (#29)
+- **Parallel parsing.** `codeprism index` and the MCP server parse in a process pool
+  (`--workers/-j`, `parse_workers` config), and SQLite is tuned for bulk writes.
+  Full index of a 2M LOC corpus: 89.6s → 42.2s. (#24)
+- **Index format version.** Indexes from an older format are fully re-parsed once instead of
+  being trusted by checksum. (#25)
+
+### Fixed
+- **Claude Code setup never actually registered the server.** MCP entries were written to
+  `.claude/settings.json`, which Claude Code doesn't read. Now `.mcp.json` (project, pre-approved
+  in `settings.local.json`) or `~/.claude.json` (`--global`); stale entries are migrated, and
+  setup files go to `--project` instead of the current directory. (#26)
+- **Java, C, C++, Ruby and PHP files were never indexed**, and the watcher ignored them (and
+  `.rs`). All 10 languages are now indexed and watched by default. (#20)
+- **Re-indexing left stale data**: renamed symbols lingered and edges were duplicated when line
+  numbers shifted; `--force` didn't remove deleted files. (#21)
+- **`update_file` dropped callers from other files** from the in-memory graph. (#22)
+- **Single-file updates did whole-repo work**: 2.6s → ~55ms at 2M LOC. (#28)
+- **`search_symbol` kind filter was case-sensitive**; `kind="Function"` returned nothing.
+  Thanks @MilindLate. (#19, fixes #18)
+
+---
+
 ## [v0.1.8] — 2026-09-28
 
 ### Added
