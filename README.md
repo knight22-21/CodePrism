@@ -85,7 +85,9 @@ Then restart Cursor. Cursor entries are tied to one project path, so run setup f
 
 Every setup also writes the CodePrism usage guide to `AGENTS.md` in the project, the shared
 instructions file most coding agents read. Claude Code gets a thin `CLAUDE.md` that imports it.
-Windsurf, Continue.dev and Zed are configured by hand: see **[INTEGRATIONS.md](INTEGRATIONS.md)**.
+Windsurf, Continue.dev and Zed are configured by hand, see **[INTEGRATIONS.md](INTEGRATIONS.md)**. Their `setup`
+commands write to locations those tools don't document and can overwrite a config file they cannot parse
+([#42](https://github.com/knight22-21/CodePrism/issues/42), [#43](https://github.com/knight22-21/CodePrism/issues/43)), so don't use them yet.
 
 **Any MCP-compatible agent (manual)**
 ```bash
@@ -224,7 +226,8 @@ codeprism stats --json
 ```
 
 Give enough of the path to be unique (`api/utils.py`, not `utils.py`). The MCP tools report an
-ambiguous path together with its candidates; the CLI commands do not, and treat it as not found.
+ambiguous path together with its candidates; the CLI commands do not, and `callers` even prints
+"No callers found" for a path it can't resolve ([#44](https://github.com/knight22-21/CodePrism/issues/44)).
 
 ### Visualization
 
@@ -274,9 +277,9 @@ codeprism serve --no-auto-index
 codeprism serve /path/to/project --transport sse --port 8765
 ```
 
-The SSE server listens on `127.0.0.1` only and has no built-in authentication. To reach it from
-another machine, use an SSH tunnel or a reverse proxy on the same host (see
-[INTEGRATIONS.md](INTEGRATIONS.md)).
+The SSE server listens on `127.0.0.1` only and has no built-in authentication; there is no `--host`
+option yet ([#45](https://github.com/knight22-21/CodePrism/issues/45)). To reach it from another machine, use an SSH tunnel or a reverse proxy on
+the same host (see [INTEGRATIONS.md](INTEGRATIONS.md)).
 
 ---
 

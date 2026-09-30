@@ -206,7 +206,8 @@ project-level config file, so use one entry per project in the user-level file.
 
 > `codeprism setup windsurf` writes `.windsurf/mcp_config.json` (or `~/.codeium/windsurf/mcp_config.json`
 > with `--global`). Those locations are not the ones the current docs list, so prefer the manual
-> configuration above and confirm with `Cascade → MCP`.
+> configuration above and confirm with `Cascade → MCP` ([#42](https://github.com/knight22-21/CodePrism/issues/42)). Setup can also overwrite an
+> existing config file it cannot parse ([#43](https://github.com/knight22-21/CodePrism/issues/43)), so back the file up first if you do use it.
 
 ---
 
@@ -235,16 +236,18 @@ The older `~/.continue/config.json` (`"mcpServers": { ... }`) is marked deprecat
 may still work on old versions, but use the YAML form on current ones.
 
 > `codeprism setup continue` writes to `~/.continue/config.json` (the deprecated form) plus a
-> `.continue/rules/codeprism.md` rule. Use the manual YAML configuration above on current
-> versions.
+> `.continue/rules/codeprism.md` rule ([#42](https://github.com/knight22-21/CodePrism/issues/42)). Use the manual YAML configuration above on
+> current versions. Setup can also overwrite a config file it cannot parse ([#43](https://github.com/knight22-21/CodePrism/issues/43)).
 
 ---
 
 ## Zed
 
 Zed has native MCP support. Per the [Zed docs](https://zed.dev/docs/ai/mcp), add the server under
-`context_servers` in your settings file (`zed: open settings file`, typically
-`~/.config/zed/settings.json`), or use **Settings → AI → MCP Servers**:
+`context_servers` in your settings file (run `zed: open settings file`), or use
+**Settings → AI → MCP Servers**. The settings file is `~/.config/zed/settings.json` on macOS and
+Linux and `%APPDATA%\Zed\settings.json` on Windows. It is JSON **with comments**: keep your comments
+and trailing commas when you edit it by hand.
 
 ```json
 {
@@ -258,12 +261,14 @@ Zed has native MCP support. Per the [Zed docs](https://zed.dev/docs/ai/mcp), add
 }
 ```
 
-Reload the window. The Zed docs don't describe a project-level MCP configuration, so use one entry
-per project in the user-level settings.
+Reload the window. Zed also reads a project-level `.zed/settings.json`, but its MCP docs only describe
+the user-level file, so use one entry per project there.
 
 > `codeprism setup zed` writes `context_servers.codeprism.command` as an object
-> (`{"path": ..., "args": [...]}`), which is not the shape the current docs show. Prefer the manual
-> configuration above.
+> (`{"path": ..., "args": [...]}`), which is not the shape the current docs show, and always to
+> `~/.config/zed/settings.json`, which is the wrong file on Windows ([#42](https://github.com/knight22-21/CodePrism/issues/42)). **It also replaces
+> a settings file it cannot parse, and Zed's own settings file (JSON with comments) is one of those
+> ([#43](https://github.com/knight22-21/CodePrism/issues/43)): it would wipe your settings.** Use the manual configuration above.
 
 ---
 
@@ -470,8 +475,8 @@ codeprism serve /path/to/project --transport sse --port 8765
 
 Connect an MCP client to `http://127.0.0.1:8765/sse`.
 
-> **The SSE server listens on `127.0.0.1` only** (there is no `--host` option) and has no built-in
-> authentication, so it is reachable only from the machine it runs on.
+> **The SSE server listens on `127.0.0.1` only** (there is no `--host` option yet, [#45](https://github.com/knight22-21/CodePrism/issues/45)) and
+> has no built-in authentication, so it is reachable only from the machine it runs on.
 
 To use it from another machine, keep it on loopback and expose it yourself:
 

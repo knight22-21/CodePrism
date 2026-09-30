@@ -337,3 +337,8 @@ Tracked as public issues:
 | [#38](https://github.com/knight22-21/CodePrism/issues/38) | `search_symbol` returns at most 50 unranked rows and does not say when it truncated |
 | [#39](https://github.com/knight22-21/CodePrism/issues/39) | Definitions inside `try` / `if` / `with` blocks are not indexed |
 | [#40](https://github.com/knight22-21/CodePrism/issues/40) | The whole graph is loaded before the server answers (8.7 s and 1.6 GB at 2M LOC) |
+| [#42](https://github.com/knight22-21/CodePrism/issues/42) | `setup windsurf/continue/zed` write to locations and shapes the tools' current docs don't list |
+| [#43](https://github.com/knight22-21/CodePrism/issues/43) | `setup cursor/windsurf/continue/zed` overwrite a config file they cannot parse (Zed's JSONC settings always) |
+| [#44](https://github.com/knight22-21/CodePrism/issues/44) | CLI `callers` prints "No callers found" for missing files, ambiguous paths and unknown symbols |
+| [#45](https://github.com/knight22-21/CodePrism/issues/45) | `serve --transport sse` has no `--host` option and only listens on loopback |
+| [#46](https://github.com/knight22-21/CodePrism/issues/46) | `get_impact` rates every used public function `CRITICAL`, whatever its blast radius |
