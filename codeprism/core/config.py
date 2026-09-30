@@ -33,6 +33,8 @@ class CodePrismConfig(BaseModel):
     enable_embeddings: bool = False
     enable_security_gate: bool = True
     watch_debounce_ms: int = 500
+    # Skip files git ignores (vendored checkouts, build output, generated code)
+    respect_gitignore: bool = True
     # `codeprism serve` builds / refreshes the index in the background at startup
     auto_index: bool = True
     # Processes used to parse large indexes: 1 = in-process (library default),

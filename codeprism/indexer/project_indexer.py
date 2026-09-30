@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..core.config import CodePrismConfig
+from ..core.gitignore import git_listed_files
 from ..core.graph import GraphEngine
 from ..core.languages import extensions_for
 from ..core.models import EdgeRecord, NodeKind
@@ -351,18 +352,29 @@ class ProjectIndexer:
         exts = extensions_for(self._config.languages)
 
         ignore_patterns = self._config.security.ignore_paths
-        files: list[str] = []
 
-        for path in sorted(root.rglob("*")):
-            if not path.is_file():
-                continue
-            rel_parts = set(path.relative_to(root).parts)
-            if rel_parts & _DEFAULT_IGNORE:
-                continue
-            if path.suffix.lower() not in exts:
-                continue
-            if any(fnmatch.fnmatch(str(path), pat) for pat in ignore_patterns):
-                continue
-            files.append(str(path))
+        def keep(path: Path) -> bool:
+            if path.suffix.lower() not in exts or not path.is_file():
+                return False
+            if set(path.relative_to(root).parts) & _DEFAULT_IGNORE:
+                return False
+            return not any(fnmatch.fnmatch(str(path), pat) for pat in ignore_patterns)
 
-        return files
+        walked = (
+            [p for p in sorted(root.rglob("*")) if keep(p)]
+            if not self._config.respect_gitignore
+            else None
+        )
+        if walked is not None:
+            return [str(p) for p in walked]
+
+        # Ask git which files belong to the project: exact .gitignore semantics,
+        # and no walk through ignored trees (node_modules, vendored checkouts).
+        listed = git_listed_files(root)
+        if listed:
+            files = [p for p in sorted(set(listed)) if keep(p)]
+            if files:
+                return [str(p) for p in files]
+        # Not a git repo, git unavailable, or the root itself is ignored (an
+        # explicit request to index it): fall back to walking the directory.
+        return [str(p) for p in sorted(root.rglob("*")) if keep(p)]
