@@ -189,9 +189,28 @@ class StorageManager:
         await self.db.commit()
 
     async def get_file_by_path(self, path: str) -> FileRecord | None:
+        """Look up an indexed file; exact match first, then a relative-path match.
+
+        Files are stored with absolute paths, but agents usually pass paths
+        relative to the project (``src/app.py``), with ``./`` or forward slashes
+        on Windows. Those resolve when exactly one indexed file ends with the
+        same path segments; an ambiguous name (two ``utils.py``) returns None
+        rather than guessing.
+        """
         async with self.db.execute("SELECT * FROM files WHERE path = ?", (path,)) as cur:
             row = await cur.fetchone()
-        return FileRecord(**dict(row)) if row else None
+        if row:
+            return FileRecord(**dict(row))
+        wanted = _path_parts(path)
+        if not wanted:
+            return None
+        like = "%" + wanted[-1].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        async with self.db.execute(
+            "SELECT * FROM files WHERE path LIKE ? ESCAPE '\\'", (like,)
+        ) as cur:
+            rows = await cur.fetchall()
+        matches = [r for r in rows if _path_parts(r["path"])[-len(wanted) :] == wanted]
+        return FileRecord(**dict(matches[0])) if len(matches) == 1 else None
 
     async def get_file_by_id(self, file_id: str) -> FileRecord | None:
         async with self.db.execute("SELECT * FROM files WHERE id = ?", (file_id,)) as cur:
@@ -628,6 +647,15 @@ class StorageManager:
 
 
 # ─── Row converters (module-level for reuse) ──────────────────────────────────
+
+
+def _path_parts(path: str) -> tuple[str, ...]:
+    """Path segments for comparison: either separator, no ``.``, case-folded on Windows."""
+    import os
+    import re
+
+    parts = tuple(p for p in re.split(r"[\\/]+", path.strip()) if p and p != ".")
+    return tuple(p.lower() for p in parts) if os.name == "nt" else parts
 
 
 def _row_to_symbol(row: aiosqlite.Row) -> SymbolRecord:

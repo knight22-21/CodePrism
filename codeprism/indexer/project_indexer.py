@@ -343,7 +343,9 @@ class ProjectIndexer:
     # ── File discovery ────────────────────────────────────────────────────────
 
     def _find_source_files(self, project_path: str) -> list[str]:
-        root = Path(project_path)
+        # Absolute root, so stored paths are the same whether the project was
+        # indexed as "." from the CLI or by absolute path from the MCP server.
+        root = Path(project_path).resolve()
 
         # Which extensions to index (based on config.languages)
         exts = extensions_for(self._config.languages)
