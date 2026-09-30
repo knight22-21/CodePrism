@@ -18,6 +18,13 @@ from .models import (
     SymbolRecord,
 )
 
+# Version of what an index *contains* (parser output + schema semantics), stored
+# in SQLite's PRAGMA user_version. Bump it whenever a release changes parser
+# output or how rows are written; existing indexes are then fully re-parsed on
+# the next `index` instead of silently keeping stale rows behind the checksum
+# skip. 0 = created before versioning existed.
+INDEX_FORMAT_VERSION = 1
+
 _SCHEMA = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
@@ -120,6 +127,22 @@ class StorageManager:
         if self._db:
             await self._db.close()
             self._db = None
+
+    async def get_index_format_version(self) -> int:
+        async with self.db.execute("PRAGMA user_version") as cur:
+            row = await cur.fetchone()
+        return int(row[0]) if row else 0
+
+    async def set_index_format_version(self, version: int = INDEX_FORMAT_VERSION) -> None:
+        await self.db.execute(f"PRAGMA user_version = {int(version)}")
+        await self.db.commit()
+
+    async def index_is_outdated(self) -> bool:
+        """True when stored rows were written by an older index format."""
+        if await self.get_index_format_version() == INDEX_FORMAT_VERSION:
+            return False
+        async with self.db.execute("SELECT 1 FROM files LIMIT 1") as cur:
+            return await cur.fetchone() is not None
 
     @property
     def db(self) -> aiosqlite.Connection:

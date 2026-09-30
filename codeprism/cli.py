@@ -115,6 +115,11 @@ async def _index(
     result = await indexer.index(path, force=force)
     await storage.close()
 
+    if result.format_upgraded:
+        console.print(
+            "[yellow]Index format changed since this project was indexed — "
+            "all files were re-parsed.[/yellow]"
+        )
     if result.success:
         skipped_note = (
             f" · [dim]{result.files_skipped} unchanged[/dim]" if result.files_skipped else ""
