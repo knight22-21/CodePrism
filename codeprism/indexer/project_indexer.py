@@ -194,14 +194,9 @@ class ProjectIndexer:
     # ── Cross-file resolution ─────────────────────────────────────────────────
 
     async def _resolve_cross_file(self, unresolved: list[UnresolvedRef]) -> list[EdgeRecord]:
-        all_symbols = await self._storage.get_all_symbols()
-
-        # Build name → id map; prefer non-import symbols on collision so that
-        # direct function calls point at the actual definition, not the import stub.
-        name_to_id: dict[str, str] = {}
-        for sym in all_symbols:
-            if sym.name not in name_to_id or sym.kind != NodeKind.IMPORT:
-                name_to_id[sym.name] = sym.id
+        # name → id for just the referenced names; non-import symbols win on
+        # collision so calls point at the definition, not the import stub.
+        name_to_id = await self._storage.resolve_symbol_names({r.ref_name for r in unresolved})
 
         resolved: list[EdgeRecord] = []
         for ref in unresolved:

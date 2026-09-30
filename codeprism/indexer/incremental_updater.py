@@ -180,12 +180,8 @@ class IncrementalUpdater:
             self._graph.add_edge(edge)
 
     async def _resolve_refs(self, unresolved: list[UnresolvedRef]) -> list[EdgeRecord]:
-        all_symbols = await self._storage.get_all_symbols()
-
-        name_to_id: dict[str, str] = {}
-        for sym in all_symbols:
-            if sym.name not in name_to_id or sym.kind != NodeKind.IMPORT:
-                name_to_id[sym.name] = sym.id
+        # Look up only the referenced names (indexed) instead of every symbol
+        name_to_id = await self._storage.resolve_symbol_names({r.ref_name for r in unresolved})
 
         resolved: list[EdgeRecord] = []
         for ref in unresolved:
