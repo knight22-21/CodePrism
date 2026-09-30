@@ -9,21 +9,10 @@ from pathlib import Path
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from ..core.languages import ALL_EXTENSIONS
 from .incremental_updater import IncrementalUpdater, UpdateResult
 
-_WATCH_EXTENSIONS = frozenset(
-    {
-        ".py",
-        ".pyi",
-        ".js",
-        ".jsx",
-        ".mjs",
-        ".ts",
-        ".tsx",
-        ".mts",
-        ".go",
-    }
-)
+_WATCH_EXTENSIONS = ALL_EXTENSIONS
 
 UpdateCallback = Callable[[str, UpdateResult], None]
 
