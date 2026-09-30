@@ -156,6 +156,14 @@ class PythonParser(BaseParser):
         if class_sym:
             name_to_id[f"{class_sym.name}.{name}"] = sym.id
 
+        # Imports inside the body (lazy imports) are real dependencies, and the
+        # call resolver needs them to know where a called name comes from. They
+        # bind only inside this function, so they stay out of the file-level
+        # name table used for intra-file resolution.
+        if body_node:
+            for imp in self._nested_imports(body_node):
+                self._extract_import(imp, file_path, file_id, source, result, {})
+
         parent_id = class_sym.id if class_sym else file_id
         result.edges.append(
             EdgeRecord.create(
@@ -168,7 +176,7 @@ class PythonParser(BaseParser):
         )
 
         if body_node:
-            for callee_name, line in self._extract_call_names(body_node):
+            for callee_name, line, style, receiver in self._extract_calls(body_node):
                 result.unresolved_refs.append(
                     UnresolvedRef(
                         from_id=sym.id,
@@ -176,6 +184,8 @@ class PythonParser(BaseParser):
                         kind=EdgeKind.CALLS,
                         file_path=file_path,
                         line_number=line,
+                        call_style=style,
+                        receiver=receiver,
                     )
                 )
 
@@ -440,18 +450,55 @@ class PythonParser(BaseParser):
 
     @staticmethod
     def _extract_call_names(body_node) -> list[tuple[str, int]]:
-        calls: list[tuple[str, int]] = []
+        return [(name, line) for name, line, _s, _r in PythonParser._extract_calls(body_node)]
+
+    @staticmethod
+    def _nested_imports(body_node) -> list:
+        found = []
+
+        def walk(n):
+            if n.type in ("import_statement", "import_from_statement"):
+                found.append(n)
+                return
+            for c in n.children:
+                walk(c)
+
+        walk(body_node)
+        return found
+
+    @staticmethod
+    def _extract_calls(body_node) -> list[tuple[str, int, str, str | None]]:
+        """(callee, line, "bare" | "attribute", receiver) for every call.
+
+        The receiver is the dotted expression before the final name when it is
+        a plain name chain (``self._storage``, ``os.path``); None for anything
+        more complex (``get_obj().method()``).
+        """
+        calls: list[tuple[str, int, str, str | None]] = []
+
+        def dotted(node) -> str | None:
+            if node.type == "identifier":
+                return node.text.decode("utf-8")
+            if node.type == "attribute":
+                obj = node.child_by_field_name("object")
+                attr = node.child_by_field_name("attribute")
+                base = dotted(obj) if obj else None
+                return f"{base}.{attr.text.decode('utf-8')}" if base and attr else None
+            return None
 
         def walk(n):
             if n.type == "call":
                 func = n.child_by_field_name("function")
+                line = n.start_point[0] + 1
                 if func:
                     if func.type == "identifier":
-                        calls.append((func.text.decode("utf-8"), n.start_point[0] + 1))
+                        calls.append((func.text.decode("utf-8"), line, "bare", None))
                     elif func.type == "attribute":
                         attr = func.child_by_field_name("attribute")
+                        obj = func.child_by_field_name("object")
                         if attr:
-                            calls.append((attr.text.decode("utf-8"), n.start_point[0] + 1))
+                            receiver = dotted(obj) if obj else None
+                            calls.append((attr.text.decode("utf-8"), line, "attribute", receiver))
             for c in n.children:
                 walk(c)
 

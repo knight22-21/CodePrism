@@ -20,6 +20,7 @@ from ..core.storage import StorageManager
 from ..parser.base import UnresolvedRef
 from ..parser.registry import ParserRegistry
 from . import _parse_worker
+from .call_resolver import resolve_refs
 
 _DEFAULT_IGNORE = frozenset(
     {
@@ -269,24 +270,7 @@ class ProjectIndexer:
     # ── Cross-file resolution ─────────────────────────────────────────────────
 
     async def _resolve_cross_file(self, unresolved: list[UnresolvedRef]) -> list[EdgeRecord]:
-        # name → id for just the referenced names; non-import symbols win on
-        # collision so calls point at the definition, not the import stub.
-        name_to_id = await self._storage.resolve_symbol_names({r.ref_name for r in unresolved})
-
-        resolved: list[EdgeRecord] = []
-        for ref in unresolved:
-            target_id = name_to_id.get(ref.ref_name)
-            if target_id and target_id != ref.from_id:
-                resolved.append(
-                    EdgeRecord.create(
-                        kind=ref.kind,
-                        from_id=ref.from_id,
-                        to_id=target_id,
-                        file_path=ref.file_path,
-                        line_number=ref.line_number,
-                    )
-                )
-        return resolved
+        return await resolve_refs(self._storage, unresolved)
 
     # ── Embeddings builder ────────────────────────────────────────────────────
 

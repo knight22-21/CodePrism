@@ -18,6 +18,11 @@ class UnresolvedRef:
     kind: EdgeKind
     file_path: str
     line_number: int | None = None
+    # CALLS only, set by parsers that know it: "bare" for f(), "attribute" for
+    # x.f(). None means unknown, and the ref is resolved by name alone.
+    call_style: str | None = None
+    # For attribute calls, the dotted receiver ("self._storage", "os.path")
+    receiver: str | None = None
 
 
 @dataclass

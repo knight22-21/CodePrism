@@ -73,6 +73,27 @@ All queries complete in under 6ms p95. LLM inference costs 500–3,000ms per tur
 
 ---
 
+## Cross-file call accuracy (Level 3b)
+
+`python -m benchmarks.run_call_precision` scores the **cross-file** CALLS edges against an
+oracle built with Python's `ast` module, for calls whose target is knowable without types:
+`f()` where `f` was imported, `mod.f()` where `mod` is an imported module, and builtins or
+third-party calls (`str()`, `json.dumps()`, `os.path.join()`), which must not link into the
+project. Calls on objects (`self.x()`, `obj.x()`) need types and are not scored.
+
+| Corpus | Precision before → after | Recall before → after | Wrong edges before → after |
+|---|---|---|---|
+| psf/requests | 0.836 → **1.000** | 0.897 → 0.897 | 122 → **0** |
+| pallets/flask | 0.678 → **1.000** | 0.873 → **0.948** | 246 → **0** |
+| encode/httpx | 0.959 → **1.000** | 1.000 → 1.000 | 46 → **0** |
+| CodePrism | 0.799 → **1.000** | 0.992 → 0.992 | 66 → **0** |
+
+"Before" is v0.1.10 (calls linked by name alone); "after" is import-aware resolution. The
+same change moved the Level 3 intra-file caller scores (fresh indexes) from
+precision 0.734 / recall 0.827 to **0.772 / 0.824**.
+
+---
+
 ## Methodology
 
 ### Level 1 — Token Reduction + Accuracy

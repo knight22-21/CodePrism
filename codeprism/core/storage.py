@@ -23,7 +23,8 @@ from .models import (
 # output or how rows are written; existing indexes are then fully re-parsed on
 # the next `index` instead of silently keeping stale rows behind the checksum
 # skip. 0 = created before versioning existed.
-INDEX_FORMAT_VERSION = 1
+# 2: Python calls record call style/receiver; function-local imports are indexed
+INDEX_FORMAT_VERSION = 2
 
 _SCHEMA = """
 PRAGMA journal_mode=WAL;
@@ -372,6 +373,58 @@ class StorageManager:
             if name not in name_to_id or kind != NodeKind.IMPORT.value:
                 name_to_id[name] = sym_id
         return name_to_id
+
+    async def _chunked(self, sql: str, values: list[str]) -> list[tuple]:
+        """Run ``sql`` (containing one ``{marks}``) over *values* in SQLite-sized chunks."""
+        rows: list[tuple] = []
+        for i in range(0, len(values), 900):
+            part = values[i : i + 900]
+            async with self.db.execute(sql.format(marks=",".join("?" * len(part))), part) as cur:
+                rows.extend(tuple(r) for r in await cur.fetchall())
+        return rows
+
+    async def definitions_by_name(self, names: set[str]) -> dict[str, list[tuple[str, str]]]:
+        """name -> [(symbol id, file path)] for every function/class with that name.
+
+        Only callables: a call can't target a variable or field (``FileRecord.language``).
+        """
+        rows = await self._chunked(
+            "SELECT s.name, s.id, f.path FROM symbols s JOIN files f ON f.id = s.file_id "
+            "WHERE s.kind IN ('function', 'class') AND s.name IN ({marks}) ORDER BY s.rowid",
+            sorted(names),
+        )
+        out: dict[str, list[tuple[str, str]]] = {}
+        for name, sym_id, path in rows:
+            out.setdefault(name, []).append((sym_id, path))
+        return out
+
+    async def imports_by_file(self, paths: set[str]) -> dict[str, list[tuple[str, str]]]:
+        """file path -> [(local name, source module)] for the imports in those files."""
+        rows = await self._chunked(
+            "SELECT f.path, s.name, COALESCE(s.signature, '') FROM symbols s "
+            "JOIN files f ON f.id = s.file_id WHERE s.kind = 'import' AND f.path IN ({marks})",
+            sorted(paths),
+        )
+        out: dict[str, list[tuple[str, str]]] = {}
+        for path, name, module in rows:
+            out.setdefault(path, []).append((name, module))
+        return out
+
+    async def files_signature(self) -> tuple[int, int]:
+        """(file count, max rowid): changes when files are added or removed, not
+        when an existing file is re-indexed (upserts keep their rowid)."""
+        async with self.db.execute("SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM files") as cur:
+            row = await cur.fetchone()
+        return int(row[0]), int(row[1])
+
+    async def file_paths(self, language: str | None = None) -> list[str]:
+        sql, args = (
+            ("SELECT path FROM files WHERE language = ?", (language,))
+            if language
+            else ("SELECT path FROM files", ())
+        )
+        async with self.db.execute(sql, args) as cur:
+            return [r[0] for r in await cur.fetchall()]
 
     async def get_non_import_symbol_names(self, exclude_file_id: str) -> set[str]:
         """Return names of all non-import symbols not in the given file.

@@ -159,11 +159,11 @@ async def run_repo(repo_name: str, repo_path: str, verbose: bool) -> RepoResult:
         db = prism.engine._storage
         engine = prism.engine
 
-        stats = await prism.engine.get_stats()
-        if not stats.get("edge_count"):
-            print(f"  Indexing {repo_name} ...", end=" ", flush=True)
-            await prism.index()
-            print("done")
+        # Always (re)index: it's incremental, and scoring whatever index happens
+        # to be on disk would measure an older version of the parser.
+        print(f"  Indexing {repo_name} ...", end=" ", flush=True)
+        await prism.index()
+        print("done")
 
         all_files = await db.get_all_files()
         py_files = [f for f in all_files if f.path.endswith(".py")]
