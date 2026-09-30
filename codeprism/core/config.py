@@ -7,6 +7,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from .languages import SUPPORTED_LANGUAGES
+
 
 class SecurityConfig(BaseModel):
     block_on_secrets: bool = True
@@ -27,9 +29,7 @@ class MCPConfig(BaseModel):
 
 class CodePrismConfig(BaseModel):
     project_path: str | None = None
-    languages: list[str] = Field(
-        default_factory=lambda: ["python", "javascript", "typescript", "go", "rust"]
-    )
+    languages: list[str] = Field(default_factory=lambda: list(SUPPORTED_LANGUAGES))
     enable_embeddings: bool = False
     enable_security_gate: bool = True
     watch_debounce_ms: int = 500

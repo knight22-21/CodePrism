@@ -11,6 +11,7 @@ from pathlib import Path
 
 from ..core.config import CodePrismConfig
 from ..core.graph import GraphEngine
+from ..core.languages import extensions_for
 from ..core.models import EdgeRecord, NodeKind
 from ..core.storage import StorageManager
 from ..parser.base import UnresolvedRef
@@ -40,14 +41,6 @@ _DEFAULT_IGNORE = frozenset(
         ".eggs",
     }
 )
-
-_LANGUAGE_EXTENSIONS: dict[str, frozenset[str]] = {
-    "python": frozenset({".py", ".pyi"}),
-    "javascript": frozenset({".js", ".jsx", ".mjs"}),
-    "typescript": frozenset({".ts", ".tsx", ".mts"}),
-    "go": frozenset({".go"}),
-    "rust": frozenset({".rs"}),
-}
 
 
 @dataclass
@@ -269,9 +262,7 @@ class ProjectIndexer:
         root = Path(project_path)
 
         # Which extensions to index (based on config.languages)
-        exts: frozenset[str] = frozenset().union(
-            *(_LANGUAGE_EXTENSIONS.get(lang, frozenset()) for lang in self._config.languages)
-        ) or frozenset().union(*_LANGUAGE_EXTENSIONS.values())
+        exts = extensions_for(self._config.languages)
 
         ignore_patterns = self._config.security.ignore_paths
         files: list[str] = []
