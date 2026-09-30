@@ -5,6 +5,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v0.1.10] — 2026-09-30
+
+### Fixed
+- **Tools now accept project-relative file paths.** Files are stored with absolute paths, so
+  `get_callers("src/app.py", ...)`, `get_module_summary`, `get_context`, `search_symbol`'s
+  `project_path` and the other file tools silently returned empty results for the relative
+  paths agents normally use. Relative paths, `./`, either separator and (on Windows) any case
+  now resolve against the served project root; an ambiguous name (two `utils.py`) is never
+  guessed. (#30)
+- **`get_callers` / `get_callees` report errors** for an unindexed file or unknown symbol instead
+  of an empty list, and include each caller's file path, not just its internal id. (#30)
+- **No duplicate file records**: `codeprism index .` stored relative paths while the MCP server
+  stored absolute ones. Paths are now always absolute; an old relative index heals itself on the
+  next index run. (#30)
+
+---
+
 ## [v0.1.9] — 2026-09-30
 
 Graph sync and scale fixes, a working Claude Code setup, Codex support, and
