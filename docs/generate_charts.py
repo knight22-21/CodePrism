@@ -46,7 +46,7 @@ OUT.mkdir(exist_ok=True)
 # ── 1. Token Reduction by Corpus ─────────────────────────────────────────────
 def chart_token_reduction_by_corpus():
     labels   = ["Fixture\n(tiny, 2 files)", "psf/requests\n(~15k LOC)", "pallets/flask\n(~30k LOC)", "encode/httpx\n(~20k LOC)"]
-    values   = [27, 89, 91, 93]
+    values   = [24, 89, 92, 93]
     colors   = [INDIGO_PALE, INDIGO, INDIGO, INDIGO_DARK]
 
     fig, ax = plt.subplots(figsize=(8, 3.6))

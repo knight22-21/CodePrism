@@ -9,16 +9,23 @@ against reading raw source files.
 
 | Level | Metric | Fixture | requests | flask | httpx |
 |---|---|---|---|---|---|
-| Level 1 | Token reduction | 27% | **88.7%** | **91.3%** | **93.1%** |
+| Level 1 | Token reduction | 24% | **88.9%** | **91.6%** | **93.2%** |
 | Level 1 | Accuracy (CP / baseline) | 0.60 / 0.89 | **0.87 / 0.86** | 0.64 / 0.77 | **0.70 / 0.68** |
 | Level 2 | Query p50 latency | < 1.5ms | < 4ms | < 4.9ms | < 5.0ms |
 | Level 2 | Query p95 latency | < 2ms | < 5.2ms | < 7.2ms | < 6.0ms |
 | Level 3 | Symbol precision / recall / F1 | 1.000 / 1.000 / 1.000 | 1.000 / 0.996 / 0.998 | 1.000 / 1.000 / 1.000 | 1.000 / 0.964 / 0.964 |
-| Level 3 | Caller recall (intra-file) | 1.000 | 0.776 | 0.708 | 0.824 |
+| Level 3 | Caller precision / recall (intra-file) | 0.875 / 1.000 | 0.669 / 0.763 | 0.693 / 0.721 | 0.849 / 0.813 |
+| Level 3b | Cross-file call precision / recall (Python) | n/a | **1.000** / 0.897 | **1.000** / 0.948 | **1.000** / 1.000 |
 
 Token reduction averaged **91% across 3 production codebases** (requests, flask, httpx).
 Accuracy: CodePrism **matches or beats the baseline on 2/3 corpora** (requests: 0.87 vs 0.86; httpx: 0.70 vs 0.68).
-Symbol indexing: **perfect precision and recall** (1.000 F1) across 2,274 functions in 4 corpora.
+Symbol indexing: precision **1.000** and recall **0.990** by name (2,274 of 2,279 functions in 4 corpora).
+This compares sets of names per file, so it cannot see same-named methods in different classes that
+share one symbol ([#34](https://github.com/knight22-21/CodePrism/issues/34)).
+
+**What was measured when.** Level 1 token reduction, Level 3 and Level 3b were re-measured on
+v0.1.11 (2026-09-30). Level 1 accuracy (LLM-as-judge) and Level 2 latency are from v0.1.5–v0.1.7 and
+have not been re-run; accuracy needs the judge API.
 
 ---
 
@@ -94,6 +101,28 @@ precision 0.734 / recall 0.827 to **0.772 / 0.824**.
 
 ---
 
+## Indexing at scale
+
+Synthetic monorepo: 31 copies of a 279-file, about 65,000-line Python tree (this repository plus its
+vendored benchmark checkouts, as it was before gitignore support), giving 8,649 Python files, about
+2.0M lines, 201K symbols and 445K edges (index database 418 MB). 12-core Windows machine, Python 3.13, otherwise idle. One run per
+cell, so treat small differences as noise.
+
+| Operation | Before | After | Change |
+|---|---:|---:|---|
+| Full index (`--force`) | 89.6 s | **42.2 s** | parse in a process pool, SQLite tuned for bulk writes (#24) |
+| Full index, in-process (`--workers 1`) | 89.6 s | 55.8 s | SQLite tuning and batched writes alone |
+| Update one changed file | 2.6 s | **~70–90 ms** | targeted lookups and per-file edge index (#28); first update after start ~260 ms |
+| Load the graph at server start | 8.7 s | 8.7 s | unchanged: see [#40](https://github.com/knight22-21/CodePrism/issues/40) |
+| Memory of the loaded graph | +1.6 GB | +1.6 GB | unchanged: see [#40](https://github.com/knight22-21/CodePrism/issues/40) |
+
+For scale: indexing this repository today (123 files, about 20,700 lines) takes about a second.
+
+Caveats: the corpus is one repository duplicated, Python only, and was measured on one machine. The
+process pool helps most on many files; small projects (under 200 files) parse in threads.
+
+---
+
 ## Methodology
 
 ### Level 1 — Token Reduction + Accuracy
@@ -131,6 +160,8 @@ chain-of-thought before outputting the score.
 ## Results
 
 ### Run 10 — 2026-09-18 | Level 3 Symbol Resolution Accuracy
+
+> Measured at v0.1.7. The Summary above has the same metrics re-measured on v0.1.11.
 
 **Tool:** `python -m benchmarks.run_symbol_accuracy`
 **Oracle:** tree-sitter AST parsed independently — no CodePrism involved in GT extraction
@@ -366,6 +397,17 @@ python -m benchmarks.run_latency_benchmark \
   --reps 20 --warmup 3
 ```
 
+### Level 3 and 3b: symbol and call accuracy (Python)
+
+```bash
+python -m benchmarks.setup_repos                                   # clones requests, flask, httpx
+python -m benchmarks.run_symbol_accuracy --repos fixture requests flask httpx
+python -m benchmarks.run_call_precision                            # add --repos requests to limit
+```
+
+Both re-index each corpus before scoring. `run_call_precision` indexes `benchmarks/repos/*` and this
+repository's own `codeprism/` folder.
+
 ### CI (GitHub Actions)
 
 The token benchmark runs automatically on every push and PR via
@@ -406,15 +448,22 @@ agent turns net faster: the model processes 88% less data per turn at < 4ms cost
   across multiple files). Direct impact is captured; 2nd+ degree hops may be incomplete.
 - **src/-layout dependency classification:** In projects with `src/` layout (flask), some relative
   imports in sub-packages are partially classified. Re-indexing after a graph-fix resolves this.
-- **Caller recall gap (0.71–0.83):** The Level 3 benchmark shows CodePrism misses ~17–29% of
-  intra-file caller edges. Root cause analysis identified three patterns that static analysis
-  cannot resolve without type inference: (1) `super().__init__()` calls where the object is a
-  call expression rather than an identifier, (2) self-recursive calls (prevented by the
-  self-edge check), and (3) `self.inherited_method()` calls inside subclasses where the method
-  is defined in a parent/mixin class — the unqualified name lookup finds the mixin method
-  (correct), but the cross-class name collision (two classes with the same method name) means
-  the unqualified approach occasionally resolves to the wrong class's method. Both problems
-  require class hierarchy tracking to solve properly.
+- **Within-file caller accuracy (precision 0.67–0.85, recall 0.72–0.81):** Level 3 shows CodePrism
+  misses roughly 19–28% of within-file caller edges and includes some extra ones. The main causes are
+  calls that need type information: (1) `super().__init__()` calls where the object is a call
+  expression rather than an identifier, (2) self-recursive calls (prevented by the self-edge check),
+  and (3) `self.method()` calls where two classes in a file define a method with the same name, which
+  resolve by bare name to whichever class was parsed last. Solving these needs class-aware symbols
+  ([#34](https://github.com/knight22-21/CodePrism/issues/34)) and class hierarchy tracking.
+- **Import-aware call links are Python-only.** The cross-file precision of 1.000 applies to Python. In
+  JavaScript, TypeScript, Go, Rust, Java, C, C++, Ruby and PHP, calls are still linked by name, so a
+  common name can link to the wrong function ([#37](https://github.com/knight22-21/CodePrism/issues/37)).
+  The accuracy benchmarks cover Python only.
+- **Cross-file object calls are conservative.** `obj.method()` links only when exactly one candidate
+  exists in a file the caller imports; otherwise it is left unlinked rather than guessed. That is why
+  cross-file recall is 0.90–1.00 rather than 1.00.
+- **Accuracy and latency numbers are older than the code.** Level 1 accuracy (LLM-as-judge) and the
+  Level 2 latency figures are from v0.1.5–v0.1.7 and have not been re-run on v0.1.11.
 - **Judge variability:** Using `gpt-oss:120b` via Ollama cloud introduces run-to-run score
   variance of ±0.1–0.2 on individual tasks. Averages across 10 tasks are stable; single-task
   scores should be interpreted with caution.

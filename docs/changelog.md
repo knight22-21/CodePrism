@@ -5,7 +5,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [v0.1.11] — 2026-10-01
+## [v0.1.11] — 2026-09-30
 
 > **Upgrading:** existing indexes are rebuilt once automatically (index format 2).
 

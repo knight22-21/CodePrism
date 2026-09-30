@@ -50,6 +50,8 @@ For anything beyond a typo fix, **open an issue first**. This lets maintainers c
 
 For large changes (new parsers, MCP tools, architectural refactors) a brief design comment in the issue is strongly preferred before any code is written.
 
+**Looking for something to work on?** Browse the [open issues](https://github.com/knight22-21/CodePrism/issues). Several are bugs with a runnable reproduction and a suggested fix, for example the symbol-id collision in [#34](https://github.com/knight22-21/CodePrism/issues/34) or import-aware call resolution for other languages in [#37](https://github.com/knight22-21/CodePrism/issues/37). Comment on the issue first so two people don't do the same work.
+
 ---
 
 ## Development Setup
@@ -86,10 +88,14 @@ python -m pytest tests/ -q
 ### Run the linter and type checker
 
 ```bash
-ruff check codeprism/         # linting
-ruff format --check codeprism/  # formatting
-mypy codeprism/                 # type checking
+ruff check codeprism/ tests/            # linting (CI runs this)
+ruff format --check codeprism/ tests/   # formatting (CI runs this)
+mypy codeprism/                         # type checking (advisory, see below)
 ```
+
+CI runs `ruff` and the test suite. `mypy` is configured in strict mode but is **not** run in CI:
+the existing code still has outstanding errors, so it is not a merge requirement yet. Please
+don't add new errors to the files you touch.
 
 ---
 
@@ -97,9 +103,10 @@ mypy codeprism/                 # type checking
 
 ```
 codeprism/
-├── core/           # GraphEngine, StorageManager, Pydantic models, config
-├── parser/         # tree-sitter language parsers (one file per language)
-├── indexer/        # ProjectIndexer, IncrementalUpdater, file watcher
+├── core/           # GraphEngine, StorageManager, Pydantic models, config,
+│                   #   languages.py (language -> extensions), gitignore.py, paths.py
+├── parser/         # tree-sitter language parsers (one file per language) + registry
+├── indexer/        # ProjectIndexer, IncrementalUpdater, call_resolver, file watcher
 ├── query/          # QueryEngine, context/impact/summary builders
 ├── security/       # SecurityScanner, SecurityGate, all detectors, CVE checker
 │   ├── detectors/  # One file per detector category
@@ -111,6 +118,9 @@ codeprism/
 tests/
 ├── fixtures/       # Sample projects and security-issue files for integration tests
 └── test_*.py       # One test file per module
+
+benchmarks/         # Token-reduction, latency and accuracy benchmarks (see docs/benchmark-results.md)
+docs/               # architecture.md, changelog.md, benchmark-results.md
 ```
 
 The key invariant: **each layer only imports downward**. `mcp/` imports `query/` and `security/`; `query/` imports `core/`; nothing in `core/` imports from higher layers.
@@ -174,7 +184,7 @@ Keep the summary line under 72 characters. Do not end it with a period.
 - Formatting and linting are enforced by **ruff** (`line-length = 100`, `target-version = py312`)
 - Run `ruff format codeprism/` before committing — CI will reject unformatted code
 - All public functions and classes must have a one-line docstring at minimum
-- Type annotations are required on all function signatures (enforced by mypy in strict mode)
+- Type annotations are expected on all new function signatures (`mypy` runs in strict mode locally but is not yet enforced in CI)
 
 ### Comments
 
@@ -200,10 +210,25 @@ When adding a new regex pattern to a detector:
 When adding a new parser:
 
 1. Create `codeprism/parser/<language>_parser.py` extending `BaseParser`
-2. Add the file extension mapping to `codeprism/parser/registry.py`
-3. Add a fixture directory under `tests/fixtures/sample_<language>_project/`
-4. Write tests covering: function extraction, class extraction, import extraction, and edge (call/import) extraction
-5. Handle parse errors gracefully — a broken file must never crash the indexer
+2. Register the language and its extensions in `codeprism/core/languages.py` (the single source of
+   truth used by the indexer, the watcher and the config defaults), and map the extensions to the
+   parser in `codeprism/parser/registry.py`. `tests/test_languages.py` fails if a listed extension
+   has no parser
+3. Add the tree-sitter grammar package to the dependencies in `pyproject.toml`
+4. Add a fixture directory under `tests/fixtures/sample_<language>_project/`
+5. Write tests covering: function extraction, class extraction, import extraction, and edge (call/import) extraction
+6. Handle parse errors gracefully — a broken file must never crash the indexer
+7. Update the language tables in `README.md` and `INTEGRATIONS.md`, and add a line to `docs/changelog.md`
+
+Calls in a new language are linked **by name** until you add import-aware resolution: record the
+call style and receiver on `UnresolvedRef` and add rules for the language in
+`codeprism/indexer/call_resolver.py` (see [#37](https://github.com/knight22-21/CodePrism/issues/37) and how Python does it).
+
+### Changing what the index contains
+
+If a change alters parser output or how rows are written, bump `INDEX_FORMAT_VERSION` in
+`codeprism/core/storage.py`. Existing indexes are then rebuilt automatically on the next run
+instead of silently keeping stale rows.
 
 ---
 
@@ -222,6 +247,8 @@ python -m pytest tests/test_security_detectors.py -v
 python -m pytest tests/ --cov=codeprism --cov-report=term-missing
 ```
 
+The test suite runs on Python 3.12 and 3.13 in CI.
+
 ### Test conventions
 
 - All test files are prefixed `test_` and mirror the module they test
@@ -229,6 +256,9 @@ python -m pytest tests/ --cov=codeprism --cov-report=term-missing
 - Use `tmp_path` (pytest built-in) for any tests that touch the filesystem
 - Never use `unittest.mock` to mock the database — hit a real in-memory SQLite instance
 - Integration tests that index actual code use fixture projects in `tests/fixtures/`
+- The indexer asks `git` which files to index, so a test that needs non-git behaviour should set
+  `respect_gitignore=False` on the config, or set `GIT_CEILING_DIRECTORIES` so a repository above
+  `tmp_path` isn't picked up
 
 ### What to test
 
@@ -240,13 +270,28 @@ Every PR that changes behavior must include tests that:
 
 PRs that add code without tests will not be merged.
 
-### Coverage target
+### Coverage
 
-We aim for **≥ 85% line coverage** on `codeprism/`. Check before submitting:
+CI fails if coverage of `codeprism/` drops below **80%**. Check before submitting:
 
 ```bash
-python -m pytest tests/ --cov=codeprism --cov-fail-under=85
+python -m pytest tests/ --cov=codeprism --cov-fail-under=80
 ```
+
+New code should be covered by its own tests rather than relying on the existing margin.
+
+### Benchmarks
+
+If you change a parser or how references are resolved, measure the effect and put the before/after
+numbers in the PR description:
+
+```bash
+python -m benchmarks.setup_repos                 # one-time: clones requests, flask, httpx
+python -m benchmarks.run_symbol_accuracy         # symbol + within-file caller accuracy
+python -m benchmarks.run_call_precision          # cross-file call precision/recall (Python)
+```
+
+Methodology and current numbers are in `docs/benchmark-results.md`.
 
 ---
 
@@ -260,11 +305,10 @@ python -m pytest tests/ --cov=codeprism --cov-fail-under=85
 
 2. **Run the full check suite locally:**
    ```bash
-   ruff check codeprism/ && ruff format --check codeprism/
-   mypy codeprism/
+   ruff check codeprism/ tests/ && ruff format --check codeprism/ tests/
    python -m pytest tests/ -q
    ```
-   All checks must pass before you open the PR.
+   All checks must pass before you open the PR (this is what CI runs).
 
 3. **Open the PR against `main`** with:
    - A clear title following the commit message convention
@@ -277,10 +321,10 @@ python -m pytest tests/ --cov=codeprism --cov-fail-under=85
    ```markdown
    - [ ] Tests added or updated for all changed behavior
    - [ ] `ruff check` and `ruff format --check` pass
-   - [ ] `mypy codeprism/` passes
+   - [ ] No new `mypy` errors in the files you changed (not yet enforced in CI)
    - [ ] All existing tests pass
    - [ ] Docstrings added/updated for public functions
-   - [ ] CHANGELOG updated (for user-facing changes)
+   - [ ] `docs/changelog.md` updated (for user-facing changes)
    ```
 
 5. **Keep PRs focused.** One logical change per PR. If you're fixing a bug and noticed an unrelated issue, open a separate PR for the second fix.
@@ -309,7 +353,7 @@ python -m pytest tests/ --cov=codeprism --cov-fail-under=85
 
 Use the GitHub issue tracker. A good bug report includes:
 
-1. **CodePrism version** (`pip show codeprism`)
+1. **CodePrism version** (`pip show codeprism-ai`)
 2. **Python version** (`python --version`)
 3. **Operating system**
 4. **Minimal reproduction** — the smallest piece of code or project that triggers the bug
@@ -358,11 +402,13 @@ You will receive a response within 72 hours. We will coordinate a fix and disclo
 
 Releases are managed by maintainers. The process is:
 
-1. Bump version in `pyproject.toml`
-2. Update `CHANGELOG.md` with all user-facing changes since the last release
-3. Tag the commit: `git tag vX.Y.Z`
-4. Push the tag — CI publishes to PyPI automatically
-5. Create a GitHub Release with the changelog entries as the body
+1. Bump the version in `pyproject.toml`
+2. Add an entry to `docs/changelog.md` with all user-facing changes since the last release (note an
+   index-format change if `INDEX_FORMAT_VERSION` was bumped)
+3. Merge to `main` and wait for CI to pass
+4. Tag the commit and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
+5. Create a GitHub Release from the tag with the changelog entry as the body. **Publishing the
+   release** is what triggers the `Publish to PyPI` workflow; pushing a tag alone does not
 
 Version numbers follow [Semantic Versioning](https://semver.org/):
 - **PATCH** (`0.1.x`) — bug fixes, no API changes
