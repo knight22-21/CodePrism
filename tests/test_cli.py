@@ -153,7 +153,7 @@ def test_callers_found(project):
 
 
 def test_setup_claude_creates_settings(tmp_path):
-    """setup claude writes .claude/settings.json in CWD."""
+    """setup claude writes the project-scoped .mcp.json Claude Code reads."""
     import json
     import os
 
@@ -162,7 +162,7 @@ def test_setup_claude_creates_settings(tmp_path):
     try:
         result = runner.invoke(app, ["setup", "claude", "--project", str(tmp_path)])
         assert result.exit_code == 0, result.output
-        cfg_file = tmp_path / ".claude" / "settings.json"
+        cfg_file = tmp_path / ".mcp.json"
         assert cfg_file.exists()
         data = json.loads(cfg_file.read_text())
         assert "codeprism" in data["mcpServers"]
@@ -172,7 +172,7 @@ def test_setup_claude_creates_settings(tmp_path):
 
 
 def test_setup_claude_merges_existing_servers(tmp_path):
-    """setup claude merges into an existing settings.json without overwriting."""
+    """setup claude leaves other servers in settings.json alone and writes .mcp.json."""
     import json
     import os
 
@@ -187,8 +187,9 @@ def test_setup_claude_merges_existing_servers(tmp_path):
         runner.invoke(app, ["setup", "claude", "--project", str(tmp_path)])
 
         data = json.loads((dot_claude / "settings.json").read_text())
-        assert "other-tool" in data["mcpServers"]
-        assert "codeprism" in data["mcpServers"]
+        assert data["mcpServers"] == {"other-tool": {"command": "other"}}
+        mcp = json.loads((tmp_path / ".mcp.json").read_text())
+        assert "codeprism" in mcp["mcpServers"]
     finally:
         os.chdir(orig)
 
