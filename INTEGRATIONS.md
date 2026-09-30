@@ -2,7 +2,7 @@
 
 How to connect CodePrism to AI coding agents, editors, and automated pipelines.
 
-CodePrism speaks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) — the open standard adopted by every major AI editor. If your tool supports MCP, CodePrism works with it. The server runs locally via **stdio** (default) or over a network via **SSE**.
+CodePrism speaks [Model Context Protocol (MCP)](https://modelcontextprotocol.io) — the open standard adopted by every major AI editor. If your tool supports MCP, CodePrism works with it. The server runs locally via **stdio** (default) or via **SSE**, which listens on `127.0.0.1` only.
 
 ---
 
@@ -11,13 +11,13 @@ CodePrism speaks [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
 1. [Claude Code](#claude-code)
 2. [Codex (OpenAI)](#codex-openai)
 3. [Cursor](#cursor)
-4. [Windsurf (Codeium)](#windsurf-codeium)
+4. [Windsurf](#windsurf)
 5. [Continue.dev](#continuedev)
 6. [Zed](#zed)
 7. [VS Code with GitHub Copilot](#vs-code-with-github-copilot)
 8. [Cody (Sourcegraph)](#cody-sourcegraph)
 9. [Aider](#aider)
-10. [Remote / SSE (any network agent)](#remote--sse-any-network-agent)
+10. [Remote / SSE](#remote--sse)
 11. [Python library (embed directly)](#python-library-embed-directly)
 12. [OpenAI Agents SDK](#openai-agents-sdk)
 13. [CI/CD (GitHub Actions)](#cicd-github-actions)
@@ -41,17 +41,20 @@ rest of your file is left alone.
 
 ## Claude Code
 
-The fastest path — one command wires everything up.
+The fastest path: one command wires everything up, and the server indexes each project itself.
 
 ```bash
-# Index your project first
-codeprism index /path/to/project
+# Every project on this machine (user scope, ~/.claude.json)
+codeprism setup claude --global
 
-# Auto-configure Claude Code
+# Or just one project (.mcp.json in the project)
 codeprism setup claude --project /path/to/project
 ```
 
-`codeprism setup claude` writes, inside the `--project` directory:
+You don't need to run `codeprism index`: when the server starts it builds the index in the
+background (first time) or refreshes it (later), and `get_graph_stats` reports `index_status`.
+
+`codeprism setup claude` (without `--global`) writes, inside the `--project` directory:
 
 - **`.mcp.json`**: the project-scoped MCP server entry. Commit it so teammates get CodePrism too.
 - **`.claude/settings.local.json`**: pre-approves the `codeprism` server for you (`enabledMcpjsonServers`), so Claude Code doesn't prompt. This file is personal; don't commit it.
@@ -82,7 +85,7 @@ Restart Claude Code after any config change, then run `/mcp` to check that `code
 **User scope, all projects** (written to `~/.claude.json`):
 
 ```bash
-codeprism setup claude --project /path/to/project --global
+codeprism setup claude --global
 ```
 
 The user-scope entry is a path-less `codeprism serve`. Claude Code starts MCP servers in the
@@ -94,7 +97,8 @@ refreshes it incrementally on later sessions. `get_graph_stats` reports `index_s
 indexed. Pass `--no-auto-index` to `serve` to turn background indexing off, or set
 `auto_index = false` in `.codeprism.toml`.
 
-`--project` still matters with `--global`: it's where `AGENTS.md` / `CLAUDE.md` are written.
+`--global` only changes where the server entry goes (`~/.claude.json`). `AGENTS.md` and `CLAUDE.md` are still
+written into the `--project` directory (default: the current one).
 
 **What Claude can now do** — without reading any files:
 
@@ -110,8 +114,8 @@ search_symbol("handle payment", kind="function")
 ## Codex (OpenAI)
 
 ```bash
-codeprism index /path/to/project
-codeprism setup codex --project /path/to/project
+codeprism setup codex --global                  # every project
+codeprism setup codex --project /path/to/project   # one project
 ```
 
 `codeprism setup codex` writes:
@@ -144,10 +148,12 @@ The same config is shared by the Codex CLI, IDE extension and desktop app.
 ## Cursor
 
 ```bash
-codeprism index /path/to/project
 codeprism setup cursor --project /path/to/project
 # Restart Cursor
 ```
+
+Cursor entries are tied to one project path, so run setup for each project. The server indexes
+the project itself when it starts.
 
 Setup writes `.cursor/mcp.json` and the shared `AGENTS.md` guide, which Cursor reads natively.
 
@@ -172,11 +178,16 @@ After restarting Cursor, go to **Settings → MCP** to verify the server is list
 
 ---
 
-## Windsurf (Codeium)
+## Windsurf
 
-Windsurf uses MCP via a global config file.
+Windsurf reads MCP servers from a user-level `mcp_config.json`. Per the
+[current Windsurf docs](https://docs.devin.ai/desktop/cascade/mcp) the file is:
 
-**Manual config** — create or edit `~/.codeium/windsurf/mcp_config.json`:
+- **macOS / Linux:** `~/.config/devin/mcp_config.json` (or `$XDG_CONFIG_HOME/devin/mcp_config.json`)
+- **Windows:** `%APPDATA%\devin\mcp_config.json`
+
+Older Windsurf releases used `~/.codeium/windsurf/mcp_config.json`. Check which one your version
+reads (Cascade → MCP settings opens it).
 
 ```json
 {
@@ -190,96 +201,69 @@ Windsurf uses MCP via a global config file.
 }
 ```
 
-Restart Windsurf. The server appears under **Cascade → MCP Tools**.
+Restart Windsurf. The server appears in Cascade's MCP tools. The Windsurf docs don't describe a
+project-level config file, so use one entry per project in the user-level file.
 
-**Per-project config** — Windsurf also respects `.windsurf/mcp.json` in the project root:
-
-```json
-{
-  "mcpServers": {
-    "codeprism": {
-      "command": "codeprism",
-      "args": ["serve", "${workspaceFolder}"]
-    }
-  }
-}
-```
-
-Windsurf Cascade (their agent mode) will automatically use `get_context` and `scan_diff` when editing files in the project.
+> `codeprism setup windsurf` writes `.windsurf/mcp_config.json` (or `~/.codeium/windsurf/mcp_config.json`
+> with `--global`). Those locations are not the ones the current docs list, so prefer the manual
+> configuration above and confirm with `Cascade → MCP`.
 
 ---
 
 ## Continue.dev
 
-Continue.dev is an open-source AI coding assistant for VS Code and JetBrains.
+Continue.dev is an open-source AI coding assistant for VS Code and JetBrains. Its
+[current docs](https://docs.continue.dev/customize/deep-dives/mcp) configure MCP servers with one
+YAML file per server in your workspace. Create `.continue/mcpServers/codeprism.yaml`:
 
-Edit `~/.continue/config.json`:
-
-```json
-{
-  "mcpServers": {
-    "codeprism": {
-      "command": "codeprism",
-      "args": ["serve", "/absolute/path/to/project"]
-    }
-  }
-}
+```yaml
+name: CodePrism
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: codeprism
+    type: stdio
+    command: codeprism
+    args:
+      - serve
+      - /absolute/path/to/project
 ```
 
-For multiple projects, add a server entry per project with a unique key:
+Continue picks the file up automatically. For several projects, put a file in each workspace.
 
-```json
-{
-  "mcpServers": {
-    "codeprism-backend": {
-      "command": "codeprism",
-      "args": ["serve", "/projects/backend"]
-    },
-    "codeprism-frontend": {
-      "command": "codeprism",
-      "args": ["serve", "/projects/frontend"]
-    }
-  }
-}
-```
+The older `~/.continue/config.json` (`"mcpServers": { ... }`) is marked deprecated by Continue. It
+may still work on old versions, but use the YAML form on current ones.
 
-Reload the Continue extension. In the chat panel, Continue will list the CodePrism tools under **@codeprism**.
+> `codeprism setup continue` writes to `~/.continue/config.json` (the deprecated form) plus a
+> `.continue/rules/codeprism.md` rule. Use the manual YAML configuration above on current
+> versions.
 
 ---
 
 ## Zed
 
-Zed has native MCP support. Edit `~/.config/zed/settings.json`:
+Zed has native MCP support. Per the [Zed docs](https://zed.dev/docs/ai/mcp), add the server under
+`context_servers` in your settings file (`zed: open settings file`, typically
+`~/.config/zed/settings.json`), or use **Settings → AI → MCP Servers**:
 
 ```json
 {
   "context_servers": {
     "codeprism": {
-      "command": {
-        "path": "codeprism",
-        "args": ["serve", "/absolute/path/to/project"]
-      }
+      "command": "codeprism",
+      "args": ["serve", "/absolute/path/to/project"],
+      "env": {}
     }
   }
 }
 ```
 
-Alternatively, use a project-level `.zed/settings.json`:
+Reload the window. The Zed docs don't describe a project-level MCP configuration, so use one entry
+per project in the user-level settings.
 
-```json
-{
-  "context_servers": {
-    "codeprism": {
-      "command": {
-        "path": "codeprism",
-        "args": ["serve", "$ZED_WORKTREE_ROOT"]
-      }
-    }
-  }
-}
-```
-
-Reload the project. The CodePrism tools appear under **Assistant → Context Servers** in Zed's panel.
+> `codeprism setup zed` writes `context_servers.codeprism.command` as an object
+> (`{"path": ..., "args": [...]}`), which is not the shape the current docs show. Prefer the manual
+> configuration above.
 
 ---
 
@@ -352,10 +336,10 @@ Aider and CodePrism are complementary, not competing:
 Aider does not build a knowledge graph; it reads files on demand, which costs tokens for every context fetch. CodePrism builds the graph once at index time; every subsequent query is a sub-100-token lookup. Together they eliminate the "cold-start" token burn that happens when Aider first encounters an unfamiliar symbol.
 
 **Typical workflow:**
-1. Run `codeprism index` once (or on CI push)
+1. Run `codeprism index /path/to/project` once (or on CI push)
 2. Query the graph before starting an Aider session — get callers, impact severity, and the symbol signature in ~200 tokens
 3. Hand the compact summary to Aider so it starts informed
-4. After Aider writes a file, run `codeprism scan_file` (or `scan_diff`) to security-gate the output before committing
+4. After Aider writes files, run `codeprism scan` to security-gate the output before committing
 
 ---
 
@@ -406,10 +390,11 @@ Connect any MCP client to `http://localhost:8765/sse` and call tools:
 ```python
 # In your orchestration layer (e.g. a LangGraph wrapper around Aider)
 impact = mcp_client.call("get_impact", {"file": "payments/processor.py", "symbol": "charge_card"})
-# → {"severity": "HIGH", "direct_dependents": [...], "all_dependents_count": 14}
+# → {"symbol": {...}, "severity": "HIGH", "direct_dependents": [...],
+#    "transitive_dependents": [...], "affected_test_files": [...], ...}
 
 scan = mcp_client.call("scan_diff", {"original": old_code, "proposed": new_code, "file": "payments/processor.py"})
-# → {"status": "PASS", "new_issues": []}
+# → {"status": "PASS", "file": "payments/processor.py", "issues": []}
 ```
 
 **When to use Option B:** Long-running sessions, multi-agent pipelines, or when your orchestrator already speaks MCP.
@@ -418,41 +403,46 @@ scan = mcp_client.call("scan_diff", {"original": old_code, "proposed": new_code,
 
 ### Option C — Post-write security gate (recommended for any setup)
 
-After Aider writes files, gate the output through CodePrism before committing:
+After Aider writes files, gate the output through CodePrism before committing. `codeprism scan`
+exits with code `2` when it finds a BLOCK-severity issue:
 
 ```bash
 #!/usr/bin/env bash
-# post-edit-gate.sh — run after aider session
-set -euo pipefail
-
+# post-edit-gate.sh — run after an aider session, from the project root
 for file in $(git diff --name-only); do
-    result=$(codeprism scan-file "$file" 2>&1)
-    status=$(echo "$result" | python -c "import sys,json; d=json.load(sys.stdin); print(d['status'])")
-    if [ "$status" = "BLOCK" ]; then
+    codeprism scan "$file"
+    if [ $? -eq 2 ]; then
         echo "BLOCKED: $file has critical security issues — aborting commit"
-        echo "$result"
         exit 1
     fi
 done
 echo "Security gate: PASS"
 ```
 
-Or inline via Python:
+Or scan the whole change at once:
+
+```bash
+codeprism scan . --diff HEAD || { echo "BLOCKED"; exit 1; }
+```
+
+Or inline via Python. Aider has already written the files, so use `check_content` (a full scan of
+the content); `check_write` compares against the file on disk and would report nothing new:
 
 ```python
-import asyncio, subprocess, json
-from codeprism import CodePrism
+import asyncio, subprocess
+from pathlib import Path
+from codeprism import SecurityGate
 
-async def gate(project: str):
-    changed = subprocess.check_output(["git", "diff", "--name-only"]).decode().splitlines()
-    async with CodePrism(project) as prism:
-        for f in changed:
-            report = await prism.scan_file(f)
-            if report["status"] == "BLOCK":
-                raise SystemExit(f"BLOCKED: {f} — {[i['description'] for i in report['issues']]}")
+async def gate() -> None:
+    changed = subprocess.check_output(["git", "diff", "--name-only", "HEAD"]).decode().splitlines()
+    security = SecurityGate()
+    for f in changed:
+        report = await security.check_content(Path(f).read_text(encoding="utf-8"), f)
+        if report.is_blocked:
+            raise SystemExit(f"BLOCKED: {f} — {[i.description for i in report.issues]}")
     print(f"Security gate: PASS ({len(changed)} files checked)")
 
-asyncio.run(gate("/path/to/project"))
+asyncio.run(gate())
 ```
 
 ---
@@ -470,48 +460,39 @@ asyncio.run(gate("/path/to/project"))
 
 ---
 
-## Remote / SSE (any network agent)
+## Remote / SSE
 
-Switch to SSE transport to serve the graph over a network — useful for:
-- Multi-machine setups (agent on one box, codebase on another)
-- Docker containers
-- Cloud VMs with no local filesystem access
-- Any MCP client that uses HTTP
+SSE transport serves the graph over HTTP, for MCP clients that speak it.
 
 ```bash
-# Start the server
 codeprism serve /path/to/project --transport sse --port 8765
 ```
 
-Connect any MCP client to `http://localhost:8765/sse`.
+Connect an MCP client to `http://127.0.0.1:8765/sse`.
 
-**With authentication (reverse proxy):**
+> **The SSE server listens on `127.0.0.1` only** (there is no `--host` option) and has no built-in
+> authentication, so it is reachable only from the machine it runs on.
 
-Put Nginx or Caddy in front for TLS + bearer token:
+To use it from another machine, keep it on loopback and expose it yourself:
+
+**SSH tunnel** (simplest; authentication and encryption come from SSH):
+
+```bash
+ssh -L 8765:127.0.0.1:8765 user@server      # then connect to http://127.0.0.1:8765/sse locally
+```
+
+**Reverse proxy on the same host** (Nginx or Caddy) for TLS and token authentication:
 
 ```nginx
 location /sse {
     proxy_pass http://127.0.0.1:8765/sse;
-    proxy_set_header Authorization "";  # strip; validate upstream
-    auth_request /auth;
+    auth_request /auth;            # validate the bearer token upstream
+    proxy_buffering off;           # SSE streams must not be buffered
 }
 ```
 
-**Docker Compose:**
-
-```yaml
-services:
-  codeprism:
-    image: python:3.12-slim
-    command: >
-      sh -c "pip install codeprism-ai &&
-             codeprism index /workspace &&
-             codeprism serve /workspace --transport sse --port 8765"
-    volumes:
-      - ./:/workspace
-    ports:
-      - "8765:8765"
-```
+Inside a container the same applies: a published Docker port cannot reach a server that is bound
+to the container's loopback, so run the reverse proxy in the same container or network namespace.
 
 ---
 
@@ -535,7 +516,9 @@ async with CodePrism("/path/to/project") as prism:
     if impact.severity in ("HIGH", "CRITICAL"):
         print(f"Warning: {len(impact.transitive_dependents)} downstream callers")
 
-    # Security gate before writing
+    # Security gate before writing. check_write compares the proposed content with the file
+    # currently on disk and reports only issues the change introduces; use
+    # gate.check_content(text, file) for a full scan of content that is already written.
     gate = SecurityGate()
     report = await gate.check_write("auth/login.py", new_content)
     if report.is_blocked:
@@ -567,29 +550,34 @@ await db.close()
 
 ## OpenAI Agents SDK
 
-Use CodePrism as a tool set in OpenAI's Agents SDK (or any framework that supports MCP tool adapters).
+Use CodePrism as a tool set in OpenAI's [Agents SDK](https://openai.github.io/openai-agents-python/mcp/)
+(or any framework that supports MCP tool adapters).
 
 ```python
-from agents import Agent, MCPServerStdio
+import asyncio
+from agents import Agent, Runner
+from agents.mcp import MCPServerStdio
 
 async def main():
     async with MCPServerStdio(
+        name="CodePrism",
         params={
             "command": "codeprism",
             "args": ["serve", "/path/to/project"],
-        }
+        },
     ) as mcp_server:
         agent = Agent(
             name="CodeAgent",
-            model="gpt-4o",
-            mcp_servers=[mcp_server],
             instructions=(
                 "You are a coding agent. Use get_context to understand code before editing. "
                 "Always call scan_diff before writing a file."
             ),
+            mcp_servers=[mcp_server],
         )
-        result = await agent.run("Refactor the charge_card function to handle retries.")
+        result = await Runner.run(agent, "Refactor the charge_card function to handle retries.")
         print(result.final_output)
+
+asyncio.run(main())
 ```
 
 ---
@@ -622,9 +610,6 @@ jobs:
       - name: Install CodePrism
         run: pip install codeprism-ai
 
-      - name: Index project
-        run: codeprism index .
-
       - name: Scan changed files
         run: |
           codeprism scan . --diff origin/${{ github.base_ref }}..HEAD
@@ -632,19 +617,9 @@ jobs:
         # Exit code 0 = PASS → PR continues
 ```
 
-**Cache the index for faster runs:**
-
-```yaml
-      - name: Cache CodePrism index
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/share/codeprism
-          key: codeprism-${{ hashFiles('**/*.py', '**/*.ts', '**/*.go') }}
-          restore-keys: codeprism-
-
-      - name: Index project (incremental if cached)
-        run: codeprism index .
-```
+`--diff` scans the changed content directly and needs no index. `codeprism scan --all` does:
+run `codeprism index .` first, and cache the index directory between runs if that is slow (on
+Linux it is `~/.local/share/codeprism`).
 
 ---
 
@@ -664,7 +639,7 @@ repos:
         name: CodePrism Security Scan
         language: system
         entry: codeprism scan
-        args: ["--diff", "HEAD"]
+        args: [".", "--diff", "HEAD"]
         pass_filenames: false
         stages: [pre-commit]
 ```
@@ -679,8 +654,7 @@ pre-commit install
 
 ```bash
 #!/usr/bin/env bash
-set -e
-codeprism scan . --diff HEAD 2>&1
+codeprism scan . --diff HEAD
 STATUS=$?
 if [ $STATUS -eq 2 ]; then
     echo "CodePrism: BLOCK-severity security issue found. Commit rejected."
@@ -688,6 +662,9 @@ if [ $STATUS -eq 2 ]; then
 fi
 exit 0
 ```
+
+`--diff HEAD` compares the working tree with `HEAD`, so staged and unstaged changes are both
+scanned.
 
 ```bash
 chmod +x .git/hooks/pre-commit
@@ -723,9 +700,9 @@ Unknown extensions fall back to a line-count generic parser.
 | Claude Code | stdio | `.mcp.json` (project) / `~/.claude.json` (user) | `codeprism setup claude` |
 | Codex | stdio | `.codex/config.toml` (project) / `~/.codex/config.toml` (user) | `codeprism setup codex` |
 | Cursor | stdio | `.cursor/mcp.json` | `codeprism setup cursor` |
-| Windsurf | stdio | `~/.codeium/windsurf/mcp_config.json` | manual |
-| Continue.dev | stdio | `~/.continue/config.json` | manual |
-| Zed | stdio | `~/.config/zed/settings.json` | manual |
+| Windsurf | stdio | `%APPDATA%\devin\mcp_config.json` / `~/.config/devin/mcp_config.json` | manual |
+| Continue.dev | stdio | `.continue/mcpServers/*.yaml` | manual |
+| Zed | stdio | `~/.config/zed/settings.json` (`context_servers`) | manual |
 | VS Code + Copilot | stdio | `settings.json` / `.vscode/mcp.json` | manual |
 | Cody | stdio | VS Code `settings.json` | manual |
 | Any HTTP agent | SSE | `http://host:8765/sse` | `codeprism serve --transport sse` |
