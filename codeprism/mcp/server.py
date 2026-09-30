@@ -70,6 +70,46 @@ def init_session_manager(manager: SessionManager) -> None:
     _session_manager = manager
 
 
+def _abs(path: str) -> str:
+    """Resolve a tool's file argument against the served project root.
+
+    Agents pass project-relative paths; the server's own working directory can
+    be a subfolder, so never resolve against the cwd.
+    """
+    if not path:
+        return path
+    p = Path(path)
+    return str((p if p.is_absolute() else Path(_project_path) / p).resolve())
+
+
+async def _file_error(file: str) -> dict[str, Any] | None:
+    if await _get().get_file(_abs(file)) is None:
+        return {
+            "error": f"File '{file}' not indexed",
+            "project_path": str(Path(_project_path).resolve()),
+        }
+    return None
+
+
+async def _symbol_refs(symbols) -> list[dict[str, Any]]:
+    storage = _get()._storage
+    paths: dict[str, str] = {}
+    out = []
+    for s in symbols:
+        if s.file_id not in paths:
+            f = await storage.get_file_by_id(s.file_id)
+            paths[s.file_id] = f.path if f else ""
+        out.append(
+            {
+                "name": s.name,
+                "file": paths[s.file_id],
+                "file_id": s.file_id,
+                "line_start": s.line_start,
+            }
+        )
+    return out
+
+
 def _get() -> QueryEngine:
     if _engine is None:
         raise RuntimeError(
@@ -222,7 +262,7 @@ async def update_file(path: str) -> dict[str, Any]:
 
     engine = _get()
     updater = IncrementalUpdater(engine._graph, engine._storage)
-    result = await updater.update_file(path)
+    result = await updater.update_file(_abs(path))
     return {
         "nodes_added": result.nodes_added,
         "nodes_removed": result.nodes_removed,
@@ -237,7 +277,7 @@ async def get_graph_stats(path: str | None = None) -> dict[str, Any]:
 
     path: optional project path filter — scopes stats to files under that directory.
     """
-    stats = await _get().get_stats(path_prefix=path)
+    stats = await _get().get_stats(path_prefix=_abs(path) if path else None)
     if path:
         stats["filter_path"] = path
     stats["project_path"] = str(Path(_project_path).resolve())
@@ -258,7 +298,7 @@ async def get_context(file: str, symbol: str, depth: int = 2) -> dict[str, Any]:
     depth=2: + their neighbours (recommended)
     depth=3: full transitive neighbourhood
     """
-    result = await _get().get_context(file, symbol, depth)
+    result = await _get().get_context(_abs(file), symbol, depth)
     if result is None:
         return {"error": f"Symbol '{symbol}' not found in {file}"}
     return context_to_dict(result)
@@ -267,7 +307,7 @@ async def get_context(file: str, symbol: str, depth: int = 2) -> dict[str, Any]:
 @mcp.tool()
 async def get_module_summary(file: str) -> dict[str, Any]:
     """Return a high-level narrative summary of a source file."""
-    result = await _get().get_module_summary(file)
+    result = await _get().get_module_summary(_abs(file))
     if result is None:
         return {"error": f"File '{file}' not indexed"}
     return summary_to_dict(result)
@@ -286,7 +326,7 @@ async def get_file_map(project_path: str = "") -> dict[str, Any]:
 @mcp.tool()
 async def get_impact(file: str, symbol: str) -> dict[str, Any]:
     """Transitive impact analysis: what breaks if this symbol changes?"""
-    result = await _get().get_impact(file, symbol)
+    result = await _get().get_impact(_abs(file), symbol)
     if result is None:
         return {"error": f"Symbol '{symbol}' not found in {file}"}
     return impact_to_dict(result)
@@ -294,28 +334,38 @@ async def get_impact(file: str, symbol: str) -> dict[str, Any]:
 
 @mcp.tool()
 async def get_callers(file: str, function: str) -> dict[str, Any]:
-    """All functions that call this function, with call-site metadata."""
-    callers = await _get().get_callers(file, function)
+    """All functions that call this function, with call-site metadata.
+
+    file: path relative to the project root, or absolute.
+    """
+    if err := await _file_error(file):
+        return err
+    if await _get().find_symbol(_abs(file), function) is None:
+        return {"error": f"Symbol '{function}' not found in '{file}'"}
+    callers = await _get().get_callers(_abs(file), function)
     return {
         "function": function,
         "file": file,
-        "callers": [
-            {"name": s.name, "file_id": s.file_id, "line_start": s.line_start} for s in callers
-        ],
+        "callers": await _symbol_refs(callers),
         "count": len(callers),
     }
 
 
 @mcp.tool()
 async def get_callees(file: str, function: str) -> dict[str, Any]:
-    """All functions called by this function."""
-    callees = await _get().get_callees(file, function)
+    """All functions called by this function.
+
+    file: path relative to the project root, or absolute.
+    """
+    if err := await _file_error(file):
+        return err
+    if await _get().find_symbol(_abs(file), function) is None:
+        return {"error": f"Symbol '{function}' not found in '{file}'"}
+    callees = await _get().get_callees(_abs(file), function)
     return {
         "function": function,
         "file": file,
-        "callees": [
-            {"name": s.name, "file_id": s.file_id, "line_start": s.line_start} for s in callees
-        ],
+        "callees": await _symbol_refs(callees),
         "count": len(callees),
     }
 
@@ -323,7 +373,7 @@ async def get_callees(file: str, function: str) -> dict[str, Any]:
 @mcp.tool()
 async def get_data_flow(file: str, symbol: str) -> dict[str, Any]:
     """Trace where data from this symbol flows (sources, sinks, paths)."""
-    result = await _get().get_data_flow(file, symbol)
+    result = await _get().get_data_flow(_abs(file), symbol)
     if result is None:
         return {"error": f"Symbol '{symbol}' not found in {file}"}
     return data_flow_to_dict(result)
@@ -345,14 +395,15 @@ async def search_symbol(
     """
     matches = await _get().search_symbols(query, kind)
     if project_path:
-        matches = [m for m in matches if m.file_path.startswith(project_path)]
+        prefix = _abs(project_path)
+        matches = [m for m in matches if m.file_path.startswith(prefix)]
     return search_matches_to_dict(matches)
 
 
 @mcp.tool()
 async def get_dependencies(file: str) -> dict[str, Any]:
     """All modules/packages this file depends on (internal vs external)."""
-    result = await _get().get_dependencies(file)
+    result = await _get().get_dependencies(_abs(file))
     if result is None:
         return {"error": f"File '{file}' not indexed"}
     return deps_to_dict(result)
@@ -361,7 +412,7 @@ async def get_dependencies(file: str) -> dict[str, Any]:
 @mcp.tool()
 async def get_dependents(file: str) -> dict[str, Any]:
     """All files that transitively depend on this file."""
-    result = await _get().get_dependents(file)
+    result = await _get().get_dependents(_abs(file))
     if result is None:
         return {"error": f"File '{file}' not indexed"}
     return dependents_to_dict(result)
@@ -387,7 +438,7 @@ async def scan_file(file: str, content: str | None = None) -> dict[str, Any]:
         try:
             from pathlib import Path
 
-            resolved = Path(file).resolve()
+            resolved = Path(_abs(file))
             project_resolved = Path(_project_path).resolve()
             if not str(resolved).startswith(str(project_resolved)):
                 return {
@@ -482,7 +533,7 @@ async def record_read(session_id: str, file: str, symbol: str) -> dict[str, Any]
     Allows get_session_context to return what has already been fetched,
     preventing redundant re-reads across long agent chains.
     """
-    await _get_session().record_read(session_id, file, symbol)
+    await _get_session().record_read(session_id, _abs(file), symbol)
     return {"recorded": True, "session_id": session_id, "file": file, "symbol": symbol}
 
 
@@ -498,7 +549,7 @@ async def record_write(
     Returns status (PASS/WARN/BLOCK) + graph_update. A BLOCK means the write
     introduced a critical security issue — surface this to the user.
     """
-    return await _get_session().record_write(session_id, file, content_before, content_after)
+    return await _get_session().record_write(session_id, _abs(file), content_before, content_after)
 
 
 @mcp.tool()

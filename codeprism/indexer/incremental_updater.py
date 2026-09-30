@@ -35,7 +35,10 @@ class IncrementalUpdater:
         self._registry = registry or ParserRegistry()
 
     async def update_file(self, file_path: str) -> UpdateResult:
-        path = Path(file_path)
+        # Stored paths are absolute; normalize so a relative path updates the
+        # same record instead of creating a duplicate.
+        path = Path(file_path).resolve()
+        file_path = str(path)
 
         # File deleted — remove all its data
         if not path.exists():
