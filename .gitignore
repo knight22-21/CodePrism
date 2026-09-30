@@ -231,3 +231,6 @@ benchmarks/repos/
 launch-assets/
 # Agent instructions written by `codeprism setup` (local only, like CLAUDE.md)
 AGENTS.md
+
+# Private business planning (local only)
+project-infra/
