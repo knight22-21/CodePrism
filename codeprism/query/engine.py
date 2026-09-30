@@ -152,7 +152,8 @@ class QueryEngine:
         vector = await _asyncio.to_thread(self._embedder.encode_one, query)
         results = self._embed_store.search(vector, top_k=20)
         if kind:
-            results = [r for r in results if r.metadata.get("kind") == kind]
+            kind_lower = kind.lower()
+            results = [r for r in results if r.metadata.get("kind", "").lower() == kind_lower]
         matches: list[SearchMatch] = []
         for r in results:
             sym = await self._storage.get_symbol_by_id(r.symbol_id)
