@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
@@ -24,14 +25,37 @@ from .tools import (
 # ── Module-level state ────────────────────────────────────────────────────────
 
 _project_path: str = "."
+_auto_index: bool = False
 _engine: QueryEngine | None = None
 _session_manager: SessionManager | None = None
+# Background startup indexing: "off" | "indexing" | "ready" | "error: ..."
+_index_status: str = "off"
 
 
-def configure(project_path: str) -> None:
-    """Call before mcp.run() to point the server at a project directory."""
-    global _project_path
+def configure(project_path: str, auto_index: bool = False) -> None:
+    """Call before mcp.run() to point the server at a project directory.
+
+    auto_index: build (first run) or incrementally refresh the index in the
+    background once the server is up, so a project never has to be indexed by
+    hand and stays in sync between sessions.
+    """
+    global _project_path, _auto_index
     _project_path = project_path
+    _auto_index = auto_index
+
+
+async def _background_index(graph, storage, cfg) -> None:
+    global _index_status
+    from ..indexer.project_indexer import ProjectIndexer
+
+    _index_status = "indexing"
+    try:
+        # parse_workers=0: one parser process per core (the serve entry point is guarded)
+        indexer = ProjectIndexer(graph, storage, cfg.model_copy(update={"parse_workers": 0}))
+        await indexer.index(_project_path)
+        _index_status = "ready"
+    except Exception as exc:  # never take the server down over indexing
+        _index_status = f"error: {exc}"
 
 
 def init_engine(engine: QueryEngine) -> None:
@@ -68,7 +92,10 @@ def _get_session() -> SessionManager:
 
 @asynccontextmanager
 async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
-    global _engine, _session_manager
+    global _engine, _session_manager, _index_status
+    import asyncio
+    import contextlib
+
     from ..core.graph import GraphEngine
     from ..core.paths import get_db_path
     from ..core.storage import StorageManager
@@ -83,12 +110,18 @@ async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
     updater = IncrementalUpdater(graph, storage)
     _session_manager = SessionManager(storage, updater, project_root=_project_path)
 
+    from ..core.config import CodePrismConfig
+    from ..core.paths import get_project_config_path
+
+    try:
+        cfg = CodePrismConfig.load(get_project_config_path(_project_path))
+    except Exception:
+        cfg = CodePrismConfig()
+
     # Wire semantic search if embeddings index exists and is configured
     try:
-        from ..core.config import CodePrismConfig
-        from ..core.paths import get_chroma_path, get_project_config_path
+        from ..core.paths import get_chroma_path
 
-        cfg = CodePrismConfig.load(get_project_config_path(_project_path))
         if cfg.enable_embeddings:
             from ..embeddings.embedder import Embedder
             from ..embeddings.store import EmbeddingStore
@@ -100,9 +133,20 @@ async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
     except Exception:
         pass  # embeddings are optional — never block server startup
 
+    index_task = None
+    if _auto_index and cfg.auto_index:
+        _index_status = "indexing"  # set before the task runs so stats never say "off"
+        index_task = asyncio.create_task(_background_index(graph, storage, cfg))
+    else:
+        _index_status = "off"
+
     try:
         yield
     finally:
+        if index_task is not None:
+            index_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await index_task
         await storage.close()
         _engine = None
         _session_manager = None
@@ -196,6 +240,10 @@ async def get_graph_stats(path: str | None = None) -> dict[str, Any]:
     stats = await _get().get_stats(path_prefix=path)
     if path:
         stats["filter_path"] = path
+    stats["project_path"] = str(Path(_project_path).resolve())
+    # While "indexing", results are partial — the first index of a project
+    # runs in the background after the server starts.
+    stats["index_status"] = _index_status
     return stats
 
 
