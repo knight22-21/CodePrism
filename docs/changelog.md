@@ -5,6 +5,29 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v0.1.11] — 2026-10-01
+
+> **Upgrading:** existing indexes are rebuilt once automatically (index format 2).
+
+### Fixed
+- **Call links follow imports (Python).** Cross-file calls were linked by name alone, so
+  `asyncio.run()` could link to your own `run`, `str()` to a project `str`, and a method call to
+  a *field* of the same name. Calls now follow the caller's imports (including package
+  re-exports and function-local imports); builtins and third-party calls link to nothing; calls
+  on objects link only when there is exactly one candidate in a file the caller imports. On a
+  new cross-file benchmark, precision went from 0.68-0.96 to **1.00** on requests, flask, httpx
+  and CodePrism, with recall equal or better. Other languages still resolve by name. (#33)
+- **Gitignored files are no longer indexed** (vendored checkouts, build output). Uses git's own
+  file list, with a plain-walk fallback outside git. Opt out with `respect_gitignore = false`.
+  (#31)
+- **Ambiguous paths are reported, not "not indexed".** A short path matching several files
+  (`utils.py`) now returns the candidate paths and a hint. (#32)
+
+### Added
+- `benchmarks/run_call_precision.py`: cross-file call accuracy against a Python `ast` oracle.
+
+---
+
 ## [v0.1.10] — 2026-09-30
 
 ### Fixed
