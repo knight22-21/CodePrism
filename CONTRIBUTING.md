@@ -10,6 +10,7 @@ If you're new here, start with the [Code of Conduct](CODE_OF_CONDUCT.md). Then c
 
 - [Ways to Contribute](#ways-to-contribute)
 - [Before You Start](#before-you-start)
+- [Quick Start](#quick-start)
 - [Development Setup](#development-setup)
 - [Project Structure](#project-structure)
 - [Making Changes](#making-changes)
@@ -50,7 +51,34 @@ For anything beyond a typo fix, **open an issue first**. This lets maintainers c
 
 For large changes (new parsers, MCP tools, architectural refactors) a brief design comment in the issue is strongly preferred before any code is written.
 
-**Looking for something to work on?** Browse the [open issues](https://github.com/knight22-21/CodePrism/issues). Several are bugs with a runnable reproduction and a suggested fix, for example the symbol-id collision in [#34](https://github.com/knight22-21/CodePrism/issues/34) or import-aware call resolution for other languages in [#37](https://github.com/knight22-21/CodePrism/issues/37). Comment on the issue first so two people don't do the same work.
+**Looking for something to work on?** Browse the [open issues](https://github.com/knight22-21/CodePrism/issues). Several are bugs with a runnable reproduction and a suggested fix, for example the symbol-id collision in [#34](https://github.com/knight22-21/CodePrism/issues/34) or import-aware call resolution for other languages in [#37](https://github.com/knight22-21/CodePrism/issues/37). Comment on the issue first so two people don't do the same work. Issues labelled [`good first issue`](https://github.com/knight22-21/CodePrism/labels/good%20first%20issue) are small and self-contained, each with a reproduction, the files to change and the tests to add.
+
+---
+
+## Quick Start
+
+About two minutes. Python 3.12+ and Git are all you need.
+
+```bash
+git clone https://github.com/<your-username>/CodePrism.git   # your fork
+cd CodePrism
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+
+python -m pytest tests/ -q                       # whole suite: ~700 tests, under a minute
+ruff check codeprism/ tests/                     # lint (CI runs this)
+ruff format --check codeprism/ tests/            # formatting (CI runs this)
+```
+
+Then:
+
+1. Comment on the issue you want so nobody duplicates the work.
+2. `git checkout -b fix/short-description`
+3. Make the change **with a test**. While you work, run one file: `python -m pytest tests/test_cli.py -q`.
+4. Run the three commands above, then open a pull request. The PR template lists the checklist.
+
+The sections below cover the details: project layout, commit style, adding parsers and detectors.
 
 ---
 
