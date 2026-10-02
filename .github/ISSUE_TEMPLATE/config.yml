@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/knight22-21/CodePrism/security/policy
+    about: Please do not open a public issue for security problems. Follow the security policy to report privately.
+  - name: Documentation
+    url: https://github.com/knight22-21/CodePrism#readme
+    about: Setup, tools, configuration and integrations are documented in the README and INTEGRATIONS.md.

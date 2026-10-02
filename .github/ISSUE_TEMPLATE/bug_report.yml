@@ -1,0 +1,98 @@
+name: Bug report
+description: Something in CodePrism does not work as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. A short, runnable reproduction is the most useful thing you can give us.
+
+        **Security problem?** Do not file it here. Follow the [security policy](https://github.com/knight22-21/CodePrism/security/policy).
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched [open and closed issues](https://github.com/knight22-21/CodePrism/issues?q=is%3Aissue) and did not find this one.
+          required: true
+        - label: I am on the latest release (`pip install -U codeprism-ai`).
+          required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: One or two sentences. Say what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Commands or a small script. Use a temporary directory or a tiny sample project if you can. Please do not paste private code.
+      placeholder: |
+        1. codeprism index .
+        2. codeprism callers src/app.py main
+        3. ...
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output
+      description: Paste the output or error, including the traceback if there is one.
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      multiple: true
+      options:
+        - CLI (codeprism index / scan / search / ...)
+        - MCP server (tools called by an agent)
+        - Parser or indexer (a language is missing symbols or edges)
+        - Security scanner / gate
+        - Setup (codeprism setup <agent>)
+        - Python API
+        - Docs
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: CodePrism version
+      description: Output of `pip show codeprism-ai` (the Version line).
+      placeholder: "0.1.11"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent or editor (if relevant)
+      description: For example Claude Code, Codex, Cursor, Zed, and its version.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Language(s) of the project, rough size, whether it is a git repository, relevant `.codeprism.toml` settings.
