@@ -5,6 +5,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## Unreleased
+
+### Fixed
+- `scan --diff` now rejects ranges beginning with `-`, so Git options such as `--stat` cannot be
+  mistaken for a diff range. (#60)
+
+---
+
 ## [v0.1.11] — 2026-09-30
 
 > **Upgrading:** existing indexes are rebuilt once automatically (index format 2).
