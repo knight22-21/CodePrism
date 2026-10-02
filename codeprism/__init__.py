@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
+
 from .core import (
     CodePrismConfig,
     EdgeKind,
@@ -25,7 +28,10 @@ from .security import CVEResult, SecurityGate, SecurityReport, SecurityScanner
 from .security import check_package as check_package_cve
 from .security import check_requirements as check_requirements_cve
 
-__version__ = "0.1.0"
+try:
+    __version__ = _pkg_version("codeprism-ai")
+except PackageNotFoundError:  # running from a source tree that is not installed
+    __version__ = "0+unknown"
 
 
 class CodePrism:

@@ -14,7 +14,7 @@ from rich.table import Table
 from .core.models import SYMBOL_KINDS
 
 # Allowlist for git ref characters — prevents argument injection via diff_range
-_SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
+_SAFE_GIT_REF_RE = re.compile(r"^(?!-)[\w./~^@{}:+\-]{1,200}$")
 
 app = typer.Typer(
     name="codeprism",
@@ -22,6 +22,28 @@ app = typer.Typer(
     add_completion=False,
 )
 console = Console()
+
+
+def _version_callback(value: bool) -> None:
+    """Print the installed version and exit when --version is passed."""
+    if value:
+        from . import __version__
+
+        typer.echo(f"codeprism {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the installed version and exit.",
+    ),
+) -> None:
+    """CodePrism — knowledge graph for AI coding agents."""
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────

@@ -8,9 +8,15 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- `codeprism --version` now exists, and `codeprism.__version__` is read from the installed
+  package metadata instead of a hard-coded `0.1.0`. (#54)
+- `scan --diff` now rejects ranges beginning with `-`, so Git options such as `--stat` cannot be
+  mistaken for a diff range. (#60)
 - Reject unknown symbol kinds in CLI and MCP searches instead of returning no matches.
   Both help descriptions now list all searchable kinds; matching remains case-insensitive.
   (#56)
+
+---
 
 ## [v0.1.11] — 2026-09-30
 
