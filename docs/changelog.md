@@ -5,6 +5,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- Reject unknown symbol kinds in CLI and MCP searches instead of returning no matches.
+  Both help descriptions now list all searchable kinds; matching remains case-insensitive.
+  (#56)
+
 ## [v0.1.11] — 2026-09-30
 
 > **Upgrading:** existing indexes are rebuilt once automatically (index format 2).

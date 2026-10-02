@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.graph import GraphEngine
-from ..core.models import FileRecord, NodeKind, SymbolRecord
+from ..core.models import SYMBOL_KINDS, FileRecord, NodeKind, SymbolRecord
 from ..core.storage import StorageManager
 from . import context as _ctx_mod
 from . import impact as _imp_mod
@@ -128,6 +128,12 @@ class QueryEngine:
     # ── Search ────────────────────────────────────────────────────────────────
 
     async def search_symbols(self, query: str, kind: str | None = None) -> list[SearchMatch]:
+        """Search symbols, rejecting unknown kinds before querying either backend."""
+        if kind is not None:
+            normalized = kind.lower()
+            if normalized not in SYMBOL_KINDS:
+                raise ValueError(f"Unknown kind {kind!r}. Valid kinds: {', '.join(SYMBOL_KINDS)}")
+            kind = normalized
         if self._embedder is not None and self._embed_store is not None:
             return await self._semantic_search(query, kind)
         return await self._substring_search(query, kind)

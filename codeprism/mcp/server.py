@@ -9,6 +9,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from ..core.models import SYMBOL_KINDS
 from ..query.engine import QueryEngine
 from .session import SessionManager
 from .tools import (
@@ -417,7 +418,11 @@ async def get_data_flow(file: str, symbol: str) -> dict[str, Any]:
 # ── Symbol search ─────────────────────────────────────────────────────────────
 
 
-@mcp.tool()
+@mcp.tool(
+    description="Find symbols by name (substring match).\n\n"
+    "project_path: optional directory prefix to restrict results to a sub-project.\n"
+    "kind: case-insensitive symbol kind; one of " + ", ".join(SYMBOL_KINDS)
+)
 async def search_symbol(
     query: str,
     project_path: str | None = None,
@@ -426,9 +431,12 @@ async def search_symbol(
     """Find symbols by name (substring match).
 
     project_path: optional directory prefix to restrict results to a sub-project.
-    kind: function|class|variable|import
+    kind: case-insensitive symbol kind from SYMBOL_KINDS.
     """
-    matches = await _get().search_symbols(query, kind)
+    try:
+        matches = await _get().search_symbols(query, kind)
+    except ValueError as error:
+        return {"error": str(error)}
     if project_path:
         prefix = _abs(project_path)
         matches = [m for m in matches if m.file_path.startswith(prefix)]

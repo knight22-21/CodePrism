@@ -19,6 +19,10 @@ class NodeKind(str, Enum):
     TYPE = "type"
 
 
+# Files have their own records; symbol search covers the remaining node kinds.
+SYMBOL_KINDS = tuple(sorted(kind.value for kind in NodeKind if kind != NodeKind.FILE))
+
+
 class EdgeKind(str, Enum):
     CALLS = "calls"
     IMPORTS = "imports"

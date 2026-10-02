@@ -11,6 +11,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from .core.models import SYMBOL_KINDS
+
 # Allowlist for git ref characters — prevents argument injection via diff_range
 _SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
 
@@ -312,7 +314,9 @@ async def _callers(target: str, project: str) -> None:
 @app.command()
 def search(
     query: str = typer.Argument(..., help="Symbol name or substring"),
-    kind: str | None = typer.Option(None, "--kind", "-k", help="function|class|variable"),
+    kind: str | None = typer.Option(
+        None, "--kind", "-k", help="Symbol kind (case-insensitive): " + ", ".join(SYMBOL_KINDS)
+    ),
     project: str = typer.Option(".", "--project", "-p", help="Project path"),
 ) -> None:
     """Find symbols matching a query string."""
@@ -323,6 +327,9 @@ async def _search(query: str, kind: str | None, project: str) -> None:
     engine, storage = await _open_session(project)
     try:
         matches = await engine.search_symbols(query, kind)
+    except ValueError as error:
+        console.print(f"Error: {error}", markup=False)
+        raise typer.Exit(2) from error
     finally:
         await storage.close()
 
