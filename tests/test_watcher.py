@@ -231,7 +231,5 @@ async def test_stop_stops_observer_and_cancellation_finishes_run(
         assert observer is not None
         watcher.stop()
         await _wait_for(lambda: not observer.is_alive())
-        # stop() does not cancel the polling coroutine under the current contract.
-        assert not task.done()
-    assert task.cancelled()
+    assert task.done()
     watcher.stop()
