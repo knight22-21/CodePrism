@@ -12,7 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 # Allowlist for git ref characters — prevents argument injection via diff_range
-_SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
+_SAFE_GIT_REF_RE = re.compile(r"^(?!-)[\w./~^@{}:+\-]{1,200}$")
 
 app = typer.Typer(
     name="codeprism",

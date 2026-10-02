@@ -10,6 +10,8 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ### Fixed
 - `codeprism --version` now exists, and `codeprism.__version__` is read from the installed
   package metadata instead of a hard-coded `0.1.0`. (#54)
+- `scan --diff` now rejects ranges beginning with `-`, so Git options such as `--stat` cannot be
+  mistaken for a diff range. (#60)
 
 ---
 

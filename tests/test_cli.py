@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from codeprism.cli import app
+from codeprism.cli import _SAFE_GIT_REF_RE, app
 
 PYTHON_FIXTURE = Path(__file__).parent / "fixtures" / "sample_python_project"
 
@@ -222,6 +222,47 @@ def test_setup_unknown_agent_exits_nonzero(tmp_path):
 # ── scan ──────────────────────────────────────────────────────────────────────
 
 SECURITY_FIXTURES = Path(__file__).parent / "fixtures" / "sample_security_issues"
+
+
+@pytest.mark.parametrize(
+    "diff_range",
+    ["HEAD~1..HEAD", "main", "origin/main...HEAD", "v0.1.11", "HEAD@{1}"],
+)
+def test_scan_diff_accepts_git_refs(diff_range: str) -> None:
+    assert _SAFE_GIT_REF_RE.fullmatch(diff_range)
+
+
+@pytest.mark.parametrize(
+    "diff_range",
+    ["--stat", "-p", "--help", "HEAD;rm", "$(id)", "two refs", ""],
+)
+def test_scan_diff_rejects_invalid_ranges(diff_range: str) -> None:
+    assert not _SAFE_GIT_REF_RE.fullmatch(diff_range)
+
+
+@pytest.mark.parametrize("diff_range", ["--stat", "-p", "--help"])
+def test_scan_diff_rejects_git_options(diff_range: str) -> None:
+    result = runner.invoke(app, ["scan", ".", "--diff", diff_range])
+
+    assert result.exit_code == 1
+    assert "Invalid diff range" in result.output
+
+
+def test_scan_diff_passes_valid_range_to_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    import subprocess
+
+    calls: list[list[str]] = []
+
+    def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    result = runner.invoke(app, ["scan", ".", "--diff", "HEAD~1..HEAD"])
+
+    assert result.exit_code == 0
+    assert calls == [["git", "diff", "--name-only", "HEAD~1..HEAD"]]
+    assert "No changed files" in result.output
 
 
 def test_scan_clean_file_exits_zero(tmp_path):
