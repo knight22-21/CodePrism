@@ -234,3 +234,6 @@ AGENTS.md
 
 # Private business planning (local only)
 project-infra/
+
+# Maintainer workflow notes (local only)
+.agents/
