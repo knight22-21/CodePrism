@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -81,11 +82,12 @@ def check_requirements(requirements_content: str) -> list[CVEResult]:
         line = raw_line.strip()
         if not line or line.startswith("#") or line.startswith("-") or "://" in line:
             continue
-        # Strip extras and version specifiers: requests[security]>=2.28 → requests, 2.28
-        pkg = line.split("[")[0].split(">=")[0].split("<=")[0].split("==")[0]
-        pkg = pkg.split("!=")[0].split("~=")[0].strip()
-        if not pkg:
+        # Extract the package name using PEP 508 rules (alphanumeric, dot, hyphen, underscore)
+        match = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", line)
+        if not match:
             continue
+
+        pkg = match.group(0)
         result = check_package(pkg)
         if result.severity not in ("PASS", "UNKNOWN"):
             results.append(result)
