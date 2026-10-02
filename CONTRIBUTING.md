@@ -388,13 +388,9 @@ Feature requests for new **security detectors** should include:
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email the maintainers directly at **krishnatyagibest321@gmail.com** with:
-- A description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Any suggested remediation
-
-You will receive a response within 72 hours. We will coordinate a fix and disclosure timeline with you and credit you in the release notes unless you prefer to remain anonymous.
+Follow the [Security Policy](SECURITY.md): it explains how to report privately (by email to
+**krishnatyagibest321@gmail.com**), what to include, how quickly you can expect a response, what is in
+scope, and how we coordinate a fix, disclosure and credit.
 
 ---
 
