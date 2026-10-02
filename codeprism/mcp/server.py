@@ -9,6 +9,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from ..core.models import NodeKind
 from ..query.engine import QueryEngine
 from .session import SessionManager
 from .tools import (
@@ -426,8 +427,13 @@ async def search_symbol(
     """Find symbols by name (substring match).
 
     project_path: optional directory prefix to restrict results to a sub-project.
-    kind: function|class|variable|import
+    kind: filter by symbol kind (file|module|class|function|variable|import|type)
     """
+    if kind is not None:
+        valid_kinds = [k.value for k in NodeKind]
+        if kind not in valid_kinds:
+            return {"error": f"Invalid kind '{kind}'. Must be one of: {', '.join(valid_kinds)}"}
+
     matches = await _get().search_symbols(query, kind)
     if project_path:
         prefix = _abs(project_path)

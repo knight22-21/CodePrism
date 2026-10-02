@@ -11,6 +11,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from .core.models import NodeKind
+
 # Allowlist for git ref characters — prevents argument injection via diff_range
 _SAFE_GIT_REF_RE = re.compile(r"^[\w./~^@{}:+\-]{1,200}$")
 
@@ -312,11 +314,11 @@ async def _callers(target: str, project: str) -> None:
 @app.command()
 def search(
     query: str = typer.Argument(..., help="Symbol name or substring"),
-    kind: str | None = typer.Option(None, "--kind", "-k", help="function|class|variable"),
+    kind: NodeKind | None = typer.Option(None, "--kind", "-k", help="Filter by symbol kind"),
     project: str = typer.Option(".", "--project", "-p", help="Project path"),
 ) -> None:
     """Find symbols matching a query string."""
-    asyncio.run(_search(query, kind, project))
+    asyncio.run(_search(query, kind.value if kind else None, project))
 
 
 async def _search(query: str, kind: str | None, project: str) -> None:

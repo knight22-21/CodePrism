@@ -87,6 +87,12 @@ def test_search_kind_filter(project):
     assert result.exit_code == 0
 
 
+def test_search_invalid_kind(project):
+    result = runner.invoke(app, ["search", "", "--kind", "invalid_typo", "--project", str(project)])
+    assert result.exit_code != 0
+    assert "invalid_typo" in result.output
+
+
 # ── context ───────────────────────────────────────────────────────────────────
 
 
