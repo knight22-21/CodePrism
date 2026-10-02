@@ -1,6 +1,7 @@
 """CLI tests using Typer's CliRunner (sync, subprocess-free)."""
 
 import shutil
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -264,3 +265,18 @@ def test_scan_all_exits_zero(project):
 def test_scan_all_shows_scan_complete(project):
     result = runner.invoke(app, ["scan", ".", "--all", "--project", str(project)])
     assert "Scan complete" in result.output
+
+
+# ── version ───────────────────────────────────────────────────────────────────
+
+
+def test_version_flag_prints_installed_version():
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert result.output.strip() == f"codeprism {version('codeprism-ai')}"
+
+
+def test_dunder_version_matches_installed_metadata():
+    import codeprism
+
+    assert codeprism.__version__ == version("codeprism-ai")

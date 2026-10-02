@@ -5,6 +5,14 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- `codeprism --version` now exists, and `codeprism.__version__` is read from the installed
+  package metadata instead of a hard-coded `0.1.0`. (#54)
+
+---
+
 ## [v0.1.11] — 2026-09-30
 
 > **Upgrading:** existing indexes are rebuilt once automatically (index format 2).

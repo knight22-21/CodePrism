@@ -22,6 +22,28 @@ app = typer.Typer(
 console = Console()
 
 
+def _version_callback(value: bool) -> None:
+    """Print the installed version and exit when --version is passed."""
+    if value:
+        from . import __version__
+
+        typer.echo(f"codeprism {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the installed version and exit.",
+    ),
+) -> None:
+    """CodePrism — knowledge graph for AI coding agents."""
+
+
 # ── Shared helpers ────────────────────────────────────────────────────────────
 
 
