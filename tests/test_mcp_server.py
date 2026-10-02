@@ -376,3 +376,23 @@ async def test_mcp_check_secret_has_secrets_found_key():
     result = await check_secret_exposure("x = 1\n")
     assert "secrets_found" in result
     assert isinstance(result["secrets_found"], list)
+
+
+@pytest.mark.parametrize("kind", ["method", "banana", ""])
+async def test_mcp_search_rejects_unknown_kind(kind):
+    result = await search_symbol("", kind=kind)
+    assert "Unknown kind" in result["error"]
+    assert "Valid kinds: class, function, import, module, type, variable" in result["error"]
+    assert "matches" not in result
+
+
+async def test_mcp_search_kind_is_case_insensitive():
+    result = await search_symbol("", kind="CLASS")
+    assert result["count"] > 0
+    assert all(match["kind"] == "class" for match in result["matches"])
+
+
+async def test_mcp_search_description_lists_all_symbol_kinds():
+    tool = await _srv.mcp.get_tool("search_symbol")
+    for kind in ("class", "function", "import", "module", "type", "variable"):
+        assert kind in tool.description

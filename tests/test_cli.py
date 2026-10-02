@@ -308,6 +308,23 @@ def test_scan_all_shows_scan_complete(project):
     assert "Scan complete" in result.output
 
 
+@pytest.mark.parametrize("kind", ["method", "banana", ""])
+def test_search_rejects_unknown_kind(project, kind):
+    result = runner.invoke(app, ["search", "", "--kind", kind, "--project", str(project)])
+    assert result.exit_code == 2
+    assert "Unknown kind" in result.output
+    assert "No matches" not in result.output
+    for choice in ("class", "function", "import", "module", "type", "variable"):
+        assert choice in result.output
+
+
+def test_search_help_lists_all_symbol_kinds():
+    result = runner.invoke(app, ["search", "--help"])
+    assert result.exit_code == 0
+    for kind in ("class", "function", "import", "module", "type", "variable"):
+        assert kind in result.output
+
+
 # ── version ───────────────────────────────────────────────────────────────────
 
 

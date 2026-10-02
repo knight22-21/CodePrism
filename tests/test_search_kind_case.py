@@ -32,3 +32,29 @@ async def test_storage_find_symbols_kind_any_case(engine, storage):
     assert [s.name for s in await storage.find_symbols("PaymentService", kind="Class")] == [
         "PaymentService"
     ]
+
+
+@pytest.mark.parametrize("kind", ["method", "banana", "", "file"])
+async def test_unknown_kind_reports_valid_choices(engine, kind):
+    with pytest.raises(ValueError, match="Unknown kind") as error:
+        await engine.search_symbols("pay", kind=kind)
+    assert repr(kind) in str(error.value)
+    assert "Valid kinds: class, function, import, module, type, variable" in str(error.value)
+
+
+@pytest.mark.parametrize("kind", ["class", "function", "import", "module", "type", "variable"])
+async def test_all_symbol_kinds_accept_uppercase(engine, kind):
+    assert await engine.search_symbols("", kind=kind.upper()) == await engine.search_symbols(
+        "", kind=kind
+    )
+
+
+async def test_invalid_kind_is_rejected_before_semantic_search(engine):
+    from unittest.mock import Mock
+
+    engine._embedder = Mock()
+    engine._embed_store = Mock()
+    with pytest.raises(ValueError, match="Unknown kind"):
+        await engine.search_symbols("pay", kind="method")
+    engine._embedder.encode_one.assert_not_called()
+    engine._embed_store.search.assert_not_called()
