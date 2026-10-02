@@ -1,0 +1,27 @@
+name: Question or help
+description: Ask how to do something or how CodePrism behaves
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [README](https://github.com/knight22-21/CodePrism#readme), [INTEGRATIONS.md](https://github.com/knight22-21/CodePrism/blob/main/INTEGRATIONS.md)
+        and [architecture notes](https://github.com/knight22-21/CodePrism/blob/main/docs/architecture.md) first.
+        If it turns out to be a bug or a missing feature, we will relabel the issue.
+  - type: textarea
+    id: question
+    attributes:
+      label: What would you like to know?
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Commands, config, and what you saw. Please do not paste private code or secrets.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: CodePrism version
+      description: Output of `pip show codeprism-ai` (the Version line).

@@ -1,0 +1,62 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Features are easiest to discuss when they start from a concrete problem.
+
+        For large changes (a new parser, MCP tool or architectural change) please wait for a maintainer's
+        reply on this issue before writing code. See [CONTRIBUTING.md](https://github.com/knight22-21/CodePrism/blob/main/CONTRIBUTING.md).
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched [open and closed issues](https://github.com/knight22-21/CodePrism/issues?q=is%3Aissue) and did not find this request.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not the solution. What are you doing today and what is hard about it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like CodePrism to do?
+      description: The behaviour you have in mind. An example command, tool call or output helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Workarounds you use now, or other tools that do this.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI
+        - MCP server and tools
+        - Language support (parser, indexer)
+        - Security scanner / gate
+        - Setup for an agent or editor
+        - Performance or scale
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to work on it?
+      options:
+        - "Yes, I can open a pull request"
+        - "Yes, with some guidance"
+        - "No, I am only suggesting it"
+    validations:
+      required: true
