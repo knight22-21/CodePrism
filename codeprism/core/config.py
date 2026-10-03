@@ -5,12 +5,13 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .languages import SUPPORTED_LANGUAGES
 
 
 class SecurityConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     block_on_secrets: bool = True
     warn_on_weak_crypto: bool = True
     check_new_dependencies: bool = True
@@ -18,16 +19,19 @@ class SecurityConfig(BaseModel):
 
 
 class EmbeddingsConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     model: str = "all-MiniLM-L6-v2"
     device: str = "cpu"
 
 
 class MCPConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     transport: str = "stdio"
     port: int = 8765
 
 
 class CodePrismConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     project_path: str | None = None
     languages: list[str] = Field(default_factory=lambda: list(SUPPORTED_LANGUAGES))
     enable_embeddings: bool = False
@@ -59,7 +63,17 @@ class CodePrismConfig(BaseModel):
         for key in ("security", "embeddings", "mcp"):
             if key in raw:
                 nested[key] = raw.pop(key)
-        return cls(**raw, **nested)
+        try:
+            return cls(**raw, **nested)
+        except ValidationError as e:
+            msg = []
+            for err in e.errors():
+                loc = ".".join(str(x) for x in err["loc"])
+                if err["type"] == "extra_forbidden":
+                    msg.append(f"Unknown configuration key: '{loc}'")
+                else:
+                    msg.append(f"Configuration error at '{loc}': {err.get('msg', 'invalid value')}")
+            raise ValueError(", ".join(msg)) from e
 
     @classmethod
     def default(cls) -> CodePrismConfig:
