@@ -172,12 +172,15 @@ async def _lifespan(server: FastMCP) -> AsyncIterator[None]:
     updater = IncrementalUpdater(graph, storage)
     _session_manager = SessionManager(storage, updater, project_root=_project_path)
 
+    import sys
+
     from ..core.config import CodePrismConfig
     from ..core.paths import get_project_config_path
 
     try:
         cfg = CodePrismConfig.load(get_project_config_path(_project_path))
-    except Exception:
+    except Exception as e:
+        print(f"CodePrism configuration error: {e}", file=sys.stderr)
         cfg = CodePrismConfig()
 
     # Wire semantic search if embeddings index exists and is configured
