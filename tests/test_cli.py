@@ -44,6 +44,44 @@ def test_index_reports_file_count(tmp_path):
     assert "file" in result.output.lower() or "Done" in result.output
 
 
+@pytest.mark.parametrize("languages", ["klingon", "python,pyton"])
+def test_index_rejects_unknown_languages(tmp_path, languages):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "app.py").write_text("def hello(): pass\n")
+
+    result = runner.invoke(app, ["index", str(proj), "--languages", languages])
+
+    assert result.exit_code == 2
+    assert "Unknown language" in result.output
+    assert "pyton" in result.output or "klingon" in result.output
+    assert "python" in result.output
+    assert "Indexing" not in result.output
+
+
+@pytest.mark.parametrize(
+    ("language", "filename", "source"),
+    [
+        ("PYTHON", "app.py", "def hello(): pass\n"),
+        ("py", "app.py", "def hello(): pass\n"),
+        ("Js", "app.js", "function hello() {}\n"),
+        ("C++", "app.cpp", "int main() { return 0; }\n"),
+    ],
+)
+def test_index_accepts_language_case_and_aliases(tmp_path, language, filename, source):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / filename).write_text(source)
+
+    result = runner.invoke(
+        app,
+        ["index", str(proj), "--languages", language, "--workers", "1"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Done. 1 files" in result.output
+
+
 def test_index_fixture_project(project):
     # project is already indexed in the fixture; re-running should succeed
     result = runner.invoke(app, ["index", str(project), "--languages", "python"])

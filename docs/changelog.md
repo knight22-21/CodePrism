@@ -8,6 +8,8 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- `index --languages` now rejects unknown names with a list of supported languages. Names remain
+  case-insensitive, and supported aliases such as `py` and `C++` still work. (#55)
 - `stats --verbose` shows project-relative paths and truncates very long paths instead of
   wrapping the file table across multiple lines. (#17)
 - `codeprism --version` now exists, and `codeprism.__version__` is read from the installed
