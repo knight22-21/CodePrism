@@ -8,6 +8,10 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- Substring symbol search ranks exact names and prefixes before limiting results. MCP
+  `search_symbol` now accepts `limit` (1-500, default 50) and reports filtered `total` and
+  `truncated`; kind/project filters apply before pagination. Semantic search keeps its
+  existing cap and response shape. (#38)
 - `index --languages` now rejects unknown names with a list of supported languages. Names remain
   case-insensitive, and supported aliases such as `py` and `C++` still work. (#55)
 - `codeprism --version` now exists, and `codeprism.__version__` is read from the installed

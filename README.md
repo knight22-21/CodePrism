@@ -277,6 +277,15 @@ codeprism serve --no-auto-index
 codeprism serve /path/to/project --transport sse --port 8765
 ```
 
+The MCP `search_symbol` tool ranks substring matches by exact name, then prefix, then other
+matches, with stable name/file ordering. Its `limit` defaults to 50 and accepts 1-500.
+`kind` and `project_path` filters apply before this limit; the response includes `count`
+(returned matches), `total` (all filtered matches) and `truncated` (whether any were cut).
+For example, `search_symbol("run", kind="function", limit=100)` can return more matches;
+narrow the query or filters when `truncated` is true. With semantic embeddings enabled,
+search keeps its existing 20-neighbor cap and ignores `limit`; that response has
+`count`/`matches` only because a complete `total` and `truncated` are unavailable.
+
 The SSE server listens on `127.0.0.1` only and has no built-in authentication; there is no `--host`
 option yet ([#45](https://github.com/knight22-21/CodePrism/issues/45)). To reach it from another machine, use an SSH tunnel or a reverse proxy on
 the same host (see [INTEGRATIONS.md](INTEGRATIONS.md)).
