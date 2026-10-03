@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from .core.languages import SUPPORTED_LANGUAGES, normalize_language
 from .core.models import SYMBOL_KINDS
 
 # Allowlist for git ref characters — prevents argument injection via diff_range
@@ -103,6 +104,23 @@ def index(
     Re-runs are incremental by default: only changed or new files are parsed.
     Use --force to re-parse everything from scratch.
     """
+    if languages:
+        requested_languages = [language.strip() for language in languages.split(",")]
+        unknown_languages = list(
+            dict.fromkeys(
+                language
+                for language in requested_languages
+                if normalize_language(language) not in SUPPORTED_LANGUAGES
+            )
+        )
+        if unknown_languages:
+            unknown = ", ".join(f"'{language}'" for language in unknown_languages)
+            supported = ", ".join(SUPPORTED_LANGUAGES)
+            raise typer.BadParameter(
+                f"Unknown language {unknown}. Supported: {supported}",
+                param_hint="--languages",
+            )
+
     asyncio.run(_index(path, languages, embeddings, force, workers))
 
 
