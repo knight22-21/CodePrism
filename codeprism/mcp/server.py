@@ -424,26 +424,32 @@ async def get_data_flow(file: str, symbol: str) -> dict[str, Any]:
 @mcp.tool(
     description="Find symbols by name (substring match).\n\n"
     "project_path: optional directory prefix to restrict results to a sub-project.\n"
-    "kind: case-insensitive symbol kind; one of " + ", ".join(SYMBOL_KINDS)
+    "kind: case-insensitive symbol kind; one of " + ", ".join(SYMBOL_KINDS) + ".\n"
+    "limit: substring result limit, 1-500 (default 50). Substring results rank exact names, "
+    "then prefixes, then other matches, and include total/truncated.\n"
+    "Semantic search retains its 20-neighbor cap, ignores limit, and omits total/truncated."
 )
 async def search_symbol(
     query: str,
     project_path: str | None = None,
     kind: str | None = None,
+    limit: int = 50,
 ) -> dict[str, Any]:
     """Find symbols by name (substring match).
 
     project_path: optional directory prefix to restrict results to a sub-project.
     kind: case-insensitive symbol kind from SYMBOL_KINDS.
+    limit: 1-500 (default 50), applied after filtering in substring mode.
+    Substring responses include total and truncated. Semantic search retains
+    its 20-neighbor cap and ignores limit; its total/truncated are unavailable.
     """
     try:
-        matches = await _get().search_symbols(query, kind)
+        page = await _get().search_symbols_page(
+            query, kind, limit=limit, file_prefix=_abs(project_path) if project_path else None
+        )
     except ValueError as error:
         return {"error": str(error)}
-    if project_path:
-        prefix = _abs(project_path)
-        matches = [m for m in matches if m.file_path.startswith(prefix)]
-    return search_matches_to_dict(matches)
+    return search_matches_to_dict(page.matches, total=page.total)
 
 
 @mcp.tool()

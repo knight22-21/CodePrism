@@ -94,8 +94,11 @@ def file_map_to_dict(r: FileMap) -> dict[str, Any]:
     }
 
 
-def search_matches_to_dict(matches: list[SearchMatch]) -> dict[str, Any]:
-    return {
+def search_matches_to_dict(
+    matches: list[SearchMatch], *, total: int | None = None
+) -> dict[str, Any]:
+    """Serialize matches, adding completeness metadata only when the total is known."""
+    result = {
         "count": len(matches),
         "matches": [
             {
@@ -110,6 +113,9 @@ def search_matches_to_dict(matches: list[SearchMatch]) -> dict[str, Any]:
             for m in matches
         ],
     }
+    if total is not None:
+        result.update(total=total, truncated=total > len(matches))
+    return result
 
 
 def deps_to_dict(r: DependencyResult) -> dict[str, Any]:

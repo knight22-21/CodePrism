@@ -8,7 +8,7 @@ from typing import Any
 
 from ..core.graph import GraphEngine
 from ..core.models import SYMBOL_KINDS, FileRecord, NodeKind, SymbolRecord
-from ..core.storage import StorageManager
+from ..core.storage import DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT, StorageManager
 from . import context as _ctx_mod
 from . import impact as _imp_mod
 from . import summary as _sum_mod
@@ -25,6 +25,14 @@ class SearchMatch:
     file_path: str
     score: float = 1.0
     docstring_excerpt: str | None = None
+
+
+@dataclass
+class SearchPage:
+    """Search matches with a complete substring total, or None for semantic search."""
+
+    matches: list[SearchMatch]
+    total: int | None = None
 
 
 @dataclass
@@ -128,21 +136,45 @@ class QueryEngine:
     # ── Search ────────────────────────────────────────────────────────────────
 
     async def search_symbols(self, query: str, kind: str | None = None) -> list[SearchMatch]:
-        """Search symbols, rejecting unknown kinds before querying either backend."""
+        """Return the default search page while preserving the existing list API."""
+        return (await self.search_symbols_page(query, kind)).matches
+
+    async def search_symbols_page(
+        self,
+        query: str,
+        kind: str | None = None,
+        *,
+        limit: int = DEFAULT_SEARCH_LIMIT,
+        file_prefix: str | None = None,
+    ) -> SearchPage:
+        """Search with filtered substring pagination; semantic results keep their cap.
+
+        file_prefix is an already-resolved literal path prefix. limit and total
+        apply only to substring mode; the semantic backend still requests 20
+        neighbors and supplies no complete total.
+        """
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= MAX_SEARCH_LIMIT
+        ):
+            raise ValueError(f"limit must be an integer between 1 and {MAX_SEARCH_LIMIT}")
         if kind is not None:
             normalized = kind.lower()
             if normalized not in SYMBOL_KINDS:
                 raise ValueError(f"Unknown kind {kind!r}. Valid kinds: {', '.join(SYMBOL_KINDS)}")
             kind = normalized
         if self._embedder is not None and self._embed_store is not None:
-            return await self._semantic_search(query, kind)
-        return await self._substring_search(query, kind)
-
-    async def _substring_search(self, query: str, kind: str | None = None) -> list[SearchMatch]:
-        raw = await self._storage.search_symbols(query, kind)
+            matches = await self._semantic_search(query, kind)
+            if file_prefix is not None:
+                matches = [match for match in matches if match.file_path.startswith(file_prefix)]
+            return SearchPage(matches)
+        raw, total = await self._storage.search_symbols_page(
+            query, kind, limit=limit, file_prefix=file_prefix
+        )
         all_files = await self._storage.get_all_files()
         id_to_path = {f.id: f.path for f in all_files}
-        return [
+        matches = [
             SearchMatch(
                 symbol=sym,
                 file_path=id_to_path.get(sym.file_id, ""),
@@ -151,6 +183,7 @@ class QueryEngine:
             )
             for sym in raw
         ]
+        return SearchPage(matches, total)
 
     async def _semantic_search(self, query: str, kind: str | None = None) -> list[SearchMatch]:
         import asyncio as _asyncio
