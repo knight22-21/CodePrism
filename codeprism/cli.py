@@ -84,13 +84,13 @@ def index(
         None,
         "--languages",
         "-l",
-        help="Comma-separated language list (default: python,javascript,typescript,go,rust,java,c,cpp,ruby,php)",
+        help="Comma-separated language list (default: project config, or all supported languages)",
     ),
-    embeddings: bool = typer.Option(
-        False,
-        "--embeddings",
+    embeddings: bool | None = typer.Option(
+        None,
+        "--embeddings/--no-embeddings",
         "-e",
-        help="Also build semantic vector index (requires codeprism[embeddings])",
+        help="Override semantic vector indexing (default: project config; requires codeprism[embeddings])",
     ),
     force: bool = typer.Option(
         False, "--force", "-f", help="Re-parse all files even if unchanged (skip incremental check)"
@@ -103,6 +103,7 @@ def index(
 
     Re-runs are incremental by default: only changed or new files are parsed.
     Use --force to re-parse everything from scratch.
+    Project .codeprism.toml settings apply unless explicitly overridden by flags.
     """
     if languages:
         requested_languages = [language.strip() for language in languages.split(",")]
@@ -127,22 +128,23 @@ def index(
 async def _index(
     path: str,
     languages: str | None,
-    embeddings: bool = False,
+    embeddings: bool | None = None,
     force: bool = False,
     workers: int = 0,
 ) -> None:
     from .core.config import CodePrismConfig
     from .core.graph import GraphEngine
-    from .core.paths import get_db_path
+    from .core.paths import get_db_path, get_project_config_path
     from .core.storage import StorageManager
     from .indexer.project_indexer import ProjectIndexer
 
     langs = [lang.strip() for lang in languages.split(",")] if languages else None
-    config = (
-        CodePrismConfig(languages=langs, enable_embeddings=embeddings, parse_workers=workers)
-        if langs
-        else CodePrismConfig(enable_embeddings=embeddings, parse_workers=workers)
-    )
+    config = CodePrismConfig.load(get_project_config_path(path))
+    if langs is not None:
+        config.languages = langs
+    if embeddings is not None:
+        config.enable_embeddings = embeddings
+    config.parse_workers = workers
 
     db_path = get_db_path(path)
     storage = StorageManager(db_path)
@@ -151,7 +153,7 @@ async def _index(
 
     mode = "[dim](full re-index)[/dim]" if force else "[dim](incremental)[/dim]"
     console.print(f"Indexing [bold]{path}[/bold] {mode}")
-    if embeddings:
+    if config.enable_embeddings:
         console.print("[dim]Embeddings enabled — will build vector index after parsing...[/dim]")
     indexer = ProjectIndexer(graph, storage, config)
     result = await indexer.index(path, force=force)
@@ -172,7 +174,7 @@ async def _index(
             f"{result.edge_count} edges · {result.duration_seconds:.2f}s"
             f"{skipped_note}"
         )
-        if embeddings:
+        if config.enable_embeddings:
             console.print("[green]Semantic index built.[/green] search_symbol now uses embeddings.")
     else:
         console.print(f"[yellow]Completed with {len(result.errors)} error(s).[/yellow]")

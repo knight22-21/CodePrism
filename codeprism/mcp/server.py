@@ -239,25 +239,28 @@ mcp = FastMCP(
 async def index_project(
     path: str,
     languages: list[str] | None = None,
-    embeddings: bool = False,
+    embeddings: bool | None = None,
 ) -> dict[str, Any]:
     """Build or rebuild the knowledge graph for a project directory.
 
-    embeddings: also build the vector index for semantic search (requires codeprism[embeddings]).
+    Load the project's .codeprism.toml, then override explicitly supplied languages
+    or embeddings. embeddings: build the vector index for semantic search
+    (requires codeprism[embeddings]); omit to inherit the project setting.
     """
     global _engine
     from ..core.config import CodePrismConfig
     from ..core.graph import GraphEngine
-    from ..core.paths import get_db_path
+    from ..core.paths import get_db_path, get_project_config_path
     from ..core.storage import StorageManager
     from ..indexer.project_indexer import ProjectIndexer
 
     # parse_workers=0: one parser process per core (the server entry point is guarded)
-    cfg = (
-        CodePrismConfig(languages=languages, enable_embeddings=embeddings, parse_workers=0)
-        if languages
-        else CodePrismConfig(enable_embeddings=embeddings, parse_workers=0)
-    )
+    cfg = CodePrismConfig.load(get_project_config_path(path))
+    if languages is not None:
+        cfg.languages = languages
+    if embeddings is not None:
+        cfg.enable_embeddings = embeddings
+    cfg.parse_workers = 0
     db_path = get_db_path(path)
     storage = StorageManager(db_path)
     await storage.initialize()
