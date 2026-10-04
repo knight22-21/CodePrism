@@ -8,6 +8,10 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- CLI `index` and the `index_project` MCP tool now load `.codeprism.toml`, matching the server's
+  startup index. Explicit language and embedding options override the file, while omitted options
+  preserve it; `index --no-embeddings` can disable configured embeddings. Automatic CLI/MCP parser
+  workers and the library's in-process default remain unchanged. (#48)
 - `index --languages` now rejects unknown names with a list of supported languages. Names remain
   case-insensitive, and supported aliases such as `py` and `C++` still work. (#55)
 - `codeprism --version` now exists, and `codeprism.__version__` is read from the installed

@@ -388,8 +388,15 @@ See [docs/architecture.md](docs/architecture.md#known-limitations) for the full 
 
 ## Configuration
 
-The MCP server reads an optional `.codeprism.toml` in the project root when it starts. The CLI
-commands take their options as flags instead (`--languages`, `--workers`, ...).
+The MCP server's startup index, `codeprism index` and the `index_project` MCP tool read an optional
+`.codeprism.toml` in the project root. Explicit indexing flags or tool arguments override the file;
+omitted options inherit it. For example, `index --languages python` overrides the configured language
+list, and `--embeddings` / `--no-embeddings` override `enable_embeddings`. The MCP tool likewise accepts
+`embeddings=true` or `embeddings=false`; omitting it preserves the file's setting.
+
+Parser workers keep their entry-point defaults: CLI and MCP indexing use one process per CPU core
+(`parse_workers = 0`), while library callers default to in-process parsing (`parse_workers = 1`).
+Use `index --workers N` to override the CLI worker count.
 
 ```toml
 [codeprism]
