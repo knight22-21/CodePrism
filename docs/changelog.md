@@ -8,6 +8,10 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- `get_file_map` now filters indexed files by directory and returns a sorted page of up to 200
+  files by default. MCP callers can use `limit` (1-1000) and `offset`; totals cover the selected
+  directory and `truncated` reports omitted files. A directory with no indexed files returns
+  an error. Internal CLI consumers still request complete maps. (#49)
 - Substring symbol search ranks exact names and prefixes before limiting results. MCP
   `search_symbol` now accepts `limit` (1-500, default 50) and reports filtered `total` and
   `truncated`; kind/project filters apply before pagination. Semantic search keeps its
