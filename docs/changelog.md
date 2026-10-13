@@ -8,6 +8,10 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- Substring symbol search ranks exact names and prefixes before limiting results. MCP
+  `search_symbol` now accepts `limit` (1-500, default 50) and reports filtered `total` and
+  `truncated`; kind/project filters apply before pagination. Semantic search keeps its
+  existing cap and response shape. (#38)
 - CLI `callers`, `context`, `impact` and `summary` distinguish missing files and ambiguous paths,
   report candidates on stderr, and exit with status 1 for lookup errors. `callers` no longer
   reports an unknown symbol as a successful zero-callers result. MCP responses stay unchanged.
