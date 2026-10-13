@@ -26,6 +26,9 @@ from .models import (
 # 2: Python calls record call style/receiver; function-local imports are indexed
 INDEX_FORMAT_VERSION = 2
 
+DEFAULT_SEARCH_LIMIT = 50
+MAX_SEARCH_LIMIT = 500
+
 _SCHEMA = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
@@ -331,20 +334,49 @@ class StorageManager:
         return [_row_to_symbol(r) for r in rows]
 
     async def search_symbols(self, query: str, kind: str | None = None) -> list[SymbolRecord]:
-        pattern = f"%{query}%"
-        kind_param = kind.lower() if kind else None
-        if kind_param:
-            async with self.db.execute(
-                "SELECT * FROM symbols WHERE name LIKE ? AND kind = ? LIMIT 50",
-                (pattern, kind_param),
-            ) as cur:
-                rows = await cur.fetchall()
-        else:
-            async with self.db.execute(
-                "SELECT * FROM symbols WHERE name LIKE ? LIMIT 50", (pattern,)
-            ) as cur:
-                rows = await cur.fetchall()
-        return [_row_to_symbol(r) for r in rows]
+        """Return the default ranked substring page, preserving the list API."""
+        symbols, _ = await self.search_symbols_page(query, kind)
+        return symbols
+
+    async def search_symbols_page(
+        self,
+        query: str,
+        kind: str | None = None,
+        *,
+        limit: int = DEFAULT_SEARCH_LIMIT,
+        file_prefix: str | None = None,
+    ) -> tuple[list[SymbolRecord], int]:
+        """Return ranked substring matches and the total before applying the limit."""
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= MAX_SEARCH_LIMIT
+        ):
+            raise ValueError(f"limit must be an integer between 1 and {MAX_SEARCH_LIMIT}")
+        predicates = ["s.name LIKE ?"]
+        parameters: list[str | int] = [f"%{query}%"]
+        if kind:
+            predicates.append("s.kind = ?")
+            parameters.append(kind.lower())
+        if file_prefix is not None:
+            # Match the existing literal startswith filter, including '%' and '_'
+            # in a directory name, before pagination and counting.
+            predicates.append("substr(f.path, 1, length(?)) = ?")
+            parameters.extend([file_prefix, file_prefix])
+        sql = f"""
+            SELECT s.*, COUNT(*) OVER () AS total_matches
+            FROM symbols AS s JOIN files AS f ON f.id = s.file_id
+            WHERE {" AND ".join(predicates)}
+            ORDER BY s.name = ? DESC, s.name LIKE ? DESC, s.name, f.path, s.id
+            LIMIT ?
+        """
+        parameters.extend([query, f"{query}%", limit])
+        # A window count keeps the page and total in the same SQLite snapshot,
+        # even if a watcher updates the index while the query runs.
+        async with self.db.execute(sql, parameters) as cur:
+            rows = list(await cur.fetchall())
+        total = int(rows[0]["total_matches"]) if rows else 0
+        return [_row_to_symbol(row) for row in rows], total
 
     async def get_all_symbols(self) -> list[SymbolRecord]:
         async with self.db.execute("SELECT * FROM symbols") as cur:
