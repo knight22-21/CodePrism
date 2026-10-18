@@ -27,21 +27,20 @@
    - Release URL: https://github.com/knight22-21/CodePrism/releases/tag/skill-v1.0.0
    - Includes skill-distribution/SKILL.md as asset
    - Users can download skill from release
+4. **GitHub Sponsors enabled** - FUNDING.yml created and pushed
+   - Stripe verification completed (works for India!)
+   - Profile set up and waiting for publication
 
 ---
 
-## 🚀 Steps Left for You (This Week - ~25 minutes minimum)
+## 🚀 Steps Left for You (This Week - ~15 minutes minimum)
 
-### Step 1: Enable GitHub Sponsors (10 minutes)
+### ✅ Step 1: Enable GitHub Sponsors - COMPLETED
 
-1. Go to https://github.com/knight22-21/CodePrism
-2. Click "Sponsors" tab
-3. Click "Enable GitHub Sponsors"
-4. Set up tiers:
-   - ☕ Bronze: $1/month
-   - 🚀 Silver: $10/month
-   - 💎 Gold: $15/month
-5. Add sponsor widget to README (GitHub will provide code)
+- GitHub Sponsors profile set up
+- FUNDING.yml created and pushed
+- Stripe verification completed (works for India!)
+- Waiting for profile to be published
 
 ### Step 2: Submit to SkillsMP (5 minutes)
 
@@ -74,11 +73,11 @@
 
 ## 📋 Minimum Viable Checklist
 
-### Do Now (25 minutes)
+### Do Now (15 minutes)
 - [x] Commit changes to Git
 - [x] Push to GitHub
 - [x] Create GitHub release (skill-v1.0.0)
-- [ ] Enable GitHub Sponsors
+- [x] Enable GitHub Sponsors (waiting for profile to be published)
 - [ ] Submit to SkillsMP
 - [ ] Submit to SkillAgent
 - [ ] Submit to agentskill.sh
@@ -224,9 +223,9 @@
 
 ## ✅ You're Almost There!
 
-All files are committed and pushed. GitHub release is created. Just do the 3 platform submissions and enable GitHub Sponsors (25 minutes), and you'll have maximum reach with zero payout restrictions.
+All files are committed and pushed. GitHub release is created. GitHub Sponsors is enabled (waiting for profile to be published). Just do the 3 platform submissions (15 minutes), and you'll have maximum reach with zero payout restrictions.
 
-**Total time remaining: ~25 minutes**
-**Expected outcome: 3M+ potential reach, direct monetization, community building**
+**Total time remaining: ~15 minutes**
+**Expected outcome: 3M+ potential reach, direct monetization via GitHub Sponsors, community building**
 
 Good luck! 🚀
