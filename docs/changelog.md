@@ -8,6 +8,10 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- `get_file_map` now filters indexed files by directory and returns a sorted page of up to 200
+  files by default. MCP callers can use `limit` (1-1000) and `offset`; totals cover the selected
+  directory and `truncated` reports omitted files. A directory with no indexed files returns
+  an error. Internal CLI consumers still request complete maps. (#49)
 - CLI `index` and the `index_project` MCP tool now load `.codeprism.toml`, matching the server's
   startup index. Explicit language and embedding options override the file, while omitted options
   preserve it; `index --no-embeddings` can disable configured embeddings. Automatic CLI/MCP parser
