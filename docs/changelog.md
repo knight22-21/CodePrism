@@ -12,6 +12,10 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   files by default. MCP callers can use `limit` (1-1000) and `offset`; totals cover the selected
   directory and `truncated` reports omitted files. A directory with no indexed files returns
   an error. Internal CLI consumers still request complete maps. (#49)
+- CLI `index` and the `index_project` MCP tool now load `.codeprism.toml`, matching the server's
+  startup index. Explicit language and embedding options override the file, while omitted options
+  preserve it; `index --no-embeddings` can disable configured embeddings. Automatic CLI/MCP parser
+  workers and the library's in-process default remain unchanged. (#48)
 - Substring symbol search ranks exact names and prefixes before limiting results. MCP
   `search_symbol` now accepts `limit` (1-500, default 50) and reports filtered `total` and
   `truncated`; kind/project filters apply before pagination. Semantic search keeps its

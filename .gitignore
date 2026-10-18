@@ -222,7 +222,9 @@ __marimo__/
 CODEPRISM_SPEC.md
 CLAUDE.md
 .claude/
+.devin/
 DEMO_GUIDE.md
+MEDIUM_ARTICLE.md
 IDEAS_PRIVATE.md
 BENCHMARKING.md
 benchmarks/results/
@@ -237,3 +239,7 @@ project-infra/
 
 # Maintainer workflow notes (local only)
 .agents/
+.cursor/
+
+# Test files (local only)
+errors.txt

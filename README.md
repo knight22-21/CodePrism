@@ -8,6 +8,7 @@ CodePrism builds a persistent knowledge graph of your project — every function
 [![Python](https://img.shields.io/pypi/pyversions/codeprism-ai)](https://pypi.org/project/codeprism-ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://github.com/knight22-21/CodePrism/actions/workflows/ci.yml/badge.svg)](https://github.com/knight22-21/CodePrism/actions)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/knight22-21)](https://github.com/sponsors/knight22-21)
 
 ---
 
@@ -408,8 +409,15 @@ See [docs/architecture.md](docs/architecture.md#known-limitations) for the full 
 
 ## Configuration
 
-The MCP server reads an optional `.codeprism.toml` in the project root when it starts. The CLI
-commands take their options as flags instead (`--languages`, `--workers`, ...).
+The MCP server's startup index, `codeprism index` and the `index_project` MCP tool read an optional
+`.codeprism.toml` in the project root. Explicit indexing flags or tool arguments override the file;
+omitted options inherit it. For example, `index --languages python` overrides the configured language
+list, and `--embeddings` / `--no-embeddings` override `enable_embeddings`. The MCP tool likewise accepts
+`embeddings=true` or `embeddings=false`; omitting it preserves the file's setting.
+
+Parser workers keep their entry-point defaults: CLI and MCP indexing use one process per CPU core
+(`parse_workers = 0`), while library callers default to in-process parsing (`parse_workers = 1`).
+Use `index --workers N` to override the CLI worker count.
 
 ```toml
 [codeprism]
@@ -480,6 +488,45 @@ Full methodology, per-task breakdown, and reproduction instructions:
 | [docs/changelog.md](docs/changelog.md) | Version history and release notes |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Per-editor setup, Docker Compose, CI, OpenAI Agents SDK |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev environment, coding standards, PR process |
+
+---
+
+## 💖 Sponsor CodePrism
+
+Support continued development of CodePrism - the knowledge graph that helps AI agents understand your codebase with 91% token reduction.
+
+**Why sponsor?**
+- Keep it free and open source
+- Fund new features and language support
+- Get priority support and feature requests
+- Support the AI agent ecosystem
+
+**[Become a sponsor →](https://github.com/sponsors/knight22-21)**
+
+See [SPONSORS.md](SPONSORS.md) for detailed tiers and benefits.
+
+---
+
+## 🤖 CodePrism Skill for AI Agents
+
+CodePrism includes a built-in skill that teaches AI agents to use the knowledge graph effectively. The skill is automatically installed when you run `codeprism setup <agent>`.
+
+**What the skill does:**
+- Teaches agents to query the graph instead of reading files
+- 91% token reduction on large codebases
+- Security scanning before every write
+- Smart context caching to avoid re-fetching
+
+**Learn more:**
+- [Skill Installation Guide](SKILL_DISTRIBUTION.md)
+- [Skill User Guide](docs/skill-guide.md)
+- [Skill Examples](docs/skill-examples.md)
+- [Skill File](skill-distribution/SKILL.md)
+
+**Platform listings:**
+- [SkillsMP](https://skillsmp.com) - 3M+ skills indexed
+- [SkillAgent](https://skillagent.dev) - 15K+ skills directory
+- [agentskill.sh](https://agentskill.sh) - 275K+ skills marketplace
 
 ---
 
