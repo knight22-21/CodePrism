@@ -30,6 +30,41 @@ REPOS = [
         "url": "https://github.com/encode/httpx.git",
         "tag": "0.27.2",
     },
+    {
+        "name": "fastapi",
+        "url": "https://github.com/tiangolo/fastapi.git",
+        "tag": "0.115.0",
+    },
+    {
+        "name": "pydantic",
+        "url": "https://github.com/pydantic/pydantic.git",
+        "tag": "v2.9.2",
+    },
+    {
+        "name": "express",
+        "url": "https://github.com/expressjs/express.git",
+        "tag": "v4.22.3",
+    },
+    {
+        "name": "react",
+        "url": "https://github.com/facebook/react.git",
+        "tag": "v18.3.1",
+    },
+    {
+        "name": "typescript",
+        "url": "https://github.com/microsoft/TypeScript.git",
+        "tag": "v5.6.3",
+    },
+    {
+        "name": "gin",
+        "url": "https://github.com/gin-gonic/gin.git",
+        "tag": "v1.10.0",
+    },
+    {
+        "name": "cobra",
+        "url": "https://github.com/spf13/cobra.git",
+        "tag": "v1.8.1",
+    },
 ]
 
 REPOS_DIR = Path(__file__).parent / "repos"

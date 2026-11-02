@@ -1,0 +1,323 @@
+[
+  {
+    "id": "gin_001",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "Copy",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Copy do?",
+    "ground_truth": "Copy returns a copy of the current Context."
+  },
+  {
+    "id": "gin_002",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "HandlerName",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does HandlerName do?",
+    "ground_truth": "HandlerName returns the current handler name."
+  },
+  {
+    "id": "gin_003",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "HandlerNames",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does HandlerNames do?",
+    "ground_truth": "HandlerNames returns the names of handlers in the chain."
+  },
+  {
+    "id": "gin_004",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "Next",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Next do?",
+    "ground_truth": "Next advances execution to the next handlers."
+  },
+  {
+    "id": "gin_005",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "Abort",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Abort do?",
+    "ground_truth": "Abort prevents pending handlers from executing."
+  },
+  {
+    "id": "gin_006",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "AbortWithStatus",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does AbortWithStatus do?",
+    "ground_truth": "AbortWithStatus aborts and writes an HTTP status."
+  },
+  {
+    "id": "gin_007",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "AbortWithStatusJSON",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does AbortWithStatusJSON do?",
+    "ground_truth": "AbortWithStatusJSON aborts and writes a JSON status response."
+  },
+  {
+    "id": "gin_008",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "Error",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Error do?",
+    "ground_truth": "Error attaches an error to the context."
+  },
+  {
+    "id": "gin_009",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "Set",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Set do?",
+    "ground_truth": "Set stores a value in the context."
+  },
+  {
+    "id": "gin_010",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "Get",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Get do?",
+    "ground_truth": "Get retrieves a value from the context."
+  },
+  {
+    "id": "gin_011",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "MustGet",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does MustGet do?",
+    "ground_truth": "MustGet retrieves a value or panics if absent."
+  },
+  {
+    "id": "gin_012",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "context.go",
+    "function": "GetString",
+    "relevant_files": [
+      "context.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does GetString do?",
+    "ground_truth": "GetString retrieves a string value."
+  },
+  {
+    "id": "gin_013",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "gin.go",
+    "function": "New",
+    "relevant_files": [
+      "gin.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does New do?",
+    "ground_truth": "New returns a new Gin engine."
+  },
+  {
+    "id": "gin_014",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "gin.go",
+    "function": "Default",
+    "relevant_files": [
+      "gin.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Default do?",
+    "ground_truth": "Default returns a Gin engine with logging and recovery middleware."
+  },
+  {
+    "id": "gin_015",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "gin.go",
+    "function": "ServeHTTP",
+    "relevant_files": [
+      "gin.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does ServeHTTP do?",
+    "ground_truth": "ServeHTTP implements http.Handler for the Gin engine."
+  },
+  {
+    "id": "gin_016",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "routergroup.go",
+    "function": "Group",
+    "relevant_files": [
+      "routergroup.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Group do?",
+    "ground_truth": "Group creates a router group with a path prefix."
+  },
+  {
+    "id": "gin_017",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "routergroup.go",
+    "function": "Use",
+    "relevant_files": [
+      "routergroup.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Use do?",
+    "ground_truth": "Use attaches middleware to a router group."
+  },
+  {
+    "id": "gin_018",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "routergroup.go",
+    "function": "GET",
+    "relevant_files": [
+      "routergroup.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does GET do?",
+    "ground_truth": "GET registers a GET route."
+  },
+  {
+    "id": "gin_019",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "routergroup.go",
+    "function": "POST",
+    "relevant_files": [
+      "routergroup.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does POST do?",
+    "ground_truth": "POST registers a POST route."
+  },
+  {
+    "id": "gin_020",
+    "repo": "gin",
+    "repo_path": "benchmarks/repos/gin",
+    "type": "symbol_lookup",
+    "file": "auth.go",
+    "function": "BasicAuth",
+    "relevant_files": [
+      "auth.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does BasicAuth do?",
+    "ground_truth": "BasicAuth returns basic-authentication middleware."
+  }
+]
+

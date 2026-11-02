@@ -6,8 +6,12 @@
     "type": "symbol_lookup",
     "file": "src/flask/sansio/scaffold.py",
     "function": "route",
-    "relevant_files": ["src/flask/sansio/scaffold.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/flask/sansio/scaffold.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Flask.route do and what arguments does it take?",
     "ground_truth": "route(rule, **options) is a decorator that registers a URL rule for a view function. It calls add_url_rule internally, passing the endpoint name and the view function. Methods default to GET; HEAD and OPTIONS are added automatically."
   },
@@ -18,8 +22,12 @@
     "type": "call_trace",
     "file": "src/flask/app.py",
     "function": "full_dispatch_request",
-    "relevant_files": ["src/flask/app.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Flask.full_dispatch_request call internally to handle a request?",
     "ground_truth": "full_dispatch_request calls preprocess_request, then dispatch_request (if preprocess_request returns None), and wraps exceptions with handle_user_exception. Finally it calls finalize_request to convert the return value into a Response."
   },
@@ -30,8 +38,12 @@
     "type": "impact_analysis",
     "file": "src/flask/app.py",
     "function": "dispatch_request",
-    "relevant_files": ["src/flask/app.py"],
-    "cp_tools": ["get_impact"],
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_impact"
+    ],
     "query": "If Flask.dispatch_request changes its return type, which functions would be affected?",
     "ground_truth": "full_dispatch_request calls dispatch_request and passes its return value to finalize_request. Changes to dispatch_request's return type would directly break full_dispatch_request and transitively wsgi_app, which calls full_dispatch_request."
   },
@@ -42,8 +54,12 @@
     "type": "dependency_map",
     "file": "src/flask/app.py",
     "function": "full_dispatch_request",
-    "relevant_files": ["src/flask/app.py"],
-    "cp_tools": ["get_dependencies"],
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_dependencies"
+    ],
     "query": "What does flask/app.py import? List internal vs external dependencies.",
     "ground_truth": "app.py imports internally from .cli, .ctx, .globals, .helpers, .sansio.app, .sansio.scaffold, .sessions, .signals, .templating, .wrappers. External: os, sys, collections.abc, datetime, inspect, itertools, types, urllib.parse, click, werkzeug."
   },
@@ -54,8 +70,12 @@
     "type": "symbol_lookup",
     "file": "src/flask/helpers.py",
     "function": "url_for",
-    "relevant_files": ["src/flask/helpers.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/flask/helpers.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does flask.url_for do and what parameters does it take?",
     "ground_truth": "url_for(endpoint, *, _anchor, _method, _scheme, _external, **values) generates a URL for the given endpoint. It delegates to current_app.url_for(). Requires an active request or application context. Unknown keyword arguments are appended as query string parameters."
   },
@@ -66,8 +86,12 @@
     "type": "call_trace",
     "file": "src/flask/app.py",
     "function": "handle_exception",
-    "relevant_files": ["src/flask/app.py"],
-    "cp_tools": ["get_callers"],
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_callers"
+    ],
     "query": "Which functions call Flask.handle_exception?",
     "ground_truth": "handle_exception is called by handle_user_exception when an unhandled exception occurs that is not an HTTPException and has no registered error handler."
   },
@@ -78,8 +102,13 @@
     "type": "impact_analysis",
     "file": "src/flask/sansio/blueprints.py",
     "function": "register",
-    "relevant_files": ["src/flask/sansio/blueprints.py", "src/flask/sansio/app.py"],
-    "cp_tools": ["get_impact"],
+    "relevant_files": [
+      "src/flask/sansio/blueprints.py",
+      "src/flask/sansio/app.py"
+    ],
+    "cp_tools": [
+      "get_impact"
+    ],
     "query": "If Blueprint.register changes its signature, which Flask internals would be affected?",
     "ground_truth": "register is called by Flask.register_blueprint in sansio/app.py. Changes to register would break register_blueprint and any code that calls register_blueprint to attach blueprints to the app."
   },
@@ -90,8 +119,12 @@
     "type": "dependency_map",
     "file": "src/flask/ctx.py",
     "function": "push",
-    "relevant_files": ["src/flask/ctx.py"],
-    "cp_tools": ["get_dependencies"],
+    "relevant_files": [
+      "src/flask/ctx.py"
+    ],
+    "cp_tools": [
+      "get_dependencies"
+    ],
     "query": "What does flask/ctx.py import? List internal vs external dependencies.",
     "ground_truth": "ctx.py imports internally from .globals (_cv_app, _cv_request), .signals (appcontext_popped, appcontext_pushed), and .typing. External: contextvars, sys, typing, functools, types, werkzeug.exceptions."
   },
@@ -102,8 +135,12 @@
     "type": "symbol_lookup",
     "file": "src/flask/app.py",
     "function": "make_response",
-    "relevant_files": ["src/flask/app.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Flask.make_response accept and return?",
     "ground_truth": "make_response(rv) converts the return value from a view function into a Response instance. It accepts str, bytes, dict, list, generator/iterator, tuple of (body, status, headers) in various combinations, a response_class instance, or a WSGI callable."
   },
@@ -114,9 +151,173 @@
     "type": "call_trace",
     "file": "src/flask/ctx.py",
     "function": "push",
-    "relevant_files": ["src/flask/ctx.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/flask/ctx.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does RequestContext.push do internally when setting up a request context?",
     "ground_truth": "push() ensures an AppContext exists (pushing one if needed), sets the request context via _cv_request.set(self), then opens the session via session_interface.open_session, and finally calls match_request to match the URL against the routing map."
+  },
+  {
+    "id": "flask_011",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/app.py",
+    "function": "create_url_adapter",
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does create_url_adapter do?",
+    "ground_truth": "create_url_adapter creates the URL adapter for a request or application context."
+  },
+  {
+    "id": "flask_012",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/app.py",
+    "function": "create_jinja_environment",
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does create_jinja_environment do?",
+    "ground_truth": "create_jinja_environment creates the Jinja environment used by the Flask application."
+  },
+  {
+    "id": "flask_013",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/app.py",
+    "function": "preprocess_request",
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does preprocess_request do?",
+    "ground_truth": "preprocess_request runs URL value preprocessors and before-request functions."
+  },
+  {
+    "id": "flask_014",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/app.py",
+    "function": "process_response",
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does process_response do?",
+    "ground_truth": "process_response runs after-request functions and saves the session before returning the response."
+  },
+  {
+    "id": "flask_015",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/app.py",
+    "function": "do_teardown_request",
+    "relevant_files": [
+      "src/flask/app.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does do_teardown_request do?",
+    "ground_truth": "do_teardown_request runs request teardown functions and emits the request-tearing-down signal."
+  },
+  {
+    "id": "flask_016",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/helpers.py",
+    "function": "redirect",
+    "relevant_files": [
+      "src/flask/helpers.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does redirect do?",
+    "ground_truth": "redirect returns a redirect response to a target location."
+  },
+  {
+    "id": "flask_017",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/helpers.py",
+    "function": "abort",
+    "relevant_files": [
+      "src/flask/helpers.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does abort do?",
+    "ground_truth": "abort raises an HTTP exception or delegates to the current application's aborter."
+  },
+  {
+    "id": "flask_018",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/templating.py",
+    "function": "render_template",
+    "relevant_files": [
+      "src/flask/templating.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does render_template do?",
+    "ground_truth": "render_template renders a template using the current application."
+  },
+  {
+    "id": "flask_019",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/sessions.py",
+    "function": "SecureCookieSession",
+    "relevant_files": [
+      "src/flask/sessions.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does SecureCookieSession do?",
+    "ground_truth": "SecureCookieSession is a dict-like session whose modifications are tracked."
+  },
+  {
+    "id": "flask_020",
+    "repo": "flask",
+    "repo_path": "benchmarks/repos/flask",
+    "type": "symbol_lookup",
+    "file": "src/flask/sansio/scaffold.py",
+    "function": "endpoint",
+    "relevant_files": [
+      "src/flask/sansio/scaffold.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does endpoint do?",
+    "ground_truth": "endpoint returns a decorator that registers a view function under an endpoint name."
   }
 ]

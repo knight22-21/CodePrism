@@ -5,6 +5,50 @@ this file is the committed record.
 
 ---
 
+## Run 12 — 2026-10-26 | Level 1 complete rerun | 11 corpora, 220 tasks
+
+**Version:** v0.1.11 source tree  
+**Token backend:** tiktoken `cl100k_base`  
+**Accuracy judge:** Ollama cloud `gpt-oss:120b`  
+**Method:** 20 tasks per corpus; each accuracy task makes one answer call and one judge call. All task targets were validated against checked-out source. TypeScript uses the documented 78-file compiler subset because the full checkout did not complete indexing within the benchmark window.
+
+| Corpus | Tasks | Token reduction | Baseline accuracy | CodePrism accuracy |
+|---|---:|---:|---:|---:|
+| fixture | 20 | 10.3% | 0.90 | 0.82 |
+| requests | 20 | 86.2% | 0.98 | 0.80 |
+| flask | 20 | 92.6% | 0.88 | 0.81 |
+| httpx | 20 | 91.8% | 0.87 | 0.80 |
+| fastapi | 20 | 96.6% | 0.99 | 0.92 |
+| pydantic | 20 | 90.8% | 0.99 | 0.92 |
+| express | 20 | 97.2% | 0.92 | 0.45 |
+| react | 20 | 97.7% | 0.98 | 0.86 |
+| TypeScript* | 20 | 91.1% | 0.98 | 0.97 |
+| gin | 20 | 89.6% | 0.99 | 0.98 |
+| cobra | 20 | 91.3% | 0.94 | 0.98 |
+| **Weighted total / macro average** | **220** | **93.0%** | **0.95** | **0.85** |
+
+`*` TypeScript is the bounded compiler subset described above. Raw artifacts are stored in `benchmarks/results/level1_full_accuracy_*.json`; token-only smoke artifacts are stored in `benchmarks/results/level1_full_tokens_*.json`.
+
+## Run 11 — 2026-10-26 | Level 1 Token + Accuracy rerun | Six Python corpora
+
+**Version:** v0.1.11 source tree  
+**Token backend:** tiktoken cl100k_base  
+**Accuracy judge:** Ollama cloud gpt-oss:120b  
+**Method:** 10 tasks each for fixture/requests/flask/httpx; 20 tasks each for fastapi/pydantic. Each accuracy task makes one answer call and one judge call. Ground truths for the new corpora were statically validated against the checked-out AST; two stale symbol names were corrected and rerun.
+
+| Corpus | Tasks | Token reduction | Baseline accuracy | CodePrism accuracy |
+|---|---:|---:|---:|---:|
+| fixture | 10 | 23.6% | 0.80 | 0.80 |
+| requests | 10 | 88.9% | 0.85 | 0.81 |
+| flask | 10 | 91.6% | 0.80 | 0.72 |
+| httpx | 10 | 93.2% | 0.76 | 0.82 |
+| fastapi | 20 | 96.7% | 0.99 | 0.93 |
+| pydantic | 20 | 91.0% | 0.99 | 0.96 |
+
+Raw artifacts: benchmarks/results/level1_*_rerun.json; corrected single-task reruns are kept as level1_*_corrections*.json.
+
+---
+
 ## Run 10 — 2026-09-18 | Level 3 Symbol Resolution Accuracy | All Python corpora
 
 **Tool:** `benchmarks/run_symbol_accuracy.py`

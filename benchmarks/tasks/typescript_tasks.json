@@ -1,0 +1,323 @@
+[
+  {
+    "id": "typescript_001",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/builderPublic.ts",
+    "function": "createSemanticDiagnosticsBuilderProgram",
+    "relevant_files": [
+      "src/compiler/builderPublic.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createSemanticDiagnosticsBuilderProgram do?",
+    "ground_truth": "createSemanticDiagnosticsBuilderProgram creates a builder for semantic diagnostics."
+  },
+  {
+    "id": "typescript_002",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/builderPublic.ts",
+    "function": "createEmitAndSemanticDiagnosticsBuilderProgram",
+    "relevant_files": [
+      "src/compiler/builderPublic.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createEmitAndSemanticDiagnosticsBuilderProgram do?",
+    "ground_truth": "createEmitAndSemanticDiagnosticsBuilderProgram creates a builder for emit and semantic diagnostics."
+  },
+  {
+    "id": "typescript_003",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/builderPublic.ts",
+    "function": "createAbstractBuilder",
+    "relevant_files": [
+      "src/compiler/builderPublic.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createAbstractBuilder do?",
+    "ground_truth": "createAbstractBuilder creates an abstract incremental builder."
+  },
+  {
+    "id": "typescript_004",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "getTransformers",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does getTransformers do?",
+    "ground_truth": "getTransformers gets the configured emit transformers."
+  },
+  {
+    "id": "typescript_005",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "noEmitSubstitution",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does noEmitSubstitution do?",
+    "ground_truth": "noEmitSubstitution handles a transform without emit substitution."
+  },
+  {
+    "id": "typescript_006",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "noEmitNotification",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does noEmitNotification do?",
+    "ground_truth": "noEmitNotification handles a transform without emit notification."
+  },
+  {
+    "id": "typescript_007",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "transformNodes",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does transformNodes do?",
+    "ground_truth": "transformNodes transforms a collection of syntax tree nodes."
+  },
+  {
+    "id": "typescript_008",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "getModuleTransformer",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does getModuleTransformer do?",
+    "ground_truth": "getModuleTransformer gets a module transformer for a module kind."
+  },
+  {
+    "id": "typescript_009",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "wrapCustomTransformer",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does wrapCustomTransformer do?",
+    "ground_truth": "wrapCustomTransformer wraps a custom transformer."
+  },
+  {
+    "id": "typescript_010",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "wrapCustomTransformerFactory",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does wrapCustomTransformerFactory do?",
+    "ground_truth": "wrapCustomTransformerFactory wraps a custom transformer factory."
+  },
+  {
+    "id": "typescript_011",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "wrapScriptTransformerFactory",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does wrapScriptTransformerFactory do?",
+    "ground_truth": "wrapScriptTransformerFactory wraps a script transformer factory."
+  },
+  {
+    "id": "typescript_012",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "wrapDeclarationTransformerFactory",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does wrapDeclarationTransformerFactory do?",
+    "ground_truth": "wrapDeclarationTransformerFactory wraps a declaration transformer factory."
+  },
+  {
+    "id": "typescript_013",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "getScriptTransformers",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does getScriptTransformers do?",
+    "ground_truth": "getScriptTransformers gets script transformers."
+  },
+  {
+    "id": "typescript_014",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/transformer.ts",
+    "function": "getDeclarationTransformers",
+    "relevant_files": [
+      "src/compiler/transformer.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does getDeclarationTransformers do?",
+    "ground_truth": "getDeclarationTransformers gets declaration transformers."
+  },
+  {
+    "id": "typescript_015",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/factory/nodeTests.ts",
+    "function": "isNumericLiteral",
+    "relevant_files": [
+      "src/compiler/factory/nodeTests.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does isNumericLiteral do?",
+    "ground_truth": "isNumericLiteral checks whether a node is a numeric literal."
+  },
+  {
+    "id": "typescript_016",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/factory/nodeTests.ts",
+    "function": "isStringLiteral",
+    "relevant_files": [
+      "src/compiler/factory/nodeTests.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does isStringLiteral do?",
+    "ground_truth": "isStringLiteral checks whether a node is a string literal."
+  },
+  {
+    "id": "typescript_017",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/factory/nodeTests.ts",
+    "function": "isIdentifier",
+    "relevant_files": [
+      "src/compiler/factory/nodeTests.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does isIdentifier do?",
+    "ground_truth": "isIdentifier checks whether a node is an identifier."
+  },
+  {
+    "id": "typescript_018",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/factory/nodeTests.ts",
+    "function": "isCallExpression",
+    "relevant_files": [
+      "src/compiler/factory/nodeTests.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does isCallExpression do?",
+    "ground_truth": "isCallExpression checks whether a node is a call expression."
+  },
+  {
+    "id": "typescript_019",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/factory/nodeTests.ts",
+    "function": "isFunctionDeclaration",
+    "relevant_files": [
+      "src/compiler/factory/nodeTests.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does isFunctionDeclaration do?",
+    "ground_truth": "isFunctionDeclaration checks whether a node is a function declaration."
+  },
+  {
+    "id": "typescript_020",
+    "repo": "typescript",
+    "repo_path": "benchmarks/repos/typescript-benchmark",
+    "type": "symbol_lookup",
+    "file": "src/compiler/factory/nodeTests.ts",
+    "function": "isClassDeclaration",
+    "relevant_files": [
+      "src/compiler/factory/nodeTests.ts"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does isClassDeclaration do?",
+    "ground_truth": "isClassDeclaration checks whether a node is a class declaration."
+  }
+]
+

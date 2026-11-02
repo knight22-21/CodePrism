@@ -7,25 +7,25 @@ against reading raw source files.
 
 ## Summary
 
-| Level | Metric | Fixture | requests | flask | httpx |
-|---|---|---|---|---|---|
-| Level 1 | Token reduction | 24% | **88.9%** | **91.6%** | **93.2%** |
-| Level 1 | Accuracy (CP / baseline) | 0.60 / 0.89 | **0.87 / 0.86** | 0.64 / 0.77 | **0.70 / 0.68** |
+| Level | Metric | fixture | requests | flask | httpx | fastapi | pydantic | express | react | TypeScript* | gin | cobra |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Level 1 | Token reduction | 10.3% | 86.2% | 92.6% | 91.8% | 96.6% | 90.8% | 97.2% | 97.7% | 91.1% | 89.6% | 91.3% |
+| Level 1 | Accuracy (CP / baseline) | 0.82 / 0.90 | 0.80 / 0.98 | 0.81 / 0.88 | 0.80 / 0.87 | 0.92 / 0.99 | 0.92 / 0.99 | 0.45 / 0.92 | 0.86 / 0.98 | 0.97 / 0.98 | 0.98 / 0.99 | 0.98 / 0.94 |
 | Level 2 | Query p50 latency | < 1.5ms | < 4ms | < 4.9ms | < 5.0ms |
 | Level 2 | Query p95 latency | < 2ms | < 5.2ms | < 7.2ms | < 6.0ms |
 | Level 3 | Symbol precision / recall / F1 | 1.000 / 1.000 / 1.000 | 1.000 / 0.996 / 0.998 | 1.000 / 1.000 / 1.000 | 1.000 / 0.964 / 0.964 |
 | Level 3 | Caller precision / recall (intra-file) | 0.875 / 1.000 | 0.669 / 0.763 | 0.693 / 0.721 | 0.849 / 0.813 |
 | Level 3b | Cross-file call precision / recall (Python) | n/a | **1.000** / 0.897 | **1.000** / 0.948 | **1.000** / 1.000 |
 
-Token reduction averaged **91% across 3 production codebases** (requests, flask, httpx).
-Accuracy: CodePrism **matches or beats the baseline on 2/3 corpora** (requests: 0.87 vs 0.86; httpx: 0.70 vs 0.68).
+The completed Level 1 rerun covers **11 corpora and 220 tasks**. Weighted token reduction is **93.0%** overall; macro-average accuracy is **0.85 for CodePrism vs 0.95 baseline**.
+CodePrism is within 0.03 of baseline on TypeScript, Gin, and Cobra, while Express is the main quality outlier (0.45 vs 0.92) despite excellent token reduction. The small fixture also shows the expected overhead penalty on tiny files.
 Symbol indexing: precision **1.000** and recall **0.990** by name (2,274 of 2,279 functions in 4 corpora).
 This compares sets of names per file, so it cannot see same-named methods in different classes that
 share one symbol ([#34](https://github.com/knight22-21/CodePrism/issues/34)).
 
-**What was measured when.** Level 1 token reduction, Level 3 and Level 3b were re-measured on
-v0.1.11 (2026-09-30). Level 1 accuracy (LLM-as-judge) and Level 2 latency are from v0.1.5–v0.1.7 and
-have not been re-run; accuracy needs the judge API.
+**What was measured when.** Level 1 token reduction and accuracy were re-measured on v0.1.11 on
+2026-10-26 with Ollama cloud gpt-oss:120b across all 11 corpora. TypeScript uses a bounded 78-file
+compiler subset. Level 2 latency remains historical and still needs a v0.1.11 rerun.
 
 ---
 

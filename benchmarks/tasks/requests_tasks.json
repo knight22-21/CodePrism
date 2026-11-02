@@ -6,8 +6,13 @@
     "type": "symbol_lookup",
     "file": "src/requests/models.py",
     "function": "raise_for_status",
-    "relevant_files": ["src/requests/models.py", "src/requests/exceptions.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/requests/models.py",
+      "src/requests/exceptions.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Response.raise_for_status do? What exception does it raise and when?",
     "ground_truth": "raise_for_status() raises HTTPError if the HTTP status code indicates an error (4xx or 5xx response)."
   },
@@ -18,8 +23,12 @@
     "type": "call_trace",
     "file": "src/requests/sessions.py",
     "function": "request",
-    "relevant_files": ["src/requests/sessions.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What functions does Session.request call internally? List every call it makes.",
     "ground_truth": "Session.request calls prepare_request, merge_environment_settings, and send."
   },
@@ -30,8 +39,13 @@
     "type": "impact_analysis",
     "file": "src/requests/adapters.py",
     "function": "send",
-    "relevant_files": ["src/requests/adapters.py", "src/requests/sessions.py"],
-    "cp_tools": ["get_impact"],
+    "relevant_files": [
+      "src/requests/adapters.py",
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_impact"
+    ],
     "query": "If HTTPAdapter.send changes its signature, which functions would break?",
     "ground_truth": "Session.send directly depends on HTTPAdapter.send; all HTTP method shortcuts (get, post, put, delete, etc.) are transitively affected."
   },
@@ -42,8 +56,12 @@
     "type": "dependency_map",
     "file": "src/requests/sessions.py",
     "function": "request",
-    "relevant_files": ["src/requests/sessions.py"],
-    "cp_tools": ["get_dependencies"],
+    "relevant_files": [
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_dependencies"
+    ],
     "query": "What does requests/sessions.py import? List internal vs external dependencies.",
     "ground_truth": "sessions.py imports internally from .adapters, .auth, .cookies, .exceptions, .hooks, .models, .status_codes, .structures, .utils, ._internal_utils. External: os, sys, time, collections, datetime, .compat (re-exports stdlib symbols so classified external)."
   },
@@ -54,8 +72,12 @@
     "type": "symbol_lookup",
     "file": "src/requests/models.py",
     "function": "prepare_url",
-    "relevant_files": ["src/requests/models.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/requests/models.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What is the signature and purpose of PreparedRequest.prepare_url?",
     "ground_truth": "prepare_url(url, params) prepares and normalizes the request URL, encoding params into the query string."
   },
@@ -66,8 +88,12 @@
     "type": "call_trace",
     "file": "src/requests/sessions.py",
     "function": "send",
-    "relevant_files": ["src/requests/sessions.py"],
-    "cp_tools": ["get_callers"],
+    "relevant_files": [
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_callers"
+    ],
     "query": "Which functions call Session.send?",
     "ground_truth": "Session.send is called by Session.request and by SessionRedirectMixin.resolve_redirects (which calls self.send on each redirect hop)."
   },
@@ -78,8 +104,12 @@
     "type": "impact_analysis",
     "file": "src/requests/sessions.py",
     "function": "request",
-    "relevant_files": ["src/requests/sessions.py"],
-    "cp_tools": ["get_impact"],
+    "relevant_files": [
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_impact"
+    ],
     "query": "If Session.request changes its return type, which callers would be affected?",
     "ground_truth": "Session.get, Session.post, Session.put, Session.patch, Session.delete, Session.head, and Session.options all call Session.request and would be affected."
   },
@@ -90,8 +120,12 @@
     "type": "dependency_map",
     "file": "src/requests/auth.py",
     "function": "__call__",
-    "relevant_files": ["src/requests/auth.py"],
-    "cp_tools": ["get_dependencies"],
+    "relevant_files": [
+      "src/requests/auth.py"
+    ],
+    "cp_tools": [
+      "get_dependencies"
+    ],
     "query": "What does requests/auth.py import?",
     "ground_truth": "auth.py imports internally from ._internal_utils, .compat, .cookies, .utils. External stdlib: base64, hashlib, os, re, threading, time, warnings."
   },
@@ -102,8 +136,12 @@
     "type": "symbol_lookup",
     "file": "src/requests/auth.py",
     "function": "__call__",
-    "relevant_files": ["src/requests/auth.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/requests/auth.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does HTTPBasicAuth.__call__ do? How does it authenticate a request?",
     "ground_truth": "HTTPBasicAuth.__call__ sets the Authorization header on the request using base64-encoded username:password credentials."
   },
@@ -114,9 +152,173 @@
     "type": "call_trace",
     "file": "src/requests/adapters.py",
     "function": "send",
-    "relevant_files": ["src/requests/adapters.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "src/requests/adapters.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does HTTPAdapter.send call internally to make the actual network request?",
     "ground_truth": "HTTPAdapter.send calls get_connection to retrieve a urllib3 connection pool, then calls urlopen on the pool to make the actual HTTP request."
+  },
+  {
+    "id": "requests_011",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/api.py",
+    "function": "get",
+    "relevant_files": [
+      "src/requests/api.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does get do?",
+    "ground_truth": "get sends a GET request through the request session."
+  },
+  {
+    "id": "requests_012",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/api.py",
+    "function": "post",
+    "relevant_files": [
+      "src/requests/api.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does post do?",
+    "ground_truth": "post sends a POST request through the request session."
+  },
+  {
+    "id": "requests_013",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/api.py",
+    "function": "put",
+    "relevant_files": [
+      "src/requests/api.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does put do?",
+    "ground_truth": "put sends a PUT request through the request session."
+  },
+  {
+    "id": "requests_014",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/api.py",
+    "function": "delete",
+    "relevant_files": [
+      "src/requests/api.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does delete do?",
+    "ground_truth": "delete sends a DELETE request through the request session."
+  },
+  {
+    "id": "requests_015",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/sessions.py",
+    "function": "prepare_request",
+    "relevant_files": [
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does prepare_request do?",
+    "ground_truth": "prepare_request merges session state with a Request and returns a PreparedRequest."
+  },
+  {
+    "id": "requests_016",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/sessions.py",
+    "function": "merge_environment_settings",
+    "relevant_files": [
+      "src/requests/sessions.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does merge_environment_settings do?",
+    "ground_truth": "merge_environment_settings combines environment proxy, stream, certificate, and verification settings."
+  },
+  {
+    "id": "requests_017",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/adapters.py",
+    "function": "close",
+    "relevant_files": [
+      "src/requests/adapters.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does close do?",
+    "ground_truth": "HTTPAdapter.close closes its connection pools."
+  },
+  {
+    "id": "requests_018",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/models.py",
+    "function": "json",
+    "relevant_files": [
+      "src/requests/models.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does json do?",
+    "ground_truth": "Response.json decodes the response body as JSON and raises on invalid JSON."
+  },
+  {
+    "id": "requests_019",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/hooks.py",
+    "function": "dispatch_hook",
+    "relevant_files": [
+      "src/requests/hooks.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does dispatch_hook do?",
+    "ground_truth": "dispatch_hook runs registered response hooks and returns the possibly modified response."
+  },
+  {
+    "id": "requests_020",
+    "repo": "requests",
+    "repo_path": "benchmarks/repos/requests",
+    "type": "symbol_lookup",
+    "file": "src/requests/structures.py",
+    "function": "CaseInsensitiveDict",
+    "relevant_files": [
+      "src/requests/structures.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does CaseInsensitiveDict do?",
+    "ground_truth": "CaseInsensitiveDict stores mapping keys case-insensitively while preserving the last key casing."
   }
 ]

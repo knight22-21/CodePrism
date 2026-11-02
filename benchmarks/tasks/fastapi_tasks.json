@@ -1,0 +1,322 @@
+[
+  {
+    "id": "fastapi_001",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "openapi",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does FastAPI.openapi do?",
+    "ground_truth": "FastAPI.openapi generates and caches the application's OpenAPI schema."
+  },
+  {
+    "id": "fastapi_002",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "setup",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is the purpose of FastAPI.setup?",
+    "ground_truth": "FastAPI.setup configures the application documentation routes and related handlers."
+  },
+  {
+    "id": "fastapi_003",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "add_api_route",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does add_api_route register?",
+    "ground_truth": "It registers an API route with a path, endpoint, response model, status code, tags, dependencies, and related options."
+  },
+  {
+    "id": "fastapi_004",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "api_route",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does api_route return?",
+    "ground_truth": "It returns a decorator that registers a function as an API route."
+  },
+  {
+    "id": "fastapi_005",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "include_router",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does include_router do?",
+    "ground_truth": "It includes an APIRouter's routes in the FastAPI application, applying prefixes, tags, dependencies, and responses."
+  },
+  {
+    "id": "fastapi_006",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "get",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does FastAPI.get provide?",
+    "ground_truth": "It returns a decorator for registering a GET path operation."
+  },
+  {
+    "id": "fastapi_007",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "post",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does FastAPI.post provide?",
+    "ground_truth": "It returns a decorator for registering a POST path operation."
+  },
+  {
+    "id": "fastapi_008",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "middleware",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does middleware provide?",
+    "ground_truth": "It returns a decorator that adds HTTP middleware to the application."
+  },
+  {
+    "id": "fastapi_009",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "exception_handler",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does exception_handler provide?",
+    "ground_truth": "It returns a decorator for registering an exception handler."
+  },
+  {
+    "id": "fastapi_010",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/applications.py",
+    "function": "websocket",
+    "relevant_files": [
+      "fastapi/applications.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does websocket provide?",
+    "ground_truth": "It returns a decorator for registering a WebSocket path operation."
+  },
+  {
+    "id": "fastapi_011",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/routing.py",
+    "function": "get_request_handler",
+    "relevant_files": [
+      "fastapi/routing.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does get_request_handler return?",
+    "ground_truth": "It builds and returns an ASGI request handler for a dependant route."
+  },
+  {
+    "id": "fastapi_012",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/routing.py",
+    "function": "APIRoute",
+    "relevant_files": [
+      "fastapi/routing.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is APIRoute?",
+    "ground_truth": "APIRoute is FastAPI's route class for handling HTTP path operations."
+  },
+  {
+    "id": "fastapi_013",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/routing.py",
+    "function": "serialize_response",
+    "relevant_files": [
+      "fastapi/routing.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does serialize_response do?",
+    "ground_truth": "It validates and serializes a response using the configured response field and model options."
+  },
+  {
+    "id": "fastapi_014",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/dependencies/utils.py",
+    "function": "solve_dependencies",
+    "relevant_files": [
+      "fastapi/dependencies/utils.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does solve_dependencies do?",
+    "ground_truth": "It solves a route's dependency graph and returns solved values, errors, and dependency state."
+  },
+  {
+    "id": "fastapi_015",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/dependencies/utils.py",
+    "function": "get_dependant",
+    "relevant_files": [
+      "fastapi/dependencies/utils.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does get_dependant build?",
+    "ground_truth": "It builds a Dependant object describing the dependencies of a callable."
+  },
+  {
+    "id": "fastapi_016",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/dependencies/utils.py",
+    "function": "get_flat_dependant",
+    "relevant_files": [
+      "fastapi/dependencies/utils.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does get_flat_dependant do?",
+    "ground_truth": "It flattens a dependant tree into a single dependant structure."
+  },
+  {
+    "id": "fastapi_017",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/params.py",
+    "function": "Query",
+    "relevant_files": [
+      "fastapi/params.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is Query?",
+    "ground_truth": "Query is a parameter metadata class for declaring query parameters."
+  },
+  {
+    "id": "fastapi_018",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/params.py",
+    "function": "Path",
+    "relevant_files": [
+      "fastapi/params.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is Path?",
+    "ground_truth": "Path is a parameter metadata class for declaring path parameters."
+  },
+  {
+    "id": "fastapi_019",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/security/oauth2.py",
+    "function": "OAuth2PasswordBearer",
+    "relevant_files": [
+      "fastapi/security/oauth2.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does OAuth2PasswordBearer represent?",
+    "ground_truth": "It is a security dependency that extracts a bearer token from the Authorization header."
+  },
+  {
+    "id": "fastapi_020",
+    "repo": "fastapi",
+    "repo_path": "benchmarks/repos/fastapi",
+    "type": "symbol_lookup",
+    "file": "fastapi/utils.py",
+    "function": "create_model_field",
+    "relevant_files": [
+      "fastapi/utils.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does create_model_field do?",
+    "ground_truth": "It creates a ModelField from a name, type, and field configuration."
+  }
+]

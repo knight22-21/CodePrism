@@ -1,0 +1,323 @@
+[
+  {
+    "id": "express_001",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/express.js",
+    "function": "createApplication",
+    "relevant_files": [
+      "lib/express.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createApplication do?",
+    "ground_truth": "createApplication creates and returns the Express application function."
+  },
+  {
+    "id": "express_002",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/application.js",
+    "function": "lazyrouter",
+    "relevant_files": [
+      "lib/application.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does lazyrouter do?",
+    "ground_truth": "lazyrouter initializes the application's router."
+  },
+  {
+    "id": "express_003",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/application.js",
+    "function": "use",
+    "relevant_files": [
+      "lib/application.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does use do?",
+    "ground_truth": "use mounts middleware or a router on the application."
+  },
+  {
+    "id": "express_004",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/application.js",
+    "function": "route",
+    "relevant_files": [
+      "lib/application.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does route do?",
+    "ground_truth": "route creates a Route for a path."
+  },
+  {
+    "id": "express_005",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/application.js",
+    "function": "listen",
+    "relevant_files": [
+      "lib/application.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does listen do?",
+    "ground_truth": "listen starts the application server."
+  },
+  {
+    "id": "express_006",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/request.js",
+    "function": "param",
+    "relevant_files": [
+      "lib/request.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does param do?",
+    "ground_truth": "param reads a route parameter or registers a parameter callback."
+  },
+  {
+    "id": "express_007",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/request.js",
+    "function": "header",
+    "relevant_files": [
+      "lib/request.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does header do?",
+    "ground_truth": "header reads a request header value."
+  },
+  {
+    "id": "express_008",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/request.js",
+    "function": "accepts",
+    "relevant_files": [
+      "lib/request.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does accepts do?",
+    "ground_truth": "accepts negotiates acceptable response media types."
+  },
+  {
+    "id": "express_009",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/response.js",
+    "function": "status",
+    "relevant_files": [
+      "lib/response.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does status do?",
+    "ground_truth": "status sets the HTTP response status code."
+  },
+  {
+    "id": "express_010",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/response.js",
+    "function": "send",
+    "relevant_files": [
+      "lib/response.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does send do?",
+    "ground_truth": "send sends a response body."
+  },
+  {
+    "id": "express_011",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/response.js",
+    "function": "json",
+    "relevant_files": [
+      "lib/response.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does json do?",
+    "ground_truth": "json sends a JSON response."
+  },
+  {
+    "id": "express_012",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/response.js",
+    "function": "redirect",
+    "relevant_files": [
+      "lib/response.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does redirect do?",
+    "ground_truth": "redirect sends an HTTP redirect response."
+  },
+  {
+    "id": "express_013",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/response.js",
+    "function": "download",
+    "relevant_files": [
+      "lib/response.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does download do?",
+    "ground_truth": "download sends a file as an attachment."
+  },
+  {
+    "id": "express_014",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/router/index.js",
+    "function": "Router",
+    "relevant_files": [
+      "lib/router/index.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Router do?",
+    "ground_truth": "Router creates an Express router."
+  },
+  {
+    "id": "express_015",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/router/index.js",
+    "function": "handle",
+    "relevant_files": [
+      "lib/router/index.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does handle do?",
+    "ground_truth": "handle dispatches a request through router layers."
+  },
+  {
+    "id": "express_016",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/router/route.js",
+    "function": "Route",
+    "relevant_files": [
+      "lib/router/route.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Route do?",
+    "ground_truth": "Route represents a path and its handlers."
+  },
+  {
+    "id": "express_017",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/router/route.js",
+    "function": "dispatch",
+    "relevant_files": [
+      "lib/router/route.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does dispatch do?",
+    "ground_truth": "dispatch invokes the handlers registered on a route."
+  },
+  {
+    "id": "express_018",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/router/layer.js",
+    "function": "Layer",
+    "relevant_files": [
+      "lib/router/layer.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Layer do?",
+    "ground_truth": "Layer represents a router path or middleware layer."
+  },
+  {
+    "id": "express_019",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/utils.js",
+    "function": "acceptParams",
+    "relevant_files": [
+      "lib/utils.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does acceptParams do?",
+    "ground_truth": "acceptParams parses an Accept header parameter string."
+  },
+  {
+    "id": "express_020",
+    "repo": "express",
+    "repo_path": "benchmarks/repos/express",
+    "type": "symbol_lookup",
+    "file": "lib/utils.js",
+    "function": "parseExtendedQueryString",
+    "relevant_files": [
+      "lib/utils.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does parseExtendedQueryString do?",
+    "ground_truth": "parseExtendedQueryString parses an extended query string."
+  }
+]
+

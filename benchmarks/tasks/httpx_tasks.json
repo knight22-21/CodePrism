@@ -6,8 +6,12 @@
     "type": "symbol_lookup",
     "file": "httpx/_client.py",
     "function": "request",
-    "relevant_files": ["httpx/_client.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Client.request do? What does it call internally?",
     "ground_truth": "Client.request builds a PreparedRequest via build_request() then calls send() with the result. It accepts method, url, content, data, files, json, params, headers, cookies, auth, follow_redirects, timeout, and extensions."
   },
@@ -18,8 +22,12 @@
     "type": "call_trace",
     "file": "httpx/_client.py",
     "function": "send",
-    "relevant_files": ["httpx/_client.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Client.send call internally to handle auth and redirects?",
     "ground_truth": "Client.send calls _set_timeout, _build_request_auth, then _send_handling_auth. It also calls response.read() if stream=False, and response.close() on error."
   },
@@ -30,8 +38,13 @@
     "type": "call_trace",
     "file": "httpx/_client.py",
     "function": "_send_single_request",
-    "relevant_files": ["httpx/_client.py", "httpx/_transports/default.py"],
-    "cp_tools": ["get_callers"],
+    "relevant_files": [
+      "httpx/_client.py",
+      "httpx/_transports/default.py"
+    ],
+    "cp_tools": [
+      "get_callers"
+    ],
     "query": "Which functions call _send_single_request?",
     "ground_truth": "_send_single_request is called by _send_handling_redirects."
   },
@@ -42,8 +55,12 @@
     "type": "symbol_lookup",
     "file": "httpx/_client.py",
     "function": "build_request",
-    "relevant_files": ["httpx/_client.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does BaseClient.build_request do and what does it return?",
     "ground_truth": "build_request constructs and returns a Request instance. It merges url, headers, cookies, and params with client-level configuration by calling _merge_url, _merge_headers, _merge_cookies, and _merge_queryparams."
   },
@@ -54,8 +71,13 @@
     "type": "symbol_lookup",
     "file": "httpx/_models.py",
     "function": "raise_for_status",
-    "relevant_files": ["httpx/_models.py", "httpx/_exceptions.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "httpx/_models.py",
+      "httpx/_exceptions.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does Response.raise_for_status do and when does it raise an exception?",
     "ground_truth": "raise_for_status raises HTTPStatusError if the response status code indicates an error (4xx client error or 5xx server error). It returns the Response itself on success. It also raises RuntimeError if the request has not been set on the response."
   },
@@ -66,8 +88,12 @@
     "type": "impact_analysis",
     "file": "httpx/_client.py",
     "function": "build_request",
-    "relevant_files": ["httpx/_client.py"],
-    "cp_tools": ["get_impact"],
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_impact"
+    ],
     "query": "If BaseClient.build_request changes its return type, which callers would be affected?",
     "ground_truth": "build_request is called by Client.request. Any change to build_request directly affects request, and transitively all HTTP shortcut methods: get, post, put, patch, delete, head, options."
   },
@@ -78,8 +104,13 @@
     "type": "impact_analysis",
     "file": "httpx/_transports/default.py",
     "function": "handle_request",
-    "relevant_files": ["httpx/_transports/default.py", "httpx/_client.py"],
-    "cp_tools": ["get_impact"],
+    "relevant_files": [
+      "httpx/_transports/default.py",
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_impact"
+    ],
     "query": "If HTTPTransport.handle_request changes its signature, what breaks?",
     "ground_truth": "handle_request is called by Client._send_single_request. Changes would transitively affect _send_handling_redirects, _send_handling_auth, send, and request — the full Client request pipeline."
   },
@@ -90,8 +121,12 @@
     "type": "symbol_lookup",
     "file": "httpx/_auth.py",
     "function": "auth_flow",
-    "relevant_files": ["httpx/_auth.py"],
-    "cp_tools": ["get_context"],
+    "relevant_files": [
+      "httpx/_auth.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
     "query": "What does BasicAuth.auth_flow do to authenticate a request?",
     "ground_truth": "BasicAuth.auth_flow sets the Authorization header on the request to a Basic auth token (base64-encoded username:password) then yields the request."
   },
@@ -102,8 +137,12 @@
     "type": "dependency_map",
     "file": "httpx/_client.py",
     "function": "send",
-    "relevant_files": ["httpx/_client.py"],
-    "cp_tools": ["get_dependencies"],
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_dependencies"
+    ],
     "query": "What does httpx/_client.py import? List internal vs external dependencies.",
     "ground_truth": "httpx/_client.py imports internally from ._auth, ._config, ._decoders, ._exceptions, ._models, ._status_codes, ._transports.asgi, ._transports.base, ._transports.default, ._transports.wsgi, ._types, ._urls, ._utils, .__version__. External: datetime, enum, logging, typing, warnings, contextlib, types."
   },
@@ -114,9 +153,173 @@
     "type": "dependency_map",
     "file": "httpx/_models.py",
     "function": "raise_for_status",
-    "relevant_files": ["httpx/_models.py"],
-    "cp_tools": ["get_dependencies"],
+    "relevant_files": [
+      "httpx/_models.py"
+    ],
+    "cp_tools": [
+      "get_dependencies"
+    ],
     "query": "What does httpx/_models.py import? List internal vs external dependencies.",
     "ground_truth": "httpx/_models.py imports internally from ._content, ._decoders, ._exceptions, ._multipart, ._status_codes, ._types, ._urls, ._utils. External: datetime, email.message, json, typing, urllib.request, collections.abc, http.cookiejar."
+  },
+  {
+    "id": "httpx_011",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_api.py",
+    "function": "get",
+    "relevant_files": [
+      "httpx/_api.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does get do?",
+    "ground_truth": "get sends a GET request using the top-level HTTPX API."
+  },
+  {
+    "id": "httpx_012",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_api.py",
+    "function": "post",
+    "relevant_files": [
+      "httpx/_api.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does post do?",
+    "ground_truth": "post sends a POST request using the top-level HTTPX API."
+  },
+  {
+    "id": "httpx_013",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_models.py",
+    "function": "json",
+    "relevant_files": [
+      "httpx/_models.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does json do?",
+    "ground_truth": "Response.json decodes the response content as JSON."
+  },
+  {
+    "id": "httpx_014",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_models.py",
+    "function": "text",
+    "relevant_files": [
+      "httpx/_models.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does text do?",
+    "ground_truth": "Response.text returns decoded response text."
+  },
+  {
+    "id": "httpx_015",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_models.py",
+    "function": "read",
+    "relevant_files": [
+      "httpx/_models.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does read do?",
+    "ground_truth": "Response.read loads the response body into memory."
+  },
+  {
+    "id": "httpx_016",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_client.py",
+    "function": "close",
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does close do?",
+    "ground_truth": "Client.close closes the client transport."
+  },
+  {
+    "id": "httpx_017",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_client.py",
+    "function": "stream",
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does stream do?",
+    "ground_truth": "Client.stream returns a context manager for streaming a request."
+  },
+  {
+    "id": "httpx_018",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_client.py",
+    "function": "build_request",
+    "relevant_files": [
+      "httpx/_client.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does build_request do?",
+    "ground_truth": "Client.build_request constructs a Request with client defaults."
+  },
+  {
+    "id": "httpx_019",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_config.py",
+    "function": "Timeout",
+    "relevant_files": [
+      "httpx/_config.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Timeout do?",
+    "ground_truth": "Timeout stores timeout settings for HTTP operations."
+  },
+  {
+    "id": "httpx_020",
+    "repo": "httpx",
+    "repo_path": "benchmarks/repos/httpx",
+    "type": "symbol_lookup",
+    "file": "httpx/_transports/default.py",
+    "function": "HTTPTransport",
+    "relevant_files": [
+      "httpx/_transports/default.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does HTTPTransport do?",
+    "ground_truth": "HTTPTransport implements the synchronous network transport."
   }
 ]

@@ -1,0 +1,322 @@
+[
+  {
+    "id": "pydantic_001",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/alias_generators.py",
+    "function": "to_pascal",
+    "relevant_files": [
+      "pydantic/alias_generators.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does to_pascal do?",
+    "ground_truth": "to_pascal converts a snake_case string to PascalCase."
+  },
+  {
+    "id": "pydantic_002",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/alias_generators.py",
+    "function": "to_camel",
+    "relevant_files": [
+      "pydantic/alias_generators.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does to_camel do?",
+    "ground_truth": "to_camel converts a snake_case string to camelCase."
+  },
+  {
+    "id": "pydantic_003",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/alias_generators.py",
+    "function": "to_snake",
+    "relevant_files": [
+      "pydantic/alias_generators.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does to_snake do?",
+    "ground_truth": "to_snake converts PascalCase, camelCase, or kebab-case text to snake_case."
+  },
+  {
+    "id": "pydantic_004",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "model_validate",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does model_validate do?",
+    "ground_truth": "model_validate validates an object and returns a Pydantic model instance."
+  },
+  {
+    "id": "pydantic_005",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "model_dump",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does model_dump do?",
+    "ground_truth": "model_dump generates a dictionary representation of a model with include, exclude, alias, and serialization options."
+  },
+  {
+    "id": "pydantic_006",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "model_dump_json",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does model_dump_json do?",
+    "ground_truth": "model_dump_json serializes a model to a JSON string."
+  },
+  {
+    "id": "pydantic_007",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "model_copy",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does model_copy do?",
+    "ground_truth": "model_copy returns a copied model, optionally updating fields and deeply copying data."
+  },
+  {
+    "id": "pydantic_008",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "model_json_schema",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does model_json_schema do?",
+    "ground_truth": "model_json_schema generates the model's JSON schema."
+  },
+  {
+    "id": "pydantic_009",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "model_construct",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does model_construct do?",
+    "ground_truth": "model_construct creates a model instance from trusted data without validation."
+  },
+  {
+    "id": "pydantic_010",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/main.py",
+    "function": "__init__",
+    "relevant_files": [
+      "pydantic/main.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does BaseModel.__init__ do?",
+    "ground_truth": "BaseModel.__init__ validates input data and initializes a model instance."
+  },
+  {
+    "id": "pydantic_011",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/type_adapter.py",
+    "function": "validate_python",
+    "relevant_files": [
+      "pydantic/type_adapter.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does TypeAdapter.validate_python do?",
+    "ground_truth": "It validates a Python object against the adapter's type."
+  },
+  {
+    "id": "pydantic_012",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/type_adapter.py",
+    "function": "validate_json",
+    "relevant_files": [
+      "pydantic/type_adapter.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does TypeAdapter.validate_json do?",
+    "ground_truth": "It validates JSON data against the adapter's type."
+  },
+  {
+    "id": "pydantic_013",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/type_adapter.py",
+    "function": "dump_python",
+    "relevant_files": [
+      "pydantic/type_adapter.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does TypeAdapter.dump_python do?",
+    "ground_truth": "It serializes a value to a Python object using the adapter's serialization rules."
+  },
+  {
+    "id": "pydantic_014",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/type_adapter.py",
+    "function": "dump_json",
+    "relevant_files": [
+      "pydantic/type_adapter.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does TypeAdapter.dump_json do?",
+    "ground_truth": "It serializes a value to JSON bytes using the adapter's serialization rules."
+  },
+  {
+    "id": "pydantic_015",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/fields.py",
+    "function": "Field",
+    "relevant_files": [
+      "pydantic/fields.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is Field?",
+    "ground_truth": "Field creates field metadata and validation configuration for a model attribute."
+  },
+  {
+    "id": "pydantic_016",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/fields.py",
+    "function": "FieldInfo",
+    "relevant_files": [
+      "pydantic/fields.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is FieldInfo?",
+    "ground_truth": "FieldInfo stores metadata and constraints for a Pydantic field."
+  },
+  {
+    "id": "pydantic_017",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/_internal/_model_construction.py",
+    "function": "ModelMetaclass",
+    "relevant_files": [
+      "pydantic/_internal/_model_construction.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is ModelMetaclass?",
+    "ground_truth": "ModelMetaclass constructs Pydantic model classes and collects their fields and validators."
+  },
+  {
+    "id": "pydantic_018",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/_internal/_generate_schema.py",
+    "function": "GenerateSchema",
+    "relevant_files": [
+      "pydantic/_internal/_generate_schema.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What is GenerateSchema?",
+    "ground_truth": "GenerateSchema builds core schemas for Python and Pydantic types."
+  },
+  {
+    "id": "pydantic_019",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/networks.py",
+    "function": "validate_email",
+    "relevant_files": [
+      "pydantic/networks.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does validate_email do?",
+    "ground_truth": "validate_email validates an email address with email-validator, normalizes it, and returns the optional display name together with the normalized email."
+  },
+  {
+    "id": "pydantic_020",
+    "repo": "pydantic",
+    "repo_path": "benchmarks/repos/pydantic",
+    "type": "symbol_lookup",
+    "file": "pydantic/color.py",
+    "function": "parse_color_value",
+    "relevant_files": [
+      "pydantic/color.py"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does parse_color_value do?",
+    "ground_truth": "parse_color_value parses a color input into its normalized color representation."
+  }
+]

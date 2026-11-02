@@ -1,0 +1,323 @@
+[
+  {
+    "id": "cobra_001",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "NoArgs",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does NoArgs do?",
+    "ground_truth": "NoArgs returns an argument validator that rejects positional arguments."
+  },
+  {
+    "id": "cobra_002",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "OnlyValidArgs",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does OnlyValidArgs do?",
+    "ground_truth": "OnlyValidArgs validates arguments against command completion."
+  },
+  {
+    "id": "cobra_003",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "MinimumNArgs",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does MinimumNArgs do?",
+    "ground_truth": "MinimumNArgs returns a validator requiring at least n arguments."
+  },
+  {
+    "id": "cobra_004",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "MaximumNArgs",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does MaximumNArgs do?",
+    "ground_truth": "MaximumNArgs returns a validator allowing at most n arguments."
+  },
+  {
+    "id": "cobra_005",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "ExactArgs",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does ExactArgs do?",
+    "ground_truth": "ExactArgs returns a validator requiring exactly n arguments."
+  },
+  {
+    "id": "cobra_006",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "RangeArgs",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does RangeArgs do?",
+    "ground_truth": "RangeArgs returns a validator requiring an argument count in a range."
+  },
+  {
+    "id": "cobra_007",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "args.go",
+    "function": "MatchAll",
+    "relevant_files": [
+      "args.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does MatchAll do?",
+    "ground_truth": "MatchAll combines positional argument validators."
+  },
+  {
+    "id": "cobra_008",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "active_help.go",
+    "function": "AppendActiveHelp",
+    "relevant_files": [
+      "active_help.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does AppendActiveHelp do?",
+    "ground_truth": "AppendActiveHelp appends active help text to completion results."
+  },
+  {
+    "id": "cobra_009",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "active_help.go",
+    "function": "GetActiveHelpConfig",
+    "relevant_files": [
+      "active_help.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does GetActiveHelpConfig do?",
+    "ground_truth": "GetActiveHelpConfig reads the active-help configuration."
+  },
+  {
+    "id": "cobra_010",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "Execute",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Execute do?",
+    "ground_truth": "Execute runs the command tree."
+  },
+  {
+    "id": "cobra_011",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "ExecuteC",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does ExecuteC do?",
+    "ground_truth": "ExecuteC runs the command and returns the executed command."
+  },
+  {
+    "id": "cobra_012",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "AddCommand",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does AddCommand do?",
+    "ground_truth": "AddCommand adds child commands."
+  },
+  {
+    "id": "cobra_013",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "Find",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Find do?",
+    "ground_truth": "Find locates a command in the command tree."
+  },
+  {
+    "id": "cobra_014",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "Help",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Help do?",
+    "ground_truth": "Help writes command help."
+  },
+  {
+    "id": "cobra_015",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "UsageString",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does UsageString do?",
+    "ground_truth": "UsageString returns the command usage text."
+  },
+  {
+    "id": "cobra_016",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "Flags",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does Flags do?",
+    "ground_truth": "Flags returns the command's local flag set."
+  },
+  {
+    "id": "cobra_017",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "PersistentFlags",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does PersistentFlags do?",
+    "ground_truth": "PersistentFlags returns inherited persistent flags."
+  },
+  {
+    "id": "cobra_018",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "SetArgs",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does SetArgs do?",
+    "ground_truth": "SetArgs sets the arguments used for execution."
+  },
+  {
+    "id": "cobra_019",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "SetOut",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does SetOut do?",
+    "ground_truth": "SetOut sets the command output writer."
+  },
+  {
+    "id": "cobra_020",
+    "repo": "cobra",
+    "repo_path": "benchmarks/repos/cobra",
+    "type": "symbol_lookup",
+    "file": "command.go",
+    "function": "SetErr",
+    "relevant_files": [
+      "command.go"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does SetErr do?",
+    "ground_truth": "SetErr sets the command error output writer."
+  }
+]
+

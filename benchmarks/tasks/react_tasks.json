@@ -1,0 +1,323 @@
+[
+  {
+    "id": "react_001",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactElement.js",
+    "function": "createElement",
+    "relevant_files": [
+      "packages/react/src/ReactElement.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createElement do?",
+    "ground_truth": "createElement creates a React element."
+  },
+  {
+    "id": "react_002",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactElement.js",
+    "function": "cloneElement",
+    "relevant_files": [
+      "packages/react/src/ReactElement.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does cloneElement do?",
+    "ground_truth": "cloneElement clones a React element with new props."
+  },
+  {
+    "id": "react_003",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactContext.js",
+    "function": "createContext",
+    "relevant_files": [
+      "packages/react/src/ReactContext.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createContext do?",
+    "ground_truth": "createContext creates a React context object."
+  },
+  {
+    "id": "react_004",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactForwardRef.js",
+    "function": "forwardRef",
+    "relevant_files": [
+      "packages/react/src/ReactForwardRef.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does forwardRef do?",
+    "ground_truth": "forwardRef creates a component that forwards a ref."
+  },
+  {
+    "id": "react_005",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactMemo.js",
+    "function": "memo",
+    "relevant_files": [
+      "packages/react/src/ReactMemo.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does memo do?",
+    "ground_truth": "memo memoizes a component based on props."
+  },
+  {
+    "id": "react_006",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactStartTransition.js",
+    "function": "startTransition",
+    "relevant_files": [
+      "packages/react/src/ReactStartTransition.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does startTransition do?",
+    "ground_truth": "startTransition marks updates as non-urgent transitions."
+  },
+  {
+    "id": "react_007",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactHooks.js",
+    "function": "useState",
+    "relevant_files": [
+      "packages/react/src/ReactHooks.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does useState do?",
+    "ground_truth": "useState creates state and returns a state setter."
+  },
+  {
+    "id": "react_008",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactHooks.js",
+    "function": "useEffect",
+    "relevant_files": [
+      "packages/react/src/ReactHooks.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does useEffect do?",
+    "ground_truth": "useEffect schedules an effect for a component."
+  },
+  {
+    "id": "react_009",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactHooks.js",
+    "function": "useMemo",
+    "relevant_files": [
+      "packages/react/src/ReactHooks.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does useMemo do?",
+    "ground_truth": "useMemo memoizes a computed value."
+  },
+  {
+    "id": "react_010",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react/src/ReactHooks.js",
+    "function": "useCallback",
+    "relevant_files": [
+      "packages/react/src/ReactHooks.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does useCallback do?",
+    "ground_truth": "useCallback memoizes a callback function."
+  },
+  {
+    "id": "react_011",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-reconciler/src/ReactFiberHooks.new.js",
+    "function": "mountState",
+    "relevant_files": [
+      "packages/react-reconciler/src/ReactFiberHooks.new.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does mountState do?",
+    "ground_truth": "mountState initializes a hook state during mounting."
+  },
+  {
+    "id": "react_012",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-reconciler/src/ReactFiberHooks.new.js",
+    "function": "updateState",
+    "relevant_files": [
+      "packages/react-reconciler/src/ReactFiberHooks.new.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does updateState do?",
+    "ground_truth": "updateState updates a hook state during rendering."
+  },
+  {
+    "id": "react_013",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-reconciler/src/ReactFiberWorkLoop.new.js",
+    "function": "scheduleUpdateOnFiber",
+    "relevant_files": [
+      "packages/react-reconciler/src/ReactFiberWorkLoop.new.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does scheduleUpdateOnFiber do?",
+    "ground_truth": "scheduleUpdateOnFiber schedules work for a fiber update."
+  },
+  {
+    "id": "react_014",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-reconciler/src/ReactFiberWorkLoop.new.js",
+    "function": "performUnitOfWork",
+    "relevant_files": [
+      "packages/react-reconciler/src/ReactFiberWorkLoop.new.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does performUnitOfWork do?",
+    "ground_truth": "performUnitOfWork performs one unit of fiber work."
+  },
+  {
+    "id": "react_015",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-reconciler/src/ReactFiberBeginWork.new.js",
+    "function": "beginWork",
+    "relevant_files": [
+      "packages/react-reconciler/src/ReactFiberBeginWork.new.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does beginWork do?",
+    "ground_truth": "beginWork begins work on a fiber."
+  },
+  {
+    "id": "react_016",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-reconciler/src/ReactFiberCompleteWork.new.js",
+    "function": "completeWork",
+    "relevant_files": [
+      "packages/react-reconciler/src/ReactFiberCompleteWork.new.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does completeWork do?",
+    "ground_truth": "completeWork completes work on a fiber."
+  },
+  {
+    "id": "react_017",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-dom/src/client/ReactDOMComponent.js",
+    "function": "setInitialProperties",
+    "relevant_files": [
+      "packages/react-dom/src/client/ReactDOMComponent.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does setInitialProperties do?",
+    "ground_truth": "setInitialProperties applies initial DOM properties."
+  },
+  {
+    "id": "react_018",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-dom/src/client/ReactDOMComponent.js",
+    "function": "updateProperties",
+    "relevant_files": [
+      "packages/react-dom/src/client/ReactDOMComponent.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does updateProperties do?",
+    "ground_truth": "updateProperties applies changed DOM properties."
+  },
+  {
+    "id": "react_019",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-dom/src/client/ReactDOMRoot.js",
+    "function": "createRoot",
+    "relevant_files": [
+      "packages/react-dom/src/client/ReactDOMRoot.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does createRoot do?",
+    "ground_truth": "createRoot creates a React DOM root."
+  },
+  {
+    "id": "react_020",
+    "repo": "react",
+    "repo_path": "benchmarks/repos/react",
+    "type": "symbol_lookup",
+    "file": "packages/react-dom/src/client/ReactDOMRoot.js",
+    "function": "hydrateRoot",
+    "relevant_files": [
+      "packages/react-dom/src/client/ReactDOMRoot.js"
+    ],
+    "cp_tools": [
+      "get_context"
+    ],
+    "query": "What does hydrateRoot do?",
+    "ground_truth": "hydrateRoot hydrates a server-rendered React root."
+  }
+]
+
