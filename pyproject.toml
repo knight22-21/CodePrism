@@ -79,6 +79,8 @@ bench = [
     "tiktoken>=0.7",
     "openai>=1.40",
     "python-dotenv>=1.0",
+    "pytest>=8.0",
+    "pytest-benchmark>=4.0",
 ]
 dev = [
     "pytest>=8.0",
