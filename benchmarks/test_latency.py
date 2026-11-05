@@ -15,6 +15,7 @@ import asyncio
 import json
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -31,10 +32,10 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 P95_CEILING_MS = 200.0
 
 
-def _load_tool_tasks() -> dict[str, dict]:
+def _load_tool_tasks() -> dict[str, dict[str, Any]]:
     with FIXTURE_TASKS.open(encoding="utf-8") as handle:
         tasks = json.load(handle)
-    by_tool: dict[str, dict] = {}
+    by_tool: dict[str, dict[str, Any]] = {}
     for task in tasks:
         tools = task.get("cp_tools") or ["get_context"]
         if len(tools) == 1 and tools[0] not in by_tool:
