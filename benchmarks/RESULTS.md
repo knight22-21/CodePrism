@@ -5,12 +5,38 @@ this file is the committed record.
 
 ---
 
+## Run 13 — 2026-11-05 | Level 2 current-version latency | 11 corpora, 220 tasks
+
+**Version:** v0.1.11  
+**Method:** 3 warmup runs discarded, 20 measurement repetitions per task; the CodePrism engine remained open, so indexing time is excluded. Baseline timing reads the relevant raw files. The pytest-benchmark regression suite also passed 5 tests on the fixture corpus.
+
+**Run analysis:** This run measured warm CodePrism query performance on the complete 11-corpus Level 1 benchmark set. We executed 220 tasks across Python, JavaScript, TypeScript, and Go, added the multi-language latency coverage, and verified the pytest-benchmark regression path. The run achieved 1.60 ms mean p50 and 2.16 ms mean p95 latency, with no skipped corpora and every task well below the 200 ms target. It demonstrates that the graph can serve queries at millisecond-scale latency after indexing; indexing time and resource scaling remain separate Level 4 concerns.
+
+| Corpus | Language | Tasks | CP mean p50 | CP mean p95 | Baseline mean p50 | Overhead |
+|---|---|---:|---:|---:|---:|---:|
+| fixture | Python | 20 | 0.58 ms | 0.77 ms | 0.18 ms | +0.41 ms |
+| requests | Python | 20 | 1.17 ms | 1.52 ms | 0.24 ms | +0.93 ms |
+| flask | Python | 20 | 1.80 ms | 2.23 ms | 0.34 ms | +1.46 ms |
+| httpx | Python | 20 | 1.90 ms | 2.43 ms | 0.32 ms | +1.58 ms |
+| fastapi | Python | 20 | 1.70 ms | 2.51 ms | 0.92 ms | +0.78 ms |
+| pydantic | Python | 20 | 1.71 ms | 2.28 ms | 0.31 ms | +1.40 ms |
+| express | JavaScript | 20 | 0.69 ms | 0.90 ms | 0.22 ms | +0.46 ms |
+| react | JavaScript | 20 | 1.31 ms | 1.74 ms | 0.33 ms | +0.98 ms |
+| TypeScript | TypeScript | 20 | 2.79 ms | 3.98 ms | 0.31 ms | +2.48 ms |
+| gin | Go | 20 | 2.15 ms | 3.00 ms | 0.39 ms | +1.76 ms |
+| cobra | Go | 20 | 1.76 ms | 2.37 ms | 0.39 ms | +1.37 ms |
+| **Overall** | **all** | **220** | **1.60 ms** | **2.16 ms** | **0.36 ms** | **+1.24 ms** |
+
+Raw artifacts: `benchmarks/results/level2_latency_all.json`, per-corpus `level2_latency_*.json`, and `level2_pytest_benchmark.json`.
+
 ## Run 12 — 2026-10-26 | Level 1 complete rerun | 11 corpora, 220 tasks
 
 **Version:** v0.1.11 source tree  
 **Token backend:** tiktoken `cl100k_base`  
 **Accuracy judge:** Ollama cloud `gpt-oss:120b`  
 **Method:** 20 tasks per corpus; each accuracy task makes one answer call and one judge call. All task targets were validated against checked-out source. TypeScript uses the documented 78-file compiler subset because the full checkout did not complete indexing within the benchmark window.
+
+**Run analysis:** This run completed the Level 1 expansion and rerun on the current v0.1.11 code. We tested 11 corpora and 220 tasks across four language families, validated all task targets, and stored raw accuracy and token artifacts for every corpus. CodePrism achieved 93.0% weighted context reduction overall. Answer quality was strong on FastAPI, Pydantic, TypeScript, Gin, and Cobra, while Express and React showed that high token reduction does not automatically guarantee answer correctness. The run establishes the context-efficiency baseline and identifies answer-quality improvement as the next priority.
 
 | Corpus | Tasks | Token reduction | Baseline accuracy | CodePrism accuracy |
 |---|---:|---:|---:|---:|
@@ -28,6 +54,30 @@ this file is the committed record.
 | **Weighted total / macro average** | **220** | **93.0%** | **0.95** | **0.85** |
 
 `*` TypeScript is the bounded compiler subset described above. Raw artifacts are stored in `benchmarks/results/level1_full_accuracy_*.json`; token-only smoke artifacts are stored in `benchmarks/results/level1_full_tokens_*.json`.
+
+## Conclusion — What This Run Demonstrates
+
+This run establishes a current, reproducible Level 1 and Level 2 baseline for CodePrism v0.1.11 across 11 corpora, 220 tasks, and four language families: Python, JavaScript, TypeScript, and Go.
+
+### What we achieved
+
+- **Large context reduction:** Level 1 reduced the measured prompt context by **93.0% overall**. This is the primary demonstrated benefit: agents can query the graph without reading entire source files.
+- **Useful answer quality on most corpora:** CodePrism reached at least **0.92 accuracy** on FastAPI, Pydantic, TypeScript, Gin, and Cobra. It matched or exceeded the baseline on Gin and Cobra.
+- **Low query latency:** Level 2 averaged **1.60 ms p50** and **2.16 ms p95** across 220 tasks, with only **1.24 ms mean p50 overhead** over raw-file reads. The slowest observed task p95 was 15.93 ms, well below the 200 ms target.
+- **Multi-language coverage:** The benchmark now exercises Python, JavaScript, TypeScript, and Go instead of only the original Python corpora.
+- **Reproducible measurement and storage:** Every corpus has raw Level 1 and Level 2 JSON artifacts, and the fixture has a passing pytest-benchmark regression artifact. Task targets were validated before execution.
+
+### What the results do not prove
+
+- **Token reduction is not the same as answer correctness.** Express achieved 97.2% reduction but only 0.45 CodePrism accuracy, making it the clearest quality gap. React also showed a quality gap at 0.86 versus a 0.98 baseline.
+- **The aggregate accuracy is not yet a universal quality guarantee.** The macro-average was 0.85 versus 0.95 for the raw-file baseline; requests, Flask, and HTTPX remained below their baselines in this run.
+- **Latency excludes indexing.** Level 2 measures warm graph queries only. Initial indexing time, memory growth, and scaling behavior belong to Level 4.
+- **TypeScript coverage is bounded.** The TypeScript result uses the documented 78-file compiler subset, not the full compiler checkout.
+- **Judge scores have variability.** LLM-as-judge results should be interpreted as corpus-level evidence, not exact correctness for every individual task.
+
+### Overall conclusion
+
+CodePrism has achieved its intended Level 1 and Level 2 performance foundation: it provides substantial context reduction with millisecond-scale query latency across multiple languages. The next engineering priority is not basic benchmark execution; it is improving answer quality in weaker corpora—especially Express and React—and then measuring indexing and resource scaling in Level 4.
 
 ## Run 11 — 2026-10-26 | Level 1 Token + Accuracy rerun | Six Python corpora
 

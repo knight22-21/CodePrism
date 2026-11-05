@@ -11,8 +11,8 @@ against reading raw source files.
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Level 1 | Token reduction | 10.3% | 86.2% | 92.6% | 91.8% | 96.6% | 90.8% | 97.2% | 97.7% | 91.1% | 89.6% | 91.3% |
 | Level 1 | Accuracy (CP / baseline) | 0.82 / 0.90 | 0.80 / 0.98 | 0.81 / 0.88 | 0.80 / 0.87 | 0.92 / 0.99 | 0.92 / 0.99 | 0.45 / 0.92 | 0.86 / 0.98 | 0.97 / 0.98 | 0.98 / 0.99 | 0.98 / 0.94 |
-| Level 2 | Query p50 latency | < 1.5ms | < 4ms | < 4.9ms | < 5.0ms |
-| Level 2 | Query p95 latency | < 2ms | < 5.2ms | < 7.2ms | < 6.0ms |
+| Level 2 | Query p50 latency | 0.58ms | 1.17ms | 1.80ms | 1.90ms | 1.70ms | 1.71ms | 0.69ms | 1.31ms | 2.79ms | 2.15ms | 1.76ms |
+| Level 2 | Query p95 latency | 0.77ms | 1.52ms | 2.23ms | 2.43ms | 2.51ms | 2.28ms | 0.90ms | 1.74ms | 3.98ms | 3.00ms | 2.37ms |
 | Level 3 | Symbol precision / recall / F1 | 1.000 / 1.000 / 1.000 | 1.000 / 0.996 / 0.998 | 1.000 / 1.000 / 1.000 | 1.000 / 0.964 / 0.964 |
 | Level 3 | Caller precision / recall (intra-file) | 0.875 / 1.000 | 0.669 / 0.763 | 0.693 / 0.721 | 0.849 / 0.813 |
 | Level 3b | Cross-file call precision / recall (Python) | n/a | **1.000** / 0.897 | **1.000** / 0.948 | **1.000** / 1.000 |
@@ -25,7 +25,7 @@ share one symbol ([#34](https://github.com/knight22-21/CodePrism/issues/34)).
 
 **What was measured when.** Level 1 token reduction and accuracy were re-measured on v0.1.11 on
 2026-10-26 with Ollama cloud gpt-oss:120b across all 11 corpora. TypeScript uses a bounded 78-file
-compiler subset. Level 2 latency remains historical and still needs a v0.1.11 rerun.
+compiler subset. Level 2 latency was re-measured on 2026-11-05 on v0.1.11 across all 11 corpora.
 
 ---
 
@@ -462,8 +462,8 @@ agent turns net faster: the model processes 88% less data per turn at < 4ms cost
 - **Cross-file object calls are conservative.** `obj.method()` links only when exactly one candidate
   exists in a file the caller imports; otherwise it is left unlinked rather than guessed. That is why
   cross-file recall is 0.90–1.00 rather than 1.00.
-- **Accuracy and latency numbers are older than the code.** Level 1 accuracy (LLM-as-judge) and the
-  Level 2 latency figures are from v0.1.5–v0.1.7 and have not been re-run on v0.1.11.
+- **Benchmark freshness:** Level 1 accuracy was re-run on 2026-10-26 and Level 2 latency was re-run
+  on 2026-11-05 against v0.1.11. Older per-run sections below are retained for historical comparison.
 - **Judge variability:** Using `gpt-oss:120b` via Ollama cloud introduces run-to-run score
   variance of ±0.1–0.2 on individual tasks. Averages across 10 tasks are stable; single-task
   scores should be interpreted with caution.
