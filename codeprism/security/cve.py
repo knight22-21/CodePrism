@@ -7,9 +7,15 @@ import re
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from typing import Any
 
 _OSV_QUERY_URL = "https://api.osv.dev/v1/query"
 _TIMEOUT = 5  # seconds
+
+# Regex to capture package name, optional extras, and exact pin (== or ===)
+_EXACT_PIN_RE = re.compile(
+    r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?\s*(?:===|==)\s*([A-Za-z0-9._+-]+)$"
+)
 
 
 @dataclass
@@ -28,7 +34,13 @@ def check_package(package: str, version: str = "") -> CVEResult:
     Returns a CVEResult with severity CRITICAL/HIGH/MEDIUM/LOW/UNKNOWN.
     Falls back gracefully (returns UNKNOWN) if the network call fails.
     """
-    payload = json.dumps({"package": {"name": package, "ecosystem": "PyPI"}}).encode()
+    clean_package = package.strip()
+    clean_version = version.strip()
+
+    query: dict[str, Any] = {"package": {"name": clean_package, "ecosystem": "PyPI"}}
+    if clean_version:
+        query["version"] = clean_version
+    payload = json.dumps(query).encode()
 
     req = urllib.request.Request(
         _OSV_QUERY_URL,
@@ -40,11 +52,11 @@ def check_package(package: str, version: str = "") -> CVEResult:
         with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
             data = json.loads(resp.read())
     except (urllib.error.URLError, OSError, json.JSONDecodeError):
-        return CVEResult(package=package, version=version)
+        return CVEResult(package=clean_package, version=clean_version)
 
     vulns = data.get("vulns", [])
     if not vulns:
-        return CVEResult(package=package, version=version, severity="PASS")
+        return CVEResult(package=clean_package, version=clean_version, severity="PASS")
 
     cve_ids: list[str] = []
     worst = "LOW"
@@ -60,10 +72,10 @@ def check_package(package: str, version: str = "") -> CVEResult:
         if db_sev in _order and _order[db_sev] > _order.get(worst, 0):
             worst = db_sev
 
-    summary = f"{len(vulns)} known vulnerabilities for {package}"
+    summary = f"{len(vulns)} known vulnerabilities for {clean_package}"
     return CVEResult(
-        package=package,
-        version=version,
+        package=clean_package,
+        version=clean_version,
         cve_ids=cve_ids[:10],
         severity=worst,
         summary=summary,
@@ -75,20 +87,41 @@ def check_requirements(requirements_content: str) -> list[CVEResult]:
     Parse a requirements.txt blob and run CVE checks on each package.
 
     Skips comment lines, blank lines, and URL-based requirements.
+    Extracts exact pinned versions (== and ===) to query version-specific CVEs.
     Returns only packages that have known vulnerabilities (severity != PASS).
     """
     results: list[CVEResult] = []
     for raw_line in requirements_content.splitlines():
         line = raw_line.strip()
-        if not line or line.startswith("#") or line.startswith("-") or "://" in line:
-            continue
-        # Extract the package name using PEP 508 rules (alphanumeric, dot, hyphen, underscore)
-        match = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", line)
-        if not match:
+        if (
+            not line
+            or line.startswith("#")
+            or line.startswith("-")
+            or "://" in line
+            or line.startswith(".")
+        ):
             continue
 
-        pkg = match.group(0)
-        result = check_package(pkg)
+        clean = line.split("#", 1)[0].strip()
+        if not clean:
+            continue
+
+        spec = clean.split(";", 1)[0].strip()
+        if not spec or "@" in spec:
+            continue
+
+        exact_match = _EXACT_PIN_RE.match(spec)
+        if exact_match:
+            pkg = exact_match.group(1)
+            version = exact_match.group(2)
+        else:
+            match = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", spec)
+            if not match:
+                continue
+            pkg = match.group(0)
+            version = ""
+
+        result = check_package(pkg, version)
         if result.severity not in ("PASS", "UNKNOWN"):
             results.append(result)
     return results
