@@ -15,9 +15,12 @@ import asyncio
 import json
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import BenchmarkFixture
 
 pytest.importorskip("pytest_benchmark")
 
@@ -48,13 +51,16 @@ TOOL_TASKS = _load_tool_tasks()
 
 @pytest.fixture(scope="session")
 def event_loop_session() -> Iterator[asyncio.AbstractEventLoop]:
+    """Provide a session-scoped asyncio event loop."""
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 
 
 @pytest.fixture(scope="session")
-def prism(event_loop_session: asyncio.AbstractEventLoop):
+def prism(event_loop_session: asyncio.AbstractEventLoop) -> Iterator[CodePrism]:
+    """Provide an indexed CodePrism instance for the sample Python fixture."""
+
     async def _open() -> CodePrism:
         instance = CodePrism(str(FIXTURE_REPO.resolve()))
         await instance.__aenter__()
@@ -69,7 +75,13 @@ def prism(event_loop_session: asyncio.AbstractEventLoop):
 
 
 @pytest.mark.parametrize("tool", sorted(TOOL_TASKS))
-def test_query_latency(benchmark, prism, event_loop_session, tool: str) -> None:
+def test_query_latency(
+    benchmark: BenchmarkFixture,
+    prism: CodePrism,
+    event_loop_session: asyncio.AbstractEventLoop,
+    tool: str,
+) -> None:
+    """Benchmark CodePrism graph query latency for a specific tool."""
     task = TOOL_TASKS[tool]
     resolved = event_loop_session.run_until_complete(_resolve_file_path(prism.engine, task["file"]))
 
@@ -77,11 +89,13 @@ def test_query_latency(benchmark, prism, event_loop_session, tool: str) -> None:
         event_loop_session.run_until_complete(_run_cp_query(prism.engine, resolved, task))
 
     benchmark.pedantic(_once, iterations=1, rounds=20, warmup_rounds=3)
-    max_ms = benchmark.stats.stats.max * 1000
+    bench_stats: Any = benchmark.stats
+    max_ms = bench_stats.stats.max * 1000
     assert max_ms < P95_CEILING_MS, f"{tool} max {max_ms:.1f}ms exceeds {P95_CEILING_MS}ms"
 
 
-def test_baseline_file_read(benchmark) -> None:
+def test_baseline_file_read(benchmark: BenchmarkFixture) -> None:
+    """Benchmark raw file read latency as a baseline."""
     task = TOOL_TASKS["get_context"]
     repo = str(FIXTURE_REPO.resolve())
 
