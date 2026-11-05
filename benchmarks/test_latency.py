@@ -26,6 +26,8 @@ from codeprism import CodePrism
 
 FIXTURE_REPO = Path(__file__).parent.parent / "tests" / "fixtures" / "sample_python_project"
 FIXTURE_TASKS = Path(__file__).parent / "tasks" / "fixture_tasks.json"
+RESULTS_DIR = Path(__file__).parent / "results"
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 P95_CEILING_MS = 200.0
 
 

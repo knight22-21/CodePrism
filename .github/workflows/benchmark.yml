@@ -58,6 +58,7 @@ jobs:
 
       - name: Run pytest-benchmark (fixture corpus)
         run: |
+          mkdir -p benchmarks/results
           python -m pytest benchmarks/test_latency.py -q \
             --benchmark-json=benchmarks/results/level2_pytest_benchmark.json
 
