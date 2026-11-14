@@ -5,6 +5,37 @@ this file is the committed record.
 
 ---
 
+## Run 14 — 2026-11-07 | Level 3 current deterministic baseline | Python symbol and call resolution
+
+**Version:** v0.1.11  
+**Method:** Independent Python `ast` ground truth compared against CodePrism’s indexed symbols and graph edges. No LLM or Ollama calls are involved.
+
+**Run analysis:** This run refreshed the deterministic Level 3 baseline on the current code. Symbol indexing passed all thresholds with overall precision 1.000, recall 0.990, and F1 0.990 across fixture, requests, flask, and httpx. Cross-file call resolution produced zero wrong judged edges and precision 1.000 across requests, flask, httpx, and codeprism; recall ranged from 0.897 to 1.000. The remaining misses are recall gaps, not false-positive links.
+
+Raw artifacts: `benchmarks/results/level3_symbol_accuracy_current.json` and `benchmarks/results/level3_call_precision_current.json`.
+
+## Run 15 — 2026-11-07 | Level 3 multi-language fixture completion | 9 languages
+
+**Version:** v0.1.11  
+**Method:** Independent tree-sitter traversal compared with CodePrism’s indexed symbols and intra-file callers. No LLM or Ollama calls are involved.
+
+**Run analysis:** This run completed the multi-language Level 3 fixture scope. It covered JavaScript, TypeScript, Go, Rust, Java, C, C++, Ruby, and PHP. All nine languages passed the symbol-resolution thresholds in aggregate: precision 1.000, recall 0.989, and F1 0.994. Judgeable caller links achieved precision 1.000 and recall 0.971. The remaining misses are recall gaps; the benchmark found no wrong judged caller links.
+
+| Corpus | Language | Files | Symbol precision | Symbol recall | Symbol F1 | Caller precision | Caller recall |
+|---|---|---:|---:|---:|---:|---:|---:|
+| javascript | JavaScript | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| typescript | TypeScript | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| go | Go | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| rust | Rust | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 0.800 |
+| java | Java | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| c | C | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| cpp | C++ | 1 | 1.000 | 1.000 | 1.000 | n/a | n/a |
+| ruby | Ruby | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| php | PHP | 1 | 1.000 | 0.900 | 0.947 | n/a | n/a |
+| **Overall** | **9 languages** | **9** | **1.000** | **0.989** | **0.994** | **1.000** | **0.971** |
+
+Raw artifact: `benchmarks/results/level3_multilang_accuracy.json`.
+
 ## Run 13 — 2026-11-05 | Level 2 current-version latency | 11 corpora, 220 tasks
 
 **Version:** v0.1.11  
