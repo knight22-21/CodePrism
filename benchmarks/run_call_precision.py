@@ -233,6 +233,7 @@ async def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--repos", nargs="*", default=list(CORPORA))
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--out", default=None, help="Write JSON results to this path")
     args = ap.parse_args()
     rows = []
     for name in args.repos:
@@ -242,7 +243,14 @@ async def main() -> None:
             continue
         rows.append(await evaluate(name, root))
     if args.json:
-        print(json.dumps(rows, indent=2))
+        payload = json.dumps(rows, indent=2)
+        if args.out:
+            out_path = ROOT / args.out
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(payload + "\n", encoding="utf-8")
+            print(f"Results saved to {out_path}")
+        else:
+            print(payload)
         return
     print(f"{'repo':10} {'edges':>6} {'judged':>6} {'wrong':>5} {'precision':>9} {'recall':>7}")
     for r in rows:
