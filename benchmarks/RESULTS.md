@@ -5,6 +5,16 @@ this file is the committed record.
 
 ---
 
+## Run 16 — 2026-11-14 | Level 4 scaling harness | Initial implementation
+
+**What this run did:** Added `benchmarks/test_size_scaling.py` to measure indexing throughput, peak RSS growth, SQLite database growth, and combined search/context query p95 over deterministic source-file subsets from the checked-out benchmark corpora. It writes raw results to `benchmarks/results/level4_size_scaling_current.json`, uses fresh temporary databases per tier, and makes no Ollama or other LLM calls. The initial slice covered 12 tiers: HTTPX (10/25/50/61 files), Requests (10/25/36/36), and Flask (10/25/50/82), with 30 query repetitions per tier.
+
+**What we achieved:** The initial representative slice passed the indexing-rate threshold in all 12 tiers, ranging from 105.7 to 514.7 files/sec. Query p95 stayed between 1.36 and 2.53 ms in every tier, far below the 200 ms ceiling. SQLite growth was 12.0–80.0 KB/file, passing the 100 KB/file ceiling everywhere. Five of 12 tiers passed the 50 KB/file RSS-growth target; the seven failures are concentrated in smaller or higher-allocation HTTPX/Requests tiers, so they show fixed process/graph overhead rather than proving superlinear memory growth. Larger repo tiers are still required before declaring memory linearity.
+
+**Command:** `python -m benchmarks.test_size_scaling --repos httpx requests flask --max-files 10 25 50 100`
+
+---
+
 ## Run 14 — 2026-11-07 | Level 3 current deterministic baseline | Python symbol and call resolution
 
 **Version:** v0.1.11  
