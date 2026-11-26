@@ -237,6 +237,17 @@ AGENTS.md
 # Private business planning (local only)
 project-infra/
 
+# Private planning and internal docs (local only)
+ACTION_PLAN.md
+FINAL_ACTION_PLAN.md
+GITHUB_PUBLICATION.md
+PLATFORM_REACH_ANALYSIS.md
+SKILL_DISTRIBUTION.md
+skills/codeprism/SUBMISSION_SUMMARY.md
+skills/codeprism/MARKETPLACE_LISTING.md
+skills/codeprism/TESTING_GUIDE.md
+skills/codeprism/TEST_RESULTS.md
+
 # Maintainer workflow notes (local only)
 .agents/
 .cursor/
